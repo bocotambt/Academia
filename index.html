@@ -9,14 +9,42 @@
 <body>
   <div class="app">
     <h1>Academia</h1>
-    <p class="subtitle">My school organizer</p>
+    <p class="subtitle">Organize tasks, exams, and notes</p>
 
-    <div class="input-row">
-      <input id="taskInput" type="text" placeholder="Enter a task" />
-      <button id="addBtn">Add</button>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="tasks">Tasks</button>
+      <button class="tab-btn" data-tab="exams">Exams</button>
+      <button class="tab-btn" data-tab="notes">Notes</button>
     </div>
 
-    <ul id="taskList"></ul>
+    <section id="tasks" class="tab-content active">
+      <h2>Tasks</h2>
+      <div class="input-row">
+        <input id="taskInput" type="text" placeholder="Enter a task" />
+        <button id="addTaskBtn">Add</button>
+      </div>
+      <ul id="taskList"></ul>
+    </section>
+
+    <section id="exams" class="tab-content">
+      <h2>Exams</h2>
+      <div class="input-row">
+        <input id="examInput" type="text" placeholder="Exam name" />
+        <input id="examDateInput" type="date" />
+        <button id="addExamBtn">Add</button>
+      </div>
+      <ul id="examList"></ul>
+    </section>
+
+    <section id="notes" class="tab-content">
+      <h2>Notes</h2>
+      <div class="notes-form">
+        <input id="noteTitleInput" type="text" placeholder="Note title" />
+        <textarea id="noteTextInput" placeholder="Write your note here"></textarea>
+        <button id="addNoteBtn">Save Note</button>
+      </div>
+      <div id="notesList"></div>
+    </section>
   </div>
 
   <script src="script.js"></script>
