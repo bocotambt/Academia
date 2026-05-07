@@ -7,7 +7,7 @@ body {
 }
 
 .app {
-  max-width: 700px;
+  max-width: 900px;
   margin: 0 auto;
   background: white;
   padding: 24px;
@@ -20,21 +20,65 @@ h1 {
   color: #1d4ed8;
 }
 
+h2 {
+  margin-top: 0;
+}
+
 .subtitle {
   color: #6b7280;
   margin-bottom: 20px;
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  padding: 10px 16px;
+  border: none;
+  background: #dbeafe;
+  color: #1e3a8a;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.tab-btn.active {
+  background: #2563eb;
+  color: white;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
 }
 
 .input-row {
   display: flex;
   gap: 10px;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
-input {
+input,
+textarea {
   flex: 1;
   padding: 12px;
   font-size: 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+  width: 100%;
+  margin-bottom: 12px;
 }
 
 button {
@@ -60,4 +104,35 @@ li {
   padding: 12px;
   border-radius: 8px;
   margin-bottom: 10px;
+}
+
+.notes-form {
+  margin-bottom: 20px;
+}
+
+.note-card {
+  background: #f8fafc;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.note-card h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  color: #1e3a8a;
+}
+
+.note-card p {
+  white-space: pre-wrap;
+}
+
+.delete-btn {
+  margin-top: 10px;
+  background: #dc2626;
+}
+
+.delete-btn:hover {
+  background: #991b1b;
 }
