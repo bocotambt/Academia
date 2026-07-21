@@ -9,17 +9,33 @@
 <body>
   <div class="app">
     <h1>Academia</h1>
-    <p class="subtitle">Organize tasks, exams, and notes</p>
+    <p class="subtitle">Organize courses, tasks, exams, notes, and weekly study plans</p>
 
     <div class="tabs">
-      <button class="tab-btn active" data-tab="tasks">Tasks</button>
+      <button class="tab-btn active" data-tab="courses">Courses</button>
+      <button class="tab-btn" data-tab="tasks">Tasks</button>
       <button class="tab-btn" data-tab="exams">Exams</button>
       <button class="tab-btn" data-tab="notes">Notes</button>
+      <button class="tab-btn" data-tab="planner">Planner</button>
     </div>
 
-    <section id="tasks" class="tab-content active">
+    <section id="courses" class="tab-content active">
+      <h2>Courses</h2>
+      <div class="input-row">
+        <input id="courseNameInput" type="text" placeholder="Course name" />
+        <input id="courseCodeInput" type="text" placeholder="Course code" />
+        <input id="courseColorInput" type="color" value="#2563eb" />
+        <button id="addCourseBtn">Add Course</button>
+      </div>
+      <div id="courseList"></div>
+    </section>
+
+    <section id="tasks" class="tab-content">
       <h2>Tasks</h2>
       <div class="input-row">
+        <select id="taskCourseInput">
+          <option value="">Choose course</option>
+        </select>
         <input id="taskInput" type="text" placeholder="Enter a task" />
         <button id="addTaskBtn">Add</button>
       </div>
@@ -29,6 +45,9 @@
     <section id="exams" class="tab-content">
       <h2>Exams</h2>
       <div class="input-row">
+        <select id="examCourseInput">
+          <option value="">Choose course</option>
+        </select>
         <input id="examInput" type="text" placeholder="Exam name" />
         <input id="examDateInput" type="date" />
         <button id="addExamBtn">Add</button>
@@ -39,11 +58,48 @@
     <section id="notes" class="tab-content">
       <h2>Notes</h2>
       <div class="notes-form">
+        <select id="noteCourseInput">
+          <option value="">Choose course</option>
+        </select>
         <input id="noteTitleInput" type="text" placeholder="Note title" />
         <textarea id="noteTextInput" placeholder="Write your note here"></textarea>
         <button id="addNoteBtn">Save Note</button>
       </div>
       <div id="notesList"></div>
+    </section>
+
+    <section id="planner" class="tab-content">
+      <h2>Weekly Planner</h2>
+      <div class="input-row">
+        <select id="plannerDayInput">
+          <option value="">Choose a day</option>
+          <option value="Monday">Monday</option>
+          <option value="Tuesday">Tuesday</option>
+          <option value="Wednesday">Wednesday</option>
+          <option value="Thursday">Thursday</option>
+          <option value="Friday">Friday</option>
+          <option value="Saturday">Saturday</option>
+          <option value="Sunday">Sunday</option>
+        </select>
+
+        <select id="plannerCourseInput">
+          <option value="">Choose course</option>
+        </select>
+
+        <input id="plannerTitleInput" type="text" placeholder="Study session or class" />
+        <input id="plannerTimeInput" type="text" placeholder="Time, e.g. 14:00 - 16:00" />
+        <button id="addPlannerBtn">Add</button>
+      </div>
+
+      <div class="planner-grid">
+        <div class="day-card"><h3>Monday</h3><ul id="MondayList"></ul></div>
+        <div class="day-card"><h3>Tuesday</h3><ul id="TuesdayList"></ul></div>
+        <div class="day-card"><h3>Wednesday</h3><ul id="WednesdayList"></ul></div>
+        <div class="day-card"><h3>Thursday</h3><ul id="ThursdayList"></ul></div>
+        <div class="day-card"><h3>Friday</h3><ul id="FridayList"></ul></div>
+        <div class="day-card"><h3>Saturday</h3><ul id="SaturdayList"></ul></div>
+        <div class="day-card"><h3>Sunday</h3><ul id="SundayList"></ul></div>
+      </div>
     </section>
   </div>
 
