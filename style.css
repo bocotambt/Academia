@@ -7,7 +7,7 @@ body {
 }
 
 .app {
-  max-width: 900px;
+  max-width: 1050px;
   margin: 0 auto;
   background: white;
   padding: 24px;
@@ -66,12 +66,25 @@ h2 {
 }
 
 input,
-textarea {
+textarea,
+select,
+button {
+  font-size: 16px;
+}
+
+input,
+textarea,
+select {
   flex: 1;
   padding: 12px;
-  font-size: 16px;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
+}
+
+input[type="color"] {
+  flex: 0 0 70px;
+  padding: 4px;
+  height: 46px;
 }
 
 textarea {
@@ -110,7 +123,9 @@ li {
   margin-bottom: 20px;
 }
 
-.note-card {
+.note-card,
+.course-card,
+.day-card {
   background: #f8fafc;
   border: 1px solid #dbeafe;
   border-radius: 12px;
@@ -118,7 +133,9 @@ li {
   margin-bottom: 14px;
 }
 
-.note-card h3 {
+.note-card h3,
+.course-card h3,
+.day-card h3 {
   margin-top: 0;
   margin-bottom: 8px;
   color: #1e3a8a;
@@ -135,4 +152,36 @@ li {
 
 .delete-btn:hover {
   background: #991b1b;
+}
+
+.course-badge {
+  display: inline-block;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.planner-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.planner-item {
+  background: #eef4ff;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.planner-item strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.meta {
+  color: #6b7280;
+  font-size: 14px;
 }
