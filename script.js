@@ -9,6 +9,8 @@ const courseList = document.getElementById("courseList");
 
 const taskCourseInput = document.getElementById("taskCourseInput");
 const taskInput = document.getElementById("taskInput");
+const taskDueDateInput = document.getElementById("taskDueDateInput");
+const taskStatusInput = document.getElementById("taskStatusInput");
 const addTaskBtn = document.getElementById("addTaskBtn");
 const taskList = document.getElementById("taskList");
 
@@ -60,8 +62,7 @@ function renderCourseOptions() {
   const selects = [taskCourseInput, examCourseInput, noteCourseInput, plannerCourseInput];
 
   selects.forEach((select) => {
-    const firstOptionText = select.id === "plannerCourseInput" ? "Choose course" : "Choose course";
-    select.innerHTML = `<option value="">${firstOptionText}</option>`;
+    select.innerHTML = `<option value="">Choose course</option>`;
 
     courses.forEach((course) => {
       const option = document.createElement("option");
@@ -74,6 +75,13 @@ function renderCourseOptions() {
 
 function getCourseByCode(code) {
   return courses.find((course) => course.code === code);
+}
+
+function getStatusClass(status) {
+  if (status === "To do") return "status-todo";
+  if (status === "Doing") return "status-doing";
+  if (status === "Done") return "status-done";
+  return "";
 }
 
 function renderCourses() {
@@ -115,8 +123,10 @@ function renderTasks() {
     const li = document.createElement("li");
     const course = getCourseByCode(task.courseCode);
     li.innerHTML = `
+      <span class="status-badge ${getStatusClass(task.status)}">${task.status}</span>
       <strong>${task.text}</strong><br>
-      <span class="meta">${course ? course.code + " - " + course.name : "No course"}</span>
+      <span class="meta">${course ? course.code + " - " + course.name : "No course"}</span><br>
+      <span class="meta">Due: ${task.dueDate || "No due date"}</span>
     `;
 
     li.addEventListener("click", () => {
@@ -245,12 +255,16 @@ addCourseBtn.addEventListener("click", () => {
 addTaskBtn.addEventListener("click", () => {
   const courseCode = taskCourseInput.value;
   const text = taskInput.value.trim();
+  const dueDate = taskDueDateInput.value;
+  const status = taskStatusInput.value;
 
-  if (!courseCode || !text) return;
+  if (!courseCode || !text || !dueDate) return;
 
-  tasks.push({ courseCode, text });
+  tasks.push({ courseCode, text, dueDate, status });
   taskCourseInput.value = "";
   taskInput.value = "";
+  taskDueDateInput.value = "";
+  taskStatusInput.value = "To do";
   saveData();
   renderTasks();
 });
