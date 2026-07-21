@@ -154,13 +154,27 @@ li {
   background: #991b1b;
 }
 
-.course-badge {
+.course-badge,
+.status-badge {
   display: inline-block;
   color: white;
   padding: 4px 10px;
   border-radius: 999px;
   font-size: 14px;
   margin-bottom: 10px;
+  margin-right: 8px;
+}
+
+.status-todo {
+  background: #ea580c;
+}
+
+.status-doing {
+  background: #2563eb;
+}
+
+.status-done {
+  background: #16a34a;
 }
 
 .planner-grid {
