@@ -145,6 +145,16 @@ li {
   white-space: pre-wrap;
 }
 
+.edit-btn {
+  margin-top: 10px;
+  margin-right: 8px;
+  background: #0f766e;
+}
+
+.edit-btn:hover {
+  background: #115e59;
+}
+
 .delete-btn {
   margin-top: 10px;
   background: #dc2626;
