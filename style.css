@@ -155,7 +155,8 @@ li {
 }
 
 .course-badge,
-.status-badge {
+.status-badge,
+.priority-badge {
   display: inline-block;
   color: white;
   padding: 4px 10px;
@@ -175,6 +176,18 @@ li {
 
 .status-done {
   background: #16a34a;
+}
+
+.priority-high {
+  background: #dc2626;
+}
+
+.priority-medium {
+  background: #d97706;
+}
+
+.priority-low {
+  background: #0891b2;
 }
 
 .planner-grid {
