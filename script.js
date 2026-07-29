@@ -39,6 +39,7 @@ let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 let exams = JSON.parse(localStorage.getItem("exams")) || [];
 let notes = JSON.parse(localStorage.getItem("notes")) || [];
 let plannerItems = JSON.parse(localStorage.getItem("plannerItems")) || [];
+let editingTaskIndex = null;
 
 tabButtons.forEach((button) => {
   button.addEventListener("click", () => {
@@ -154,10 +155,36 @@ function renderTasks() {
       <span class="priority-badge ${getPriorityClass(task.priority)}">${task.priority}</span>
       <strong>${task.text}</strong><br>
       <span class="meta">${course ? course.code + " - " + course.name : "No course"}</span><br>
-      <span class="meta">Due: ${task.dueDate || "No due date"}</span>
+      <span class="meta">Due: ${task.dueDate || "No due date"}</span><br>
+      <button class="edit-btn">Edit</button>
+      <button class="delete-btn">Delete</button>
     `;
 
-    li.addEventListener("click", () => {
+    const editButton = li.querySelector(".edit-btn");
+    const deleteButton = li.querySelector(".delete-btn");
+
+    editButton.addEventListener("click", () => {
+      const realIndex = tasks.findIndex(
+        (savedTask) =>
+          savedTask.courseCode === task.courseCode &&
+          savedTask.text === task.text &&
+          savedTask.dueDate === task.dueDate &&
+          savedTask.status === task.status &&
+          savedTask.priority === task.priority
+      );
+
+      if (realIndex !== -1) {
+        editingTaskIndex = realIndex;
+        taskCourseInput.value = task.courseCode;
+        taskInput.value = task.text;
+        taskDueDateInput.value = task.dueDate;
+        taskStatusInput.value = task.status;
+        taskPriorityInput.value = task.priority;
+        addTaskBtn.textContent = "Update Task";
+      }
+    });
+
+    deleteButton.addEventListener("click", () => {
       const realIndex = tasks.findIndex(
         (savedTask) =>
           savedTask.courseCode === task.courseCode &&
@@ -300,12 +327,22 @@ addTaskBtn.addEventListener("click", () => {
 
   if (!courseCode || !text || !dueDate) return;
 
-  tasks.push({ courseCode, text, dueDate, status, priority });
+  const taskData = { courseCode, text, dueDate, status, priority };
+
+  if (editingTaskIndex !== null) {
+    tasks[editingTaskIndex] = taskData;
+    editingTaskIndex = null;
+    addTaskBtn.textContent = "Add Task";
+  } else {
+    tasks.push(taskData);
+  }
+
   taskCourseInput.value = "";
   taskInput.value = "";
   taskDueDateInput.value = "";
   taskStatusInput.value = "To do";
   taskPriorityInput.value = "High";
+
   saveData();
   renderTasks();
 });
