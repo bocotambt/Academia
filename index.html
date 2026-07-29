@@ -43,8 +43,23 @@
           <option value="Doing">Doing</option>
           <option value="Done">Done</option>
         </select>
+        <select id="taskPriorityInput">
+          <option value="High">High priority</option>
+          <option value="Medium">Medium priority</option>
+          <option value="Low">Low priority</option>
+        </select>
         <button id="addTaskBtn">Add Task</button>
       </div>
+
+      <div class="input-row">
+        <select id="taskSortInput">
+          <option value="default">Sort tasks</option>
+          <option value="dueDate">Due date</option>
+          <option value="priority">Priority</option>
+          <option value="status">Status</option>
+        </select>
+      </div>
+
       <ul id="taskList"></ul>
     </section>
 
