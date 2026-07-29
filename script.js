@@ -11,6 +11,8 @@ const taskCourseInput = document.getElementById("taskCourseInput");
 const taskInput = document.getElementById("taskInput");
 const taskDueDateInput = document.getElementById("taskDueDateInput");
 const taskStatusInput = document.getElementById("taskStatusInput");
+const taskPriorityInput = document.getElementById("taskPriorityInput");
+const taskSortInput = document.getElementById("taskSortInput");
 const addTaskBtn = document.getElementById("addTaskBtn");
 const taskList = document.getElementById("taskList");
 
@@ -84,6 +86,30 @@ function getStatusClass(status) {
   return "";
 }
 
+function getPriorityClass(priority) {
+  if (priority === "High") return "priority-high";
+  if (priority === "Medium") return "priority-medium";
+  if (priority === "Low") return "priority-low";
+  return "";
+}
+
+function sortTasks(taskArray) {
+  const sortBy = taskSortInput ? taskSortInput.value : "default";
+  const sorted = [...taskArray];
+
+  if (sortBy === "dueDate") {
+    sorted.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+  } else if (sortBy === "priority") {
+    const order = { High: 1, Medium: 2, Low: 3 };
+    sorted.sort((a, b) => order[a.priority] - order[b.priority]);
+  } else if (sortBy === "status") {
+    const order = { "To do": 1, Doing: 2, Done: 3 };
+    sorted.sort((a, b) => order[a.status] - order[b.status]);
+  }
+
+  return sorted;
+}
+
 function renderCourses() {
   courseList.innerHTML = "";
 
@@ -118,21 +144,34 @@ function renderCourses() {
 
 function renderTasks() {
   taskList.innerHTML = "";
+  const sortedTasks = sortTasks(tasks);
 
-  tasks.forEach((task, index) => {
-    const li = document.createElement("li");
+  sortedTasks.forEach((task) => {
     const course = getCourseByCode(task.courseCode);
+    const li = document.createElement("li");
     li.innerHTML = `
       <span class="status-badge ${getStatusClass(task.status)}">${task.status}</span>
+      <span class="priority-badge ${getPriorityClass(task.priority)}">${task.priority}</span>
       <strong>${task.text}</strong><br>
       <span class="meta">${course ? course.code + " - " + course.name : "No course"}</span><br>
       <span class="meta">Due: ${task.dueDate || "No due date"}</span>
     `;
 
     li.addEventListener("click", () => {
-      tasks.splice(index, 1);
-      saveData();
-      renderTasks();
+      const realIndex = tasks.findIndex(
+        (savedTask) =>
+          savedTask.courseCode === task.courseCode &&
+          savedTask.text === task.text &&
+          savedTask.dueDate === task.dueDate &&
+          savedTask.status === task.status &&
+          savedTask.priority === task.priority
+      );
+
+      if (realIndex !== -1) {
+        tasks.splice(realIndex, 1);
+        saveData();
+        renderTasks();
+      }
     });
 
     taskList.appendChild(li);
@@ -257,17 +296,25 @@ addTaskBtn.addEventListener("click", () => {
   const text = taskInput.value.trim();
   const dueDate = taskDueDateInput.value;
   const status = taskStatusInput.value;
+  const priority = taskPriorityInput.value;
 
   if (!courseCode || !text || !dueDate) return;
 
-  tasks.push({ courseCode, text, dueDate, status });
+  tasks.push({ courseCode, text, dueDate, status, priority });
   taskCourseInput.value = "";
   taskInput.value = "";
   taskDueDateInput.value = "";
   taskStatusInput.value = "To do";
+  taskPriorityInput.value = "High";
   saveData();
   renderTasks();
 });
+
+if (taskSortInput) {
+  taskSortInput.addEventListener("change", () => {
+    renderTasks();
+  });
+}
 
 addExamBtn.addEventListener("click", () => {
   const courseCode = examCourseInput.value;
