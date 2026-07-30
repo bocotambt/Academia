@@ -294,6 +294,11 @@ function renderCalendar() {
     cell.className = "calendar-day";
 
     const dateString = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+    if (dateString === todayString) {
+      cell.classList.add("today");
+    }
 
     const dayNumber = document.createElement("div");
     dayNumber.className = "calendar-day-number";
