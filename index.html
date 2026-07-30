@@ -33,6 +33,7 @@
     <div class="tabs">
       <button class="tab-btn active" data-tab="courses">Courses</button>
       <button class="tab-btn" data-tab="tasks">Tasks</button>
+      <button class="tab-btn" data-tab="calendar">Calendar</button>
       <button class="tab-btn" data-tab="exams">Exams</button>
       <button class="tab-btn" data-tab="notes">Notes</button>
       <button class="tab-btn" data-tab="planner">Planner</button>
@@ -96,6 +97,24 @@
       </div>
 
       <ul id="taskList"></ul>
+    </section>
+
+    <section id="calendar" class="tab-content">
+      <div class="calendar-header">
+        <button id="prevMonthBtn">←</button>
+        <h2 id="calendarMonthLabel">Month Year</h2>
+        <button id="nextMonthBtn">→</button>
+      </div>
+      <div class="calendar-weekdays">
+        <div>Sun</div>
+        <div>Mon</div>
+        <div>Tue</div>
+        <div>Wed</div>
+        <div>Thu</div>
+        <div>Fri</div>
+        <div>Sat</div>
+      </div>
+      <div id="calendarGrid" class="calendar-grid"></div>
     </section>
 
     <section id="exams" class="tab-content">
