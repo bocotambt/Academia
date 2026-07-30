@@ -29,6 +29,33 @@ h2 {
   margin-bottom: 20px;
 }
 
+.dashboard-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.summary-card {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.summary-card h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  color: #1e3a8a;
+}
+
+.summary-card p {
+  margin: 0;
+  font-size: 32px;
+  font-weight: bold;
+  color: #111827;
+}
+
 .tabs {
   display: flex;
   gap: 10px;
