@@ -25,6 +25,11 @@ const taskSortInput = document.getElementById("taskSortInput");
 const addTaskBtn = document.getElementById("addTaskBtn");
 const taskList = document.getElementById("taskList");
 
+const calendarMonthLabel = document.getElementById("calendarMonthLabel");
+const calendarGrid = document.getElementById("calendarGrid");
+const prevMonthBtn = document.getElementById("prevMonthBtn");
+const nextMonthBtn = document.getElementById("nextMonthBtn");
+
 const examCourseInput = document.getElementById("examCourseInput");
 const examInput = document.getElementById("examInput");
 const examDateInput = document.getElementById("examDateInput");
@@ -50,6 +55,10 @@ let notes = JSON.parse(localStorage.getItem("notes")) || [];
 let plannerItems = JSON.parse(localStorage.getItem("plannerItems")) || [];
 let editingTaskIndex = null;
 
+const today = new Date();
+let currentCalendarMonth = today.getMonth();
+let currentCalendarYear = today.getFullYear();
+
 tabButtons.forEach((button) => {
   button.addEventListener("click", () => {
     const tabName = button.dataset.tab;
@@ -74,8 +83,8 @@ function renderDashboard() {
   totalTasksCount.textContent = tasks.length;
   doneTasksCount.textContent = tasks.filter((task) => task.status === "Done").length;
 
-  const today = new Date().toISOString().split("T")[0];
-  upcomingExamsCount.textContent = exams.filter((exam) => exam.date >= today).length;
+  const now = new Date().toISOString().split("T")[0];
+  upcomingExamsCount.textContent = exams.filter((exam) => exam.date >= now).length;
 
   savedNotesCount.textContent = notes.length;
 }
@@ -260,6 +269,59 @@ function renderTasks() {
   });
 }
 
+function renderCalendar() {
+  calendarGrid.innerHTML = "";
+
+  const firstDay = new Date(currentCalendarYear, currentCalendarMonth, 1);
+  const lastDay = new Date(currentCalendarYear, currentCalendarMonth + 1, 0);
+  const daysInMonth = lastDay.getDate();
+  const startDay = firstDay.getDay();
+
+  const monthName = firstDay.toLocaleString("en-US", {
+    month: "long",
+    year: "numeric"
+  });
+  calendarMonthLabel.textContent = monthName;
+
+  for (let i = 0; i < startDay; i++) {
+    const emptyCell = document.createElement("div");
+    emptyCell.className = "calendar-day empty";
+    calendarGrid.appendChild(emptyCell);
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const cell = document.createElement("div");
+    cell.className = "calendar-day";
+
+    const dateString = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+    const dayNumber = document.createElement("div");
+    dayNumber.className = "calendar-day-number";
+    dayNumber.textContent = day;
+    cell.appendChild(dayNumber);
+
+    tasks
+      .filter((task) => task.dueDate === dateString)
+      .forEach((task) => {
+        const item = document.createElement("span");
+        item.className = "calendar-task";
+        item.textContent = `Task: ${task.text}`;
+        cell.appendChild(item);
+      });
+
+    exams
+      .filter((exam) => exam.date === dateString)
+      .forEach((exam) => {
+        const item = document.createElement("span");
+        item.className = "calendar-exam";
+        item.textContent = `Exam: ${exam.name}`;
+        cell.appendChild(item);
+      });
+
+    calendarGrid.appendChild(cell);
+  }
+}
+
 function renderExams() {
   examList.innerHTML = "";
 
@@ -354,6 +416,7 @@ function renderAll() {
   renderCourseOptions();
   renderCourses();
   renderTasks();
+  renderCalendar();
   renderExams();
   renderNotes();
   renderPlanner();
@@ -418,6 +481,24 @@ if (taskFilterStatusInput) {
 if (taskFilterPriorityInput) {
   taskFilterPriorityInput.addEventListener("change", renderTasks);
 }
+
+prevMonthBtn.addEventListener("click", () => {
+  currentCalendarMonth--;
+  if (currentCalendarMonth < 0) {
+    currentCalendarMonth = 11;
+    currentCalendarYear--;
+  }
+  renderCalendar();
+});
+
+nextMonthBtn.addEventListener("click", () => {
+  currentCalendarMonth++;
+  if (currentCalendarMonth > 11) {
+    currentCalendarMonth = 0;
+    currentCalendarYear++;
+  }
+  renderCalendar();
+});
 
 addExamBtn.addEventListener("click", () => {
   const courseCode = examCourseInput.value;
