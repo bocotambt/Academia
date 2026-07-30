@@ -12,6 +12,10 @@ const taskInput = document.getElementById("taskInput");
 const taskDueDateInput = document.getElementById("taskDueDateInput");
 const taskStatusInput = document.getElementById("taskStatusInput");
 const taskPriorityInput = document.getElementById("taskPriorityInput");
+const taskSearchInput = document.getElementById("taskSearchInput");
+const taskFilterCourseInput = document.getElementById("taskFilterCourseInput");
+const taskFilterStatusInput = document.getElementById("taskFilterStatusInput");
+const taskFilterPriorityInput = document.getElementById("taskFilterPriorityInput");
 const taskSortInput = document.getElementById("taskSortInput");
 const addTaskBtn = document.getElementById("addTaskBtn");
 const taskList = document.getElementById("taskList");
@@ -62,7 +66,12 @@ function saveData() {
 }
 
 function renderCourseOptions() {
-  const selects = [taskCourseInput, examCourseInput, noteCourseInput, plannerCourseInput];
+  const selects = [
+    taskCourseInput,
+    examCourseInput,
+    noteCourseInput,
+    plannerCourseInput
+  ];
 
   selects.forEach((select) => {
     select.innerHTML = `<option value="">Choose course</option>`;
@@ -73,6 +82,14 @@ function renderCourseOptions() {
       option.textContent = `${course.code} - ${course.name}`;
       select.appendChild(option);
     });
+  });
+
+  taskFilterCourseInput.innerHTML = `<option value="">All courses</option>`;
+  courses.forEach((course) => {
+    const option = document.createElement("option");
+    option.value = course.code;
+    option.textContent = `${course.code} - ${course.name}`;
+    taskFilterCourseInput.appendChild(option);
   });
 }
 
@@ -92,6 +109,28 @@ function getPriorityClass(priority) {
   if (priority === "Medium") return "priority-medium";
   if (priority === "Low") return "priority-low";
   return "";
+}
+
+function getFilteredTasks() {
+  const searchText = taskSearchInput.value.trim().toLowerCase();
+  const filterCourse = taskFilterCourseInput.value;
+  const filterStatus = taskFilterStatusInput.value;
+  const filterPriority = taskFilterPriorityInput.value;
+
+  return tasks.filter((task) => {
+    const course = getCourseByCode(task.courseCode);
+    const courseText = course ? `${course.code} ${course.name}`.toLowerCase() : "";
+
+    const matchesSearch =
+      task.text.toLowerCase().includes(searchText) ||
+      courseText.includes(searchText);
+
+    const matchesCourse = !filterCourse || task.courseCode === filterCourse;
+    const matchesStatus = !filterStatus || task.status === filterStatus;
+    const matchesPriority = !filterPriority || task.priority === filterPriority;
+
+    return matchesSearch && matchesCourse && matchesStatus && matchesPriority;
+  });
 }
 
 function sortTasks(taskArray) {
@@ -145,7 +184,8 @@ function renderCourses() {
 
 function renderTasks() {
   taskList.innerHTML = "";
-  const sortedTasks = sortTasks(tasks);
+  const filteredTasks = getFilteredTasks();
+  const sortedTasks = sortTasks(filteredTasks);
 
   sortedTasks.forEach((task) => {
     const course = getCourseByCode(task.courseCode);
@@ -348,9 +388,19 @@ addTaskBtn.addEventListener("click", () => {
 });
 
 if (taskSortInput) {
-  taskSortInput.addEventListener("change", () => {
-    renderTasks();
-  });
+  taskSortInput.addEventListener("change", renderTasks);
+}
+if (taskSearchInput) {
+  taskSearchInput.addEventListener("input", renderTasks);
+}
+if (taskFilterCourseInput) {
+  taskFilterCourseInput.addEventListener("change", renderTasks);
+}
+if (taskFilterStatusInput) {
+  taskFilterStatusInput.addEventListener("change", renderTasks);
+}
+if (taskFilterPriorityInput) {
+  taskFilterPriorityInput.addEventListener("change", renderTasks);
 }
 
 addExamBtn.addEventListener("click", () => {
