@@ -21,7 +21,7 @@ h1 {
 }
 
 h2 {
-  margin-top: 0;
+  margin: 0;
 }
 
 .subtitle {
@@ -94,19 +94,13 @@ h2 {
 
 input,
 textarea,
-select,
-button {
-  font-size: 16px;
-}
-
-input,
-textarea,
 select {
   flex: 1;
   padding: 12px;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   min-width: 140px;
+  font-size: 16px;
 }
 
 input[type="color"] {
@@ -129,6 +123,7 @@ button {
   color: white;
   cursor: pointer;
   border-radius: 8px;
+  font-size: 16px;
 }
 
 button:hover {
@@ -194,9 +189,7 @@ li {
 
 .course-badge,
 .status-badge,
-.priority-badge,
-.calendar-task,
-.calendar-exam {
+.priority-badge {
   display: inline-block;
   color: white;
   padding: 4px 10px;
@@ -253,30 +246,46 @@ li {
   font-size: 14px;
 }
 
+/* CALENDAR */
 .calendar-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 14px;
+  justify-content: space-between;
   gap: 12px;
+  margin-bottom: 16px;
+}
+
+.calendar-header button {
+  padding: 10px 14px;
+  min-width: 56px;
+}
+
+#calendarMonthLabel {
+  flex: 1;
+  text-align: center;
+  color: #1e3a8a;
+  font-size: 28px;
 }
 
 .calendar-weekdays {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 10px;
-  font-weight: bold;
-  color: #475569;
 }
 
 .calendar-weekdays div {
   text-align: center;
+  font-weight: bold;
+  color: #475569;
+  background: #eff6ff;
+  border-radius: 8px;
+  padding: 10px 6px;
 }
 
 .calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -299,25 +308,49 @@ li {
   color: #1e3a8a;
 }
 
+.calendar-task,
+.calendar-exam {
+  display: block;
+  color: white;
+  border-radius: 8px;
+  font-size: 12px;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
 .calendar-task {
   background: #2563eb;
-  display: block;
-  margin-bottom: 6px;
-  font-size: 12px;
-  padding: 5px 8px;
 }
 
 .calendar-exam {
   background: #dc2626;
-  display: block;
-  margin-bottom: 6px;
-  font-size: 12px;
-  padding: 5px 8px;
 }
 
-@media (max-width: 800px) {
-  .calendar-grid,
-  .calendar-weekdays {
-    grid-template-columns: repeat(2, 1fr);
+@media (max-width: 900px) {
+  .calendar-weekdays,
+  .calendar-grid {
+    grid-template-columns: repeat(7, minmax(90px, 1fr));
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  body {
+    padding: 16px;
+  }
+
+  .app {
+    padding: 16px;
+  }
+
+  .calendar-header {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  #calendarMonthLabel {
+    width: 100%;
+    order: -1;
   }
 }
