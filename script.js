@@ -1,6 +1,11 @@
 const tabButtons = document.querySelectorAll(".tab-btn");
 const tabContents = document.querySelectorAll(".tab-content");
 
+const totalTasksCount = document.getElementById("totalTasksCount");
+const doneTasksCount = document.getElementById("doneTasksCount");
+const upcomingExamsCount = document.getElementById("upcomingExamsCount");
+const savedNotesCount = document.getElementById("savedNotesCount");
+
 const courseNameInput = document.getElementById("courseNameInput");
 const courseCodeInput = document.getElementById("courseCodeInput");
 const courseColorInput = document.getElementById("courseColorInput");
@@ -63,6 +68,16 @@ function saveData() {
   localStorage.setItem("exams", JSON.stringify(exams));
   localStorage.setItem("notes", JSON.stringify(notes));
   localStorage.setItem("plannerItems", JSON.stringify(plannerItems));
+}
+
+function renderDashboard() {
+  totalTasksCount.textContent = tasks.length;
+  doneTasksCount.textContent = tasks.filter((task) => task.status === "Done").length;
+
+  const today = new Date().toISOString().split("T")[0];
+  upcomingExamsCount.textContent = exams.filter((exam) => exam.date >= today).length;
+
+  savedNotesCount.textContent = notes.length;
 }
 
 function renderCourseOptions() {
@@ -237,7 +252,7 @@ function renderTasks() {
       if (realIndex !== -1) {
         tasks.splice(realIndex, 1);
         saveData();
-        renderTasks();
+        renderAll();
       }
     });
 
@@ -259,7 +274,7 @@ function renderExams() {
     li.addEventListener("click", () => {
       exams.splice(index, 1);
       saveData();
-      renderExams();
+      renderAll();
     });
 
     examList.appendChild(li);
@@ -289,7 +304,7 @@ function renderNotes() {
       const index = Number(button.dataset.index);
       notes.splice(index, 1);
       saveData();
-      renderNotes();
+      renderAll();
     });
   });
 }
@@ -325,7 +340,7 @@ function renderPlanner() {
           if (realIndex !== -1) {
             plannerItems.splice(realIndex, 1);
             saveData();
-            renderPlanner();
+            renderAll();
           }
         });
 
@@ -335,6 +350,7 @@ function renderPlanner() {
 }
 
 function renderAll() {
+  renderDashboard();
   renderCourseOptions();
   renderCourses();
   renderTasks();
@@ -384,7 +400,7 @@ addTaskBtn.addEventListener("click", () => {
   taskPriorityInput.value = "High";
 
   saveData();
-  renderTasks();
+  renderAll();
 });
 
 if (taskSortInput) {
@@ -415,7 +431,7 @@ addExamBtn.addEventListener("click", () => {
   examInput.value = "";
   examDateInput.value = "";
   saveData();
-  renderExams();
+  renderAll();
 });
 
 addNoteBtn.addEventListener("click", () => {
@@ -430,7 +446,7 @@ addNoteBtn.addEventListener("click", () => {
   noteTitleInput.value = "";
   noteTextInput.value = "";
   saveData();
-  renderNotes();
+  renderAll();
 });
 
 addPlannerBtn.addEventListener("click", () => {
@@ -447,7 +463,7 @@ addPlannerBtn.addEventListener("click", () => {
   plannerTitleInput.value = "";
   plannerTimeInput.value = "";
   saveData();
-  renderPlanner();
+  renderAll();
 });
 
 renderAll();
