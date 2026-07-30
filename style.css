@@ -194,7 +194,9 @@ li {
 
 .course-badge,
 .status-badge,
-.priority-badge {
+.priority-badge,
+.calendar-task,
+.calendar-exam {
   display: inline-block;
   color: white;
   padding: 4px 10px;
@@ -249,4 +251,73 @@ li {
 .meta {
   color: #6b7280;
   font-size: 14px;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  gap: 12px;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+  font-weight: bold;
+  color: #475569;
+}
+
+.calendar-weekdays div {
+  text-align: center;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+}
+
+.calendar-day {
+  background: #f8fafc;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  min-height: 130px;
+  padding: 10px;
+}
+
+.calendar-day.empty {
+  background: transparent;
+  border: 1px dashed #dbeafe;
+}
+
+.calendar-day-number {
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #1e3a8a;
+}
+
+.calendar-task {
+  background: #2563eb;
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  padding: 5px 8px;
+}
+
+.calendar-exam {
+  background: #dc2626;
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  padding: 5px 8px;
+}
+
+@media (max-width: 800px) {
+  .calendar-grid,
+  .calendar-weekdays {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
