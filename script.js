@@ -54,6 +54,10 @@ let exams = JSON.parse(localStorage.getItem("exams")) || [];
 let notes = JSON.parse(localStorage.getItem("notes")) || [];
 let plannerItems = JSON.parse(localStorage.getItem("plannerItems")) || [];
 let editingTaskIndex = null;
+let editingCourseIndex = null;
+let editingExamIndex = null;
+let editingNoteIndex = null;
+let editingPlannerIndex = null;
 
 const today = new Date();
 let currentCalendarMonth = today.getMonth();
@@ -135,6 +139,49 @@ function getPriorityClass(priority) {
   return "";
 }
 
+function clearCourseInputs() {
+  courseNameInput.value = "";
+  courseCodeInput.value = "";
+  courseColorInput.value = "#2563eb";
+  editingCourseIndex = null;
+  addCourseBtn.textContent = "Add Course";
+}
+
+function clearTaskInputs() {
+  taskCourseInput.value = "";
+  taskInput.value = "";
+  taskDueDateInput.value = "";
+  taskStatusInput.value = "To do";
+  taskPriorityInput.value = "High";
+  editingTaskIndex = null;
+  addTaskBtn.textContent = "Add Task";
+}
+
+function clearExamInputs() {
+  examCourseInput.value = "";
+  examInput.value = "";
+  examDateInput.value = "";
+  editingExamIndex = null;
+  addExamBtn.textContent = "Add";
+}
+
+function clearNoteInputs() {
+  noteCourseInput.value = "";
+  noteTitleInput.value = "";
+  noteTextInput.value = "";
+  editingNoteIndex = null;
+  addNoteBtn.textContent = "Save Note";
+}
+
+function clearPlannerInputs() {
+  plannerDayInput.value = "";
+  plannerCourseInput.value = "";
+  plannerTitleInput.value = "";
+  plannerTimeInput.value = "";
+  editingPlannerIndex = null;
+  addPlannerBtn.textContent = "Add";
+}
+
 function getFilteredTasks() {
   const searchText = taskSearchInput.value.trim().toLowerCase();
   const filterCourse = taskFilterCourseInput.value;
@@ -184,9 +231,23 @@ function renderCourses() {
       <span class="course-badge" style="background:${course.color}">${course.code}</span>
       <h3>${course.name}</h3>
       <p class="meta">Color: ${course.color}</p>
+      <button class="edit-btn" data-index="${index}">Edit</button>
       <button class="delete-btn" data-index="${index}">Delete</button>
     `;
     courseList.appendChild(card);
+  });
+
+  courseList.querySelectorAll(".edit-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      const index = Number(button.dataset.index);
+      const course = courses[index];
+
+      courseNameInput.value = course.name;
+      courseCodeInput.value = course.code;
+      courseColorInput.value = course.color;
+      editingCourseIndex = index;
+      addCourseBtn.textContent = "Update Course";
+    });
   });
 
   courseList.querySelectorAll(".delete-btn").forEach((button) => {
@@ -202,6 +263,7 @@ function renderCourses() {
       courses.splice(index, 1);
       saveData();
       renderAll();
+      clearCourseInputs();
     });
   });
 }
@@ -262,6 +324,7 @@ function renderTasks() {
         tasks.splice(realIndex, 1);
         saveData();
         renderAll();
+        clearTaskInputs();
       }
     });
 
@@ -335,16 +398,35 @@ function renderExams() {
     const course = getCourseByCode(exam.courseCode);
     li.innerHTML = `
       <strong>${exam.name}</strong><br>
-      <span class="meta">${exam.date} • ${course ? course.code + " - " + course.name : "No course"}</span>
+      <span class="meta">${exam.date} • ${course ? course.code + " - " + course.name : "No course"}</span><br>
+      <button class="edit-btn" data-index="${index}">Edit</button>
+      <button class="delete-btn" data-index="${index}">Delete</button>
     `;
 
-    li.addEventListener("click", () => {
+    examList.appendChild(li);
+  });
+
+  examList.querySelectorAll(".edit-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      const index = Number(button.dataset.index);
+      const exam = exams[index];
+
+      examCourseInput.value = exam.courseCode;
+      examInput.value = exam.name;
+      examDateInput.value = exam.date;
+      editingExamIndex = index;
+      addExamBtn.textContent = "Update";
+    });
+  });
+
+  examList.querySelectorAll(".delete-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      const index = Number(button.dataset.index);
       exams.splice(index, 1);
       saveData();
       renderAll();
+      clearExamInputs();
     });
-
-    examList.appendChild(li);
   });
 }
 
@@ -360,10 +442,24 @@ function renderNotes() {
       <h3>${note.title}</h3>
       <p class="meta">${course ? course.code + " - " + course.name : "No course"}</p>
       <p>${note.text}</p>
+      <button class="edit-btn" data-index="${index}">Edit</button>
       <button class="delete-btn" data-index="${index}">Delete</button>
     `;
 
     notesList.appendChild(card);
+  });
+
+  notesList.querySelectorAll(".edit-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      const index = Number(button.dataset.index);
+      const note = notes[index];
+
+      noteCourseInput.value = note.courseCode;
+      noteTitleInput.value = note.title;
+      noteTextInput.value = note.text;
+      editingNoteIndex = index;
+      addNoteBtn.textContent = "Update Note";
+    });
   });
 
   notesList.querySelectorAll(".delete-btn").forEach((button) => {
@@ -372,6 +468,7 @@ function renderNotes() {
       notes.splice(index, 1);
       saveData();
       renderAll();
+      clearNoteInputs();
     });
   });
 }
@@ -392,10 +489,35 @@ function renderPlanner() {
         li.innerHTML = `
           <strong>${item.title}</strong>
           <span>${item.time}</span><br>
-          <span class="meta">${course ? course.code + " - " + course.name : "No course"}</span>
+          <span class="meta">${course ? course.code + " - " + course.name : "No course"}</span><br>
+          <button class="edit-btn">Edit</button>
+          <button class="delete-btn">Delete</button>
         `;
 
-        li.addEventListener("click", () => {
+        const editButton = li.querySelector(".edit-btn");
+        const deleteButton = li.querySelector(".delete-btn");
+
+        editButton.addEventListener("click", () => {
+          const realIndex = plannerItems.findIndex(
+            (plannerItem) =>
+              plannerItem.day === item.day &&
+              plannerItem.title === item.title &&
+              plannerItem.time === item.time &&
+              plannerItem.courseCode === item.courseCode
+          );
+
+          if (realIndex !== -1) {
+            const plannerItem = plannerItems[realIndex];
+            plannerDayInput.value = plannerItem.day;
+            plannerCourseInput.value = plannerItem.courseCode;
+            plannerTitleInput.value = plannerItem.title;
+            plannerTimeInput.value = plannerItem.time;
+            editingPlannerIndex = realIndex;
+            addPlannerBtn.textContent = "Update";
+          }
+        });
+
+        deleteButton.addEventListener("click", () => {
           const realIndex = plannerItems.findIndex(
             (plannerItem) =>
               plannerItem.day === item.day &&
@@ -408,6 +530,7 @@ function renderPlanner() {
             plannerItems.splice(realIndex, 1);
             saveData();
             renderAll();
+            clearPlannerInputs();
           }
         });
 
@@ -434,12 +557,32 @@ addCourseBtn.addEventListener("click", () => {
 
   if (!name || !code) return;
 
-  courses.push({ name, code, color });
-  courseNameInput.value = "";
-  courseCodeInput.value = "";
-  courseColorInput.value = "#2563eb";
+  const courseData = { name, code, color };
+
+  if (editingCourseIndex !== null) {
+    const oldCode = courses[editingCourseIndex].code;
+
+    courses[editingCourseIndex] = courseData;
+
+    tasks = tasks.map((task) =>
+      task.courseCode === oldCode ? { ...task, courseCode: code } : task
+    );
+    exams = exams.map((exam) =>
+      exam.courseCode === oldCode ? { ...exam, courseCode: code } : exam
+    );
+    notes = notes.map((note) =>
+      note.courseCode === oldCode ? { ...note, courseCode: code } : note
+    );
+    plannerItems = plannerItems.map((item) =>
+      item.courseCode === oldCode ? { ...item, courseCode: code } : item
+    );
+  } else {
+    courses.push(courseData);
+  }
+
   saveData();
   renderAll();
+  clearCourseInputs();
 });
 
 addTaskBtn.addEventListener("click", () => {
@@ -455,20 +598,13 @@ addTaskBtn.addEventListener("click", () => {
 
   if (editingTaskIndex !== null) {
     tasks[editingTaskIndex] = taskData;
-    editingTaskIndex = null;
-    addTaskBtn.textContent = "Add Task";
   } else {
     tasks.push(taskData);
   }
 
-  taskCourseInput.value = "";
-  taskInput.value = "";
-  taskDueDateInput.value = "";
-  taskStatusInput.value = "To do";
-  taskPriorityInput.value = "High";
-
   saveData();
   renderAll();
+  clearTaskInputs();
 });
 
 if (taskSortInput) {
@@ -512,12 +648,17 @@ addExamBtn.addEventListener("click", () => {
 
   if (!courseCode || !name || !date) return;
 
-  exams.push({ courseCode, name, date });
-  examCourseInput.value = "";
-  examInput.value = "";
-  examDateInput.value = "";
+  const examData = { courseCode, name, date };
+
+  if (editingExamIndex !== null) {
+    exams[editingExamIndex] = examData;
+  } else {
+    exams.push(examData);
+  }
+
   saveData();
   renderAll();
+  clearExamInputs();
 });
 
 addNoteBtn.addEventListener("click", () => {
@@ -527,12 +668,17 @@ addNoteBtn.addEventListener("click", () => {
 
   if (!courseCode || !title || !text) return;
 
-  notes.push({ courseCode, title, text });
-  noteCourseInput.value = "";
-  noteTitleInput.value = "";
-  noteTextInput.value = "";
+  const noteData = { courseCode, title, text };
+
+  if (editingNoteIndex !== null) {
+    notes[editingNoteIndex] = noteData;
+  } else {
+    notes.push(noteData);
+  }
+
   saveData();
   renderAll();
+  clearNoteInputs();
 });
 
 addPlannerBtn.addEventListener("click", () => {
@@ -543,13 +689,17 @@ addPlannerBtn.addEventListener("click", () => {
 
   if (!day || !courseCode || !title || !time) return;
 
-  plannerItems.push({ day, courseCode, title, time });
-  plannerDayInput.value = "";
-  plannerCourseInput.value = "";
-  plannerTitleInput.value = "";
-  plannerTimeInput.value = "";
+  const plannerData = { day, courseCode, title, time };
+
+  if (editingPlannerIndex !== null) {
+    plannerItems[editingPlannerIndex] = plannerData;
+  } else {
+    plannerItems.push(plannerData);
+  }
+
   saveData();
   renderAll();
+  clearPlannerInputs();
 });
 
 renderAll();
