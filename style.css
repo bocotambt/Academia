@@ -17,11 +17,13 @@ body {
 
 h1 {
   margin-top: 0;
+  margin-bottom: 8px;
   color: #1d4ed8;
 }
 
 h2 {
-  margin: 0;
+  margin: 0 0 16px 0;
+  color: #1e3a8a;
 }
 
 .subtitle {
@@ -59,7 +61,7 @@ h2 {
 .tabs {
   display: flex;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   flex-wrap: wrap;
 }
 
@@ -68,8 +70,9 @@ h2 {
   border: none;
   background: #dbeafe;
   color: #1e3a8a;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
+  font-weight: 600;
 }
 
 .tab-btn.active {
@@ -98,9 +101,18 @@ select {
   flex: 1;
   padding: 12px;
   border: 1px solid #cbd5e1;
-  border-radius: 8px;
+  border-radius: 10px;
   min-width: 140px;
   font-size: 16px;
+  background: white;
+  color: #1f2937;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid #93c5fd;
+  border-color: #2563eb;
 }
 
 input[type="color"] {
@@ -122,8 +134,9 @@ button {
   background: #2563eb;
   color: white;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 16px;
+  font-weight: 600;
 }
 
 button:hover {
@@ -133,13 +146,15 @@ button:hover {
 ul {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 
 li {
   background: #eef4ff;
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 10px;
+  padding: 14px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  border: 1px solid #dbeafe;
 }
 
 .notes-form {
@@ -151,7 +166,7 @@ li {
 .day-card {
   background: #f8fafc;
   border: 1px solid #dbeafe;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 16px;
   margin-bottom: 14px;
 }
@@ -168,9 +183,20 @@ li {
   white-space: pre-wrap;
 }
 
-.edit-btn {
+.card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.edit-btn,
+.delete-btn {
   margin-top: 10px;
   margin-right: 8px;
+}
+
+.edit-btn {
   background: #0f766e;
 }
 
@@ -179,7 +205,6 @@ li {
 }
 
 .delete-btn {
-  margin-top: 10px;
   background: #dc2626;
 }
 
@@ -197,6 +222,7 @@ li {
   font-size: 14px;
   margin-bottom: 10px;
   margin-right: 8px;
+  font-weight: 600;
 }
 
 .status-todo {
@@ -231,9 +257,10 @@ li {
 
 .planner-item {
   background: #eef4ff;
-  border-radius: 8px;
-  padding: 10px;
+  border-radius: 10px;
+  padding: 12px;
   margin-bottom: 10px;
+  border: 1px solid #dbeafe;
 }
 
 .planner-item strong {
@@ -264,6 +291,7 @@ li {
   text-align: center;
   color: #1e3a8a;
   font-size: 28px;
+  margin-bottom: 0;
 }
 
 .calendar-legend {
@@ -380,6 +408,15 @@ li {
 
   .app {
     padding: 16px;
+  }
+
+  .tabs {
+    gap: 8px;
+  }
+
+  .tab-btn,
+  button {
+    width: 100%;
   }
 
   .calendar-header {
