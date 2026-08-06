@@ -1,705 +1,665 @@
 const tabButtons = document.querySelectorAll(".tab-btn");
 const tabContents = document.querySelectorAll(".tab-content");
 
-const totalTasksCount = document.getElementById("totalTasksCount");
-const doneTasksCount = document.getElementById("doneTasksCount");
-const upcomingExamsCount = document.getElementById("upcomingExamsCount");
-const savedNotesCount = document.getElementById("savedNotesCount");
-
-const courseNameInput = document.getElementById("courseNameInput");
-const courseCodeInput = document.getElementById("courseCodeInput");
-const courseColorInput = document.getElementById("courseColorInput");
-const addCourseBtn = document.getElementById("addCourseBtn");
-const courseList = document.getElementById("courseList");
-
-const taskCourseInput = document.getElementById("taskCourseInput");
-const taskInput = document.getElementById("taskInput");
-const taskDueDateInput = document.getElementById("taskDueDateInput");
-const taskStatusInput = document.getElementById("taskStatusInput");
-const taskPriorityInput = document.getElementById("taskPriorityInput");
-const taskSearchInput = document.getElementById("taskSearchInput");
-const taskFilterCourseInput = document.getElementById("taskFilterCourseInput");
-const taskFilterStatusInput = document.getElementById("taskFilterStatusInput");
-const taskFilterPriorityInput = document.getElementById("taskFilterPriorityInput");
-const taskSortInput = document.getElementById("taskSortInput");
-const addTaskBtn = document.getElementById("addTaskBtn");
-const taskList = document.getElementById("taskList");
-
-const calendarMonthLabel = document.getElementById("calendarMonthLabel");
-const calendarGrid = document.getElementById("calendarGrid");
-const prevMonthBtn = document.getElementById("prevMonthBtn");
-const nextMonthBtn = document.getElementById("nextMonthBtn");
-
-const examCourseInput = document.getElementById("examCourseInput");
-const examInput = document.getElementById("examInput");
-const examDateInput = document.getElementById("examDateInput");
-const addExamBtn = document.getElementById("addExamBtn");
-const examList = document.getElementById("examList");
-
-const noteCourseInput = document.getElementById("noteCourseInput");
-const noteTitleInput = document.getElementById("noteTitleInput");
-const noteTextInput = document.getElementById("noteTextInput");
-const addNoteBtn = document.getElementById("addNoteBtn");
-const notesList = document.getElementById("notesList");
-
-const plannerDayInput = document.getElementById("plannerDayInput");
-const plannerCourseInput = document.getElementById("plannerCourseInput");
-const plannerTitleInput = document.getElementById("plannerTitleInput");
-const plannerTimeInput = document.getElementById("plannerTimeInput");
-const addPlannerBtn = document.getElementById("addPlannerBtn");
-
-let courses = JSON.parse(localStorage.getItem("courses")) || [];
-let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-let exams = JSON.parse(localStorage.getItem("exams")) || [];
-let notes = JSON.parse(localStorage.getItem("notes")) || [];
-let plannerItems = JSON.parse(localStorage.getItem("plannerItems")) || [];
-let editingTaskIndex = null;
-let editingCourseIndex = null;
-let editingExamIndex = null;
-let editingNoteIndex = null;
-let editingPlannerIndex = null;
-
-const today = new Date();
-let currentCalendarMonth = today.getMonth();
-let currentCalendarYear = today.getFullYear();
-
-tabButtons.forEach((button) => {
+tabButtons.forEach(button => {
   button.addEventListener("click", () => {
-    const tabName = button.dataset.tab;
+    const tab = button.dataset.tab;
 
-    tabButtons.forEach((btn) => btn.classList.remove("active"));
-    tabContents.forEach((content) => content.classList.remove("active"));
+    tabButtons.forEach(btn => btn.classList.remove("active"));
+    tabContents.forEach(content => content.classList.remove("active"));
 
     button.classList.add("active");
-    document.getElementById(tabName).classList.add("active");
+    document.getElementById(tab).classList.add("active");
   });
 });
 
-function saveData() {
+let courses = JSON.parse(localStorage.getItem("courses")) || [];
+let notes = JSON.parse(localStorage.getItem("notes")) || [];
+let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+let pendingSessions = [];
+let editingCourseId = null;
+let editingNoteId = null;
+let editingTaskId = null;
+
+const courseNameInput = document.getElementById("courseName");
+const courseCodeInput = document.getElementById("courseCode");
+const courseInstructorInput = document.getElementById("courseInstructor");
+const courseColorInput = document.getElementById("courseColor");
+
+const sessionTypeInput = document.getElementById("sessionType");
+const sessionRepeatInput = document.getElementById("sessionRepeat");
+const sessionDayInput = document.getElementById("sessionDay");
+const sessionDateInput = document.getElementById("sessionDate");
+const sessionStartTimeInput = document.getElementById("sessionStartTime");
+const sessionEndTimeInput = document.getElementById("sessionEndTime");
+
+const addSessionBtn = document.getElementById("addSessionBtn");
+const saveCourseBtn = document.getElementById("saveCourseBtn");
+const pendingSessionsList = document.getElementById("pendingSessionsList");
+const coursesList = document.getElementById("coursesList");
+
+const noteTitleInput = document.getElementById("noteTitle");
+const noteContentInput = document.getElementById("noteContent");
+const saveNoteBtn = document.getElementById("saveNoteBtn");
+const notesList = document.getElementById("notesList");
+
+const taskTitleInput = document.getElementById("taskTitle");
+const taskDateInput = document.getElementById("taskDate");
+const taskPriorityInput = document.getElementById("taskPriority");
+const taskStatusInput = document.getElementById("taskStatus");
+const addTaskBtn = document.getElementById("addTaskBtn");
+const plannerList = document.getElementById("plannerList");
+
+const totalCoursesEl = document.getElementById("totalCourses");
+const totalTasksEl = document.getElementById("totalTasks");
+const upcomingExamsEl = document.getElementById("upcomingExams");
+
+const calendarGrid = document.getElementById("calendarGrid");
+const calendarMonthLabel = document.getElementById("calendarMonthLabel");
+const prevMonthBtn = document.getElementById("prevMonthBtn");
+const nextMonthBtn = document.getElementById("nextMonthBtn");
+
+let currentCalendarDate = new Date();
+
+function saveCourses() {
   localStorage.setItem("courses", JSON.stringify(courses));
-  localStorage.setItem("tasks", JSON.stringify(tasks));
-  localStorage.setItem("exams", JSON.stringify(exams));
+}
+
+function saveNotes() {
   localStorage.setItem("notes", JSON.stringify(notes));
-  localStorage.setItem("plannerItems", JSON.stringify(plannerItems));
 }
 
-function renderDashboard() {
-  totalTasksCount.textContent = tasks.length;
-  doneTasksCount.textContent = tasks.filter((task) => task.status === "Done").length;
-
-  const now = new Date().toISOString().split("T")[0];
-  upcomingExamsCount.textContent = exams.filter((exam) => exam.date >= now).length;
-
-  savedNotesCount.textContent = notes.length;
+function saveTasks() {
+  localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
-function renderCourseOptions() {
-  const selects = [
-    taskCourseInput,
-    examCourseInput,
-    noteCourseInput,
-    plannerCourseInput
-  ];
+function updateDashboard() {
+  totalCoursesEl.textContent = courses.length;
+  totalTasksEl.textContent = tasks.length;
 
-  selects.forEach((select) => {
-    select.innerHTML = `<option value="">Choose course</option>`;
-
-    courses.forEach((course) => {
-      const option = document.createElement("option");
-      option.value = course.code;
-      option.textContent = `${course.code} - ${course.name}`;
-      select.appendChild(option);
+  const today = new Date();
+  const upcomingCount = courses.reduce((count, course) => {
+    const specificSessions = (course.sessions || []).filter(session => {
+      return session.repeat === "specific" && session.date;
     });
+
+    const futureSessions = specificSessions.filter(session => {
+      return new Date(session.date) >= new Date(today.toDateString());
+    });
+
+    return count + futureSessions.length;
+  }, 0);
+
+  upcomingExamsEl.textContent = upcomingCount;
+}
+
+function updateSessionInputs() {
+  if (sessionRepeatInput.value === "weekly") {
+    sessionDayInput.style.display = "block";
+    sessionDateInput.style.display = "none";
+    sessionDateInput.value = "";
+  } else {
+    sessionDayInput.style.display = "none";
+    sessionDateInput.style.display = "block";
+    sessionDayInput.value = "";
+  }
+}
+
+function renderPendingSessions() {
+  pendingSessionsList.innerHTML = "";
+
+  if (pendingSessions.length === 0) {
+    pendingSessionsList.innerHTML = "<li>No sessions added yet.</li>";
+    return;
+  }
+
+  pendingSessions.forEach((session, index) => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <strong>${session.type}</strong><br>
+      ${session.repeat === "weekly"
+        ? `${session.day} • ${session.startTime} - ${session.endTime} • Weekly`
+        : `${session.date} • ${session.startTime} - ${session.endTime} • Specific Date`}
+      <br>
+      <button class="delete-btn" onclick="removePendingSession(${index})">Remove</button>
+    `;
+    pendingSessionsList.appendChild(li);
   });
-
-  taskFilterCourseInput.innerHTML = `<option value="">All courses</option>`;
-  courses.forEach((course) => {
-    const option = document.createElement("option");
-    option.value = course.code;
-    option.textContent = `${course.code} - ${course.name}`;
-    taskFilterCourseInput.appendChild(option);
-  });
 }
 
-function getCourseByCode(code) {
-  return courses.find((course) => course.code === code);
+function removePendingSession(index) {
+  pendingSessions.splice(index, 1);
+  renderPendingSessions();
 }
 
-function getStatusClass(status) {
-  if (status === "To do") return "status-todo";
-  if (status === "Doing") return "status-doing";
-  if (status === "Done") return "status-done";
-  return "";
-}
+window.removePendingSession = removePendingSession;
 
-function getPriorityClass(priority) {
-  if (priority === "High") return "priority-high";
-  if (priority === "Medium") return "priority-medium";
-  if (priority === "Low") return "priority-low";
-  return "";
-}
-
-function clearCourseInputs() {
+function clearCourseForm() {
   courseNameInput.value = "";
   courseCodeInput.value = "";
+  courseInstructorInput.value = "";
   courseColorInput.value = "#2563eb";
-  editingCourseIndex = null;
-  addCourseBtn.textContent = "Add Course";
+
+  sessionTypeInput.value = "Lecture";
+  sessionRepeatInput.value = "weekly";
+  sessionDayInput.value = "";
+  sessionDateInput.value = "";
+  sessionStartTimeInput.value = "";
+  sessionEndTimeInput.value = "";
+
+  pendingSessions = [];
+  editingCourseId = null;
+  saveCourseBtn.textContent = "Save Course";
+
+  updateSessionInputs();
+  renderPendingSessions();
 }
 
-function clearTaskInputs() {
-  taskCourseInput.value = "";
-  taskInput.value = "";
-  taskDueDateInput.value = "";
-  taskStatusInput.value = "To do";
+function addSession() {
+  const type = sessionTypeInput.value;
+  const repeat = sessionRepeatInput.value;
+  const day = sessionDayInput.value;
+  const date = sessionDateInput.value;
+  const startTime = sessionStartTimeInput.value;
+  const endTime = sessionEndTimeInput.value;
+
+  if (!startTime || !endTime) {
+    alert("Please enter both start and end time.");
+    return;
+  }
+
+  if (repeat === "weekly" && !day) {
+    alert("Please choose a day for a weekly session.");
+    return;
+  }
+
+  if (repeat === "specific" && !date) {
+    alert("Please choose a date for a specific-date session.");
+    return;
+  }
+
+  pendingSessions.push({
+    id: Date.now() + Math.random(),
+    type,
+    repeat,
+    day,
+    date,
+    startTime,
+    endTime
+  });
+
+  sessionTypeInput.value = "Lecture";
+  sessionRepeatInput.value = "weekly";
+  sessionDayInput.value = "";
+  sessionDateInput.value = "";
+  sessionStartTimeInput.value = "";
+  sessionEndTimeInput.value = "";
+
+  updateSessionInputs();
+  renderPendingSessions();
+}
+
+function saveCourse() {
+  const name = courseNameInput.value.trim();
+  const code = courseCodeInput.value.trim();
+  const instructor = courseInstructorInput.value.trim();
+  const color = courseColorInput.value;
+
+  if (!name || !code) {
+    alert("Please enter both course name and course code.");
+    return;
+  }
+
+  if (pendingSessions.length === 0) {
+    alert("Please add at least one session.");
+    return;
+  }
+
+  const courseData = {
+    id: editingCourseId || Date.now(),
+    name,
+    code,
+    instructor,
+    color,
+    sessions: [...pendingSessions]
+  };
+
+  if (editingCourseId) {
+    courses = courses.map(course => course.id === editingCourseId ? courseData : course);
+  } else {
+    courses.push(courseData);
+  }
+
+  saveCourses();
+  renderCourses();
+  updateDashboard();
+  renderCalendar();
+  clearCourseForm();
+}
+
+function editCourse(id) {
+  const course = courses.find(course => course.id === id);
+  if (!course) return;
+
+  editingCourseId = id;
+  courseNameInput.value = course.name;
+  courseCodeInput.value = course.code;
+  courseInstructorInput.value = course.instructor;
+  courseColorInput.value = course.color;
+  pendingSessions = [...(course.sessions || [])];
+
+  saveCourseBtn.textContent = "Update Course";
+  renderPendingSessions();
+  updateSessionInputs();
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function deleteCourse(id) {
+  courses = courses.filter(course => course.id !== id);
+  saveCourses();
+  renderCourses();
+  updateDashboard();
+  renderCalendar();
+
+  if (editingCourseId === id) {
+    clearCourseForm();
+  }
+}
+
+window.editCourse = editCourse;
+window.deleteCourse = deleteCourse;
+
+function renderCourses() {
+  coursesList.innerHTML = "";
+
+  if (courses.length === 0) {
+    coursesList.innerHTML = "<p>No courses added yet.</p>";
+    return;
+  }
+
+  courses.forEach(course => {
+    const card = document.createElement("div");
+    card.className = "course-card";
+
+    let sessionsHtml = "<p>No sessions saved.</p>";
+
+    if (course.sessions && course.sessions.length > 0) {
+      sessionsHtml = course.sessions.map(session => `
+        <div class="planner-item">
+          <span class="course-badge" style="background:${course.color};">${session.type}</span>
+          <p class="meta">
+            ${session.repeat === "weekly"
+              ? `${session.day} • ${session.startTime} - ${session.endTime} • Weekly`
+              : `${session.date} • ${session.startTime} - ${session.endTime} • Specific Date`}
+          </p>
+        </div>
+      `).join("");
+    }
+
+    card.innerHTML = `
+      <h3>${course.name} (${course.code})</h3>
+      <p><strong>Instructor:</strong> ${course.instructor || "N/A"}</p>
+      <div class="course-badge" style="background:${course.color};">${course.code}</div>
+      <div class="course-sessions">
+        <h4>Sessions</h4>
+        ${sessionsHtml}
+      </div>
+      <div class="card-actions">
+        <button class="edit-btn" onclick="editCourse(${course.id})">Edit</button>
+        <button class="delete-btn" onclick="deleteCourse(${course.id})">Delete</button>
+      </div>
+    `;
+
+    coursesList.appendChild(card);
+  });
+}
+
+function clearNoteForm() {
+  noteTitleInput.value = "";
+  noteContentInput.value = "";
+  editingNoteId = null;
+  saveNoteBtn.textContent = "Save Note";
+}
+
+function saveNote() {
+  const title = noteTitleInput.value.trim();
+  const content = noteContentInput.value.trim();
+
+  if (!title || !content) {
+    alert("Please enter both note title and note content.");
+    return;
+  }
+
+  const noteData = {
+    id: editingNoteId || Date.now(),
+    title,
+    content
+  };
+
+  if (editingNoteId) {
+    notes = notes.map(note => note.id === editingNoteId ? noteData : note);
+  } else {
+    notes.push(noteData);
+  }
+
+  saveNotes();
+  renderNotes();
+  clearNoteForm();
+}
+
+function editNote(id) {
+  const note = notes.find(note => note.id === id);
+  if (!note) return;
+
+  editingNoteId = id;
+  noteTitleInput.value = note.title;
+  noteContentInput.value = note.content;
+  saveNoteBtn.textContent = "Update Note";
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function deleteNote(id) {
+  notes = notes.filter(note => note.id !== id);
+  saveNotes();
+  renderNotes();
+
+  if (editingNoteId === id) {
+    clearNoteForm();
+  }
+}
+
+window.editNote = editNote;
+window.deleteNote = deleteNote;
+
+function renderNotes() {
+  notesList.innerHTML = "";
+
+  if (notes.length === 0) {
+    notesList.innerHTML = "<p>No notes saved yet.</p>";
+    return;
+  }
+
+  notes.forEach(note => {
+    const card = document.createElement("div");
+    card.className = "note-card";
+    card.innerHTML = `
+      <h3>${note.title}</h3>
+      <p>${note.content}</p>
+      <div class="card-actions">
+        <button class="edit-btn" onclick="editNote(${note.id})">Edit</button>
+        <button class="delete-btn" onclick="deleteNote(${note.id})">Delete</button>
+      </div>
+    `;
+    notesList.appendChild(card);
+  });
+}
+
+function clearTaskForm() {
+  taskTitleInput.value = "";
+  taskDateInput.value = "";
   taskPriorityInput.value = "High";
-  editingTaskIndex = null;
+  taskStatusInput.value = "To Do";
+  editingTaskId = null;
   addTaskBtn.textContent = "Add Task";
 }
 
-function clearExamInputs() {
-  examCourseInput.value = "";
-  examInput.value = "";
-  examDateInput.value = "";
-  editingExamIndex = null;
-  addExamBtn.textContent = "Add";
-}
+function addOrUpdateTask() {
+  const title = taskTitleInput.value.trim();
+  const date = taskDateInput.value;
+  const priority = taskPriorityInput.value;
+  const status = taskStatusInput.value;
 
-function clearNoteInputs() {
-  noteCourseInput.value = "";
-  noteTitleInput.value = "";
-  noteTextInput.value = "";
-  editingNoteIndex = null;
-  addNoteBtn.textContent = "Save Note";
-}
-
-function clearPlannerInputs() {
-  plannerDayInput.value = "";
-  plannerCourseInput.value = "";
-  plannerTitleInput.value = "";
-  plannerTimeInput.value = "";
-  editingPlannerIndex = null;
-  addPlannerBtn.textContent = "Add";
-}
-
-function getFilteredTasks() {
-  const searchText = taskSearchInput.value.trim().toLowerCase();
-  const filterCourse = taskFilterCourseInput.value;
-  const filterStatus = taskFilterStatusInput.value;
-  const filterPriority = taskFilterPriorityInput.value;
-
-  return tasks.filter((task) => {
-    const course = getCourseByCode(task.courseCode);
-    const courseText = course ? `${course.code} ${course.name}`.toLowerCase() : "";
-
-    const matchesSearch =
-      task.text.toLowerCase().includes(searchText) ||
-      courseText.includes(searchText);
-
-    const matchesCourse = !filterCourse || task.courseCode === filterCourse;
-    const matchesStatus = !filterStatus || task.status === filterStatus;
-    const matchesPriority = !filterPriority || task.priority === filterPriority;
-
-    return matchesSearch && matchesCourse && matchesStatus && matchesPriority;
-  });
-}
-
-function sortTasks(taskArray) {
-  const sortBy = taskSortInput ? taskSortInput.value : "default";
-  const sorted = [...taskArray];
-
-  if (sortBy === "dueDate") {
-    sorted.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
-  } else if (sortBy === "priority") {
-    const order = { High: 1, Medium: 2, Low: 3 };
-    sorted.sort((a, b) => order[a.priority] - order[b.priority]);
-  } else if (sortBy === "status") {
-    const order = { "To do": 1, Doing: 2, Done: 3 };
-    sorted.sort((a, b) => order[a.status] - order[b.status]);
+  if (!title || !date) {
+    alert("Please enter both task title and due date.");
+    return;
   }
 
-  return sorted;
+  const taskData = {
+    id: editingTaskId || Date.now(),
+    title,
+    date,
+    priority,
+    status
+  };
+
+  if (editingTaskId) {
+    tasks = tasks.map(task => task.id === editingTaskId ? taskData : task);
+  } else {
+    tasks.push(taskData);
+  }
+
+  saveTasks();
+  renderTasks();
+  updateDashboard();
+  renderCalendar();
+  clearTaskForm();
 }
 
-function renderCourses() {
-  courseList.innerHTML = "";
+function editTask(id) {
+  const task = tasks.find(task => task.id === id);
+  if (!task) return;
 
-  courses.forEach((course, index) => {
-    const card = document.createElement("div");
-    card.className = "course-card";
-    card.innerHTML = `
-      <span class="course-badge" style="background:${course.color}">${course.code}</span>
-      <h3>${course.name}</h3>
-      <p class="meta">Color: ${course.color}</p>
-      <button class="edit-btn" data-index="${index}">Edit</button>
-      <button class="delete-btn" data-index="${index}">Delete</button>
-    `;
-    courseList.appendChild(card);
-  });
+  editingTaskId = id;
+  taskTitleInput.value = task.title;
+  taskDateInput.value = task.date;
+  taskPriorityInput.value = task.priority;
+  taskStatusInput.value = task.status;
+  addTaskBtn.textContent = "Update Task";
 
-  courseList.querySelectorAll(".edit-btn").forEach((button) => {
-    button.addEventListener("click", () => {
-      const index = Number(button.dataset.index);
-      const course = courses[index];
-
-      courseNameInput.value = course.name;
-      courseCodeInput.value = course.code;
-      courseColorInput.value = course.color;
-      editingCourseIndex = index;
-      addCourseBtn.textContent = "Update Course";
-    });
-  });
-
-  courseList.querySelectorAll(".delete-btn").forEach((button) => {
-    button.addEventListener("click", () => {
-      const index = Number(button.dataset.index);
-      const deletedCourse = courses[index];
-
-      tasks = tasks.filter((task) => task.courseCode !== deletedCourse.code);
-      exams = exams.filter((exam) => exam.courseCode !== deletedCourse.code);
-      notes = notes.filter((note) => note.courseCode !== deletedCourse.code);
-      plannerItems = plannerItems.filter((item) => item.courseCode !== deletedCourse.code);
-
-      courses.splice(index, 1);
-      saveData();
-      renderAll();
-      clearCourseInputs();
-    });
-  });
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
+
+function deleteTask(id) {
+  tasks = tasks.filter(task => task.id !== id);
+  saveTasks();
+  renderTasks();
+  updateDashboard();
+  renderCalendar();
+
+  if (editingTaskId === id) {
+    clearTaskForm();
+  }
+}
+
+window.editTask = editTask;
+window.deleteTask = deleteTask;
 
 function renderTasks() {
-  taskList.innerHTML = "";
-  const filteredTasks = getFilteredTasks();
-  const sortedTasks = sortTasks(filteredTasks);
+  plannerList.innerHTML = "";
 
-  sortedTasks.forEach((task) => {
-    const course = getCourseByCode(task.courseCode);
-    const li = document.createElement("li");
-    li.innerHTML = `
-      <span class="status-badge ${getStatusClass(task.status)}">${task.status}</span>
-      <span class="priority-badge ${getPriorityClass(task.priority)}">${task.priority}</span>
-      <strong>${task.text}</strong><br>
-      <span class="meta">${course ? course.code + " - " + course.name : "No course"}</span><br>
-      <span class="meta">Due: ${task.dueDate || "No due date"}</span><br>
-      <button class="edit-btn">Edit</button>
-      <button class="delete-btn">Delete</button>
+  if (tasks.length === 0) {
+    plannerList.innerHTML = "<p>No tasks added yet.</p>";
+    return;
+  }
+
+  tasks.forEach(task => {
+    const card = document.createElement("div");
+    card.className = "day-card";
+
+    const priorityClass =
+      task.priority === "High" ? "priority-high" :
+      task.priority === "Medium" ? "priority-medium" :
+      "priority-low";
+
+    const statusClass =
+      task.status === "To Do" ? "status-todo" :
+      task.status === "Doing" ? "status-doing" :
+      "status-done";
+
+    card.innerHTML = `
+      <h3>${task.title}</h3>
+      <span class="priority-badge ${priorityClass}">${task.priority}</span>
+      <span class="status-badge ${statusClass}">${task.status}</span>
+      <p class="meta">Due: ${task.date}</p>
+      <div class="card-actions">
+        <button class="edit-btn" onclick="editTask(${task.id})">Edit</button>
+        <button class="delete-btn" onclick="deleteTask(${task.id})">Delete</button>
+      </div>
     `;
 
-    const editButton = li.querySelector(".edit-btn");
-    const deleteButton = li.querySelector(".delete-btn");
-
-    editButton.addEventListener("click", () => {
-      const realIndex = tasks.findIndex(
-        (savedTask) =>
-          savedTask.courseCode === task.courseCode &&
-          savedTask.text === task.text &&
-          savedTask.dueDate === task.dueDate &&
-          savedTask.status === task.status &&
-          savedTask.priority === task.priority
-      );
-
-      if (realIndex !== -1) {
-        editingTaskIndex = realIndex;
-        taskCourseInput.value = task.courseCode;
-        taskInput.value = task.text;
-        taskDueDateInput.value = task.dueDate;
-        taskStatusInput.value = task.status;
-        taskPriorityInput.value = task.priority;
-        addTaskBtn.textContent = "Update Task";
-      }
-    });
-
-    deleteButton.addEventListener("click", () => {
-      const realIndex = tasks.findIndex(
-        (savedTask) =>
-          savedTask.courseCode === task.courseCode &&
-          savedTask.text === task.text &&
-          savedTask.dueDate === task.dueDate &&
-          savedTask.status === task.status &&
-          savedTask.priority === task.priority
-      );
-
-      if (realIndex !== -1) {
-        tasks.splice(realIndex, 1);
-        saveData();
-        renderAll();
-        clearTaskInputs();
-      }
-    });
-
-    taskList.appendChild(li);
+    plannerList.appendChild(card);
   });
+}
+
+function getWeeklySessionsForDate(date) {
+  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const dayName = days[date.getDay()];
+
+  const matches = [];
+
+  courses.forEach(course => {
+    (course.sessions || []).forEach(session => {
+      if (session.repeat === "weekly" && session.day === dayName) {
+        matches.push({
+          courseName: course.name,
+          courseCode: course.code,
+          color: course.color,
+          sessionType: session.type,
+          startTime: session.startTime,
+          endTime: session.endTime
+        });
+      }
+    });
+  });
+
+  return matches;
+}
+
+function getSpecificSessionsForDate(dateString) {
+  const matches = [];
+
+  courses.forEach(course => {
+    (course.sessions || []).forEach(session => {
+      if (session.repeat === "specific" && session.date === dateString) {
+        matches.push({
+          courseName: course.name,
+          courseCode: course.code,
+          color: course.color,
+          sessionType: session.type,
+          startTime: session.startTime,
+          endTime: session.endTime
+        });
+      }
+    });
+  });
+
+  return matches;
 }
 
 function renderCalendar() {
   calendarGrid.innerHTML = "";
 
-  const firstDay = new Date(currentCalendarYear, currentCalendarMonth, 1);
-  const lastDay = new Date(currentCalendarYear, currentCalendarMonth + 1, 0);
-  const daysInMonth = lastDay.getDate();
-  const startDay = firstDay.getDay();
+  const year = currentCalendarDate.getFullYear();
+  const month = currentCalendarDate.getMonth();
 
-  const monthName = firstDay.toLocaleString("en-US", {
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const startDayIndex = firstDay.getDay();
+  const totalDays = lastDay.getDate();
+
+  const monthName = currentCalendarDate.toLocaleString("en-US", {
     month: "long",
     year: "numeric"
   });
+
   calendarMonthLabel.textContent = monthName;
 
-  for (let i = 0; i < startDay; i++) {
+  for (let i = 0; i < startDayIndex; i++) {
     const emptyCell = document.createElement("div");
     emptyCell.className = "calendar-day empty";
     calendarGrid.appendChild(emptyCell);
   }
 
-  for (let day = 1; day <= daysInMonth; day++) {
-    const cell = document.createElement("div");
-    cell.className = "calendar-day";
+  const today = new Date();
+  const todayString = today.toISOString().split("T")[0];
 
-    const dateString = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  for (let day = 1; day <= totalDays; day++) {
+    const currentDate = new Date(year, month, day);
+    const dateString = currentDate.toISOString().split("T")[0];
+
+    const dayCell = document.createElement("div");
+    dayCell.className = "calendar-day";
 
     if (dateString === todayString) {
-      cell.classList.add("today");
+      dayCell.classList.add("today");
     }
 
-    const dayNumber = document.createElement("div");
-    dayNumber.className = "calendar-day-number";
-    dayNumber.textContent = day;
-    cell.appendChild(dayNumber);
+    const weeklySessions = getWeeklySessionsForDate(currentDate);
+    const specificSessions = getSpecificSessionsForDate(dateString);
+    const dayTasks = tasks.filter(task => task.date === dateString);
 
-    tasks
-      .filter((task) => task.dueDate === dateString)
-      .forEach((task) => {
-        const item = document.createElement("span");
-        item.className = "calendar-task";
-        item.textContent = `Task: ${task.text}`;
-        cell.appendChild(item);
-      });
+    let itemsHtml = "";
 
-    exams
-      .filter((exam) => exam.date === dateString)
-      .forEach((exam) => {
-        const item = document.createElement("span");
-        item.className = "calendar-exam";
-        item.textContent = `Exam: ${exam.name}`;
-        cell.appendChild(item);
-      });
+    weeklySessions.forEach(session => {
+      itemsHtml += `
+        <span class="calendar-exam">
+          ${session.courseCode} ${session.sessionType}<br>
+          ${session.startTime}-${session.endTime}
+        </span>
+      `;
+    });
 
-    calendarGrid.appendChild(cell);
-  }
-}
+    specificSessions.forEach(session => {
+      itemsHtml += `
+        <span class="calendar-exam">
+          ${session.courseCode} ${session.sessionType}<br>
+          ${session.startTime}-${session.endTime}
+        </span>
+      `;
+    });
 
-function renderExams() {
-  examList.innerHTML = "";
+    dayTasks.forEach(task => {
+      itemsHtml += `
+        <span class="calendar-task">
+          ${task.title}
+        </span>
+      `;
+    });
 
-  exams.forEach((exam, index) => {
-    const li = document.createElement("li");
-    const course = getCourseByCode(exam.courseCode);
-    li.innerHTML = `
-      <strong>${exam.name}</strong><br>
-      <span class="meta">${exam.date} • ${course ? course.code + " - " + course.name : "No course"}</span><br>
-      <button class="edit-btn" data-index="${index}">Edit</button>
-      <button class="delete-btn" data-index="${index}">Delete</button>
+    dayCell.innerHTML = `
+      <div class="calendar-day-number">${day}</div>
+      ${itemsHtml}
     `;
 
-    examList.appendChild(li);
-  });
-
-  examList.querySelectorAll(".edit-btn").forEach((button) => {
-    button.addEventListener("click", () => {
-      const index = Number(button.dataset.index);
-      const exam = exams[index];
-
-      examCourseInput.value = exam.courseCode;
-      examInput.value = exam.name;
-      examDateInput.value = exam.date;
-      editingExamIndex = index;
-      addExamBtn.textContent = "Update";
-    });
-  });
-
-  examList.querySelectorAll(".delete-btn").forEach((button) => {
-    button.addEventListener("click", () => {
-      const index = Number(button.dataset.index);
-      exams.splice(index, 1);
-      saveData();
-      renderAll();
-      clearExamInputs();
-    });
-  });
+    calendarGrid.appendChild(dayCell);
+  }
 }
 
-function renderNotes() {
-  notesList.innerHTML = "";
-
-  notes.forEach((note, index) => {
-    const course = getCourseByCode(note.courseCode);
-    const card = document.createElement("div");
-    card.className = "note-card";
-
-    card.innerHTML = `
-      <h3>${note.title}</h3>
-      <p class="meta">${course ? course.code + " - " + course.name : "No course"}</p>
-      <p>${note.text}</p>
-      <button class="edit-btn" data-index="${index}">Edit</button>
-      <button class="delete-btn" data-index="${index}">Delete</button>
-    `;
-
-    notesList.appendChild(card);
-  });
-
-  notesList.querySelectorAll(".edit-btn").forEach((button) => {
-    button.addEventListener("click", () => {
-      const index = Number(button.dataset.index);
-      const note = notes[index];
-
-      noteCourseInput.value = note.courseCode;
-      noteTitleInput.value = note.title;
-      noteTextInput.value = note.text;
-      editingNoteIndex = index;
-      addNoteBtn.textContent = "Update Note";
-    });
-  });
-
-  notesList.querySelectorAll(".delete-btn").forEach((button) => {
-    button.addEventListener("click", () => {
-      const index = Number(button.dataset.index);
-      notes.splice(index, 1);
-      saveData();
-      renderAll();
-      clearNoteInputs();
-    });
-  });
-}
-
-function renderPlanner() {
-  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
-  days.forEach((day) => {
-    const dayList = document.getElementById(day + "List");
-    dayList.innerHTML = "";
-
-    plannerItems
-      .filter((item) => item.day === day)
-      .forEach((item) => {
-        const course = getCourseByCode(item.courseCode);
-        const li = document.createElement("li");
-        li.className = "planner-item";
-        li.innerHTML = `
-          <strong>${item.title}</strong>
-          <span>${item.time}</span><br>
-          <span class="meta">${course ? course.code + " - " + course.name : "No course"}</span><br>
-          <button class="edit-btn">Edit</button>
-          <button class="delete-btn">Delete</button>
-        `;
-
-        const editButton = li.querySelector(".edit-btn");
-        const deleteButton = li.querySelector(".delete-btn");
-
-        editButton.addEventListener("click", () => {
-          const realIndex = plannerItems.findIndex(
-            (plannerItem) =>
-              plannerItem.day === item.day &&
-              plannerItem.title === item.title &&
-              plannerItem.time === item.time &&
-              plannerItem.courseCode === item.courseCode
-          );
-
-          if (realIndex !== -1) {
-            const plannerItem = plannerItems[realIndex];
-            plannerDayInput.value = plannerItem.day;
-            plannerCourseInput.value = plannerItem.courseCode;
-            plannerTitleInput.value = plannerItem.title;
-            plannerTimeInput.value = plannerItem.time;
-            editingPlannerIndex = realIndex;
-            addPlannerBtn.textContent = "Update";
-          }
-        });
-
-        deleteButton.addEventListener("click", () => {
-          const realIndex = plannerItems.findIndex(
-            (plannerItem) =>
-              plannerItem.day === item.day &&
-              plannerItem.title === item.title &&
-              plannerItem.time === item.time &&
-              plannerItem.courseCode === item.courseCode
-          );
-
-          if (realIndex !== -1) {
-            plannerItems.splice(realIndex, 1);
-            saveData();
-            renderAll();
-            clearPlannerInputs();
-          }
-        });
-
-        dayList.appendChild(li);
-      });
-  });
-}
-
-function renderAll() {
-  renderDashboard();
-  renderCourseOptions();
-  renderCourses();
-  renderTasks();
+function goToPreviousMonth() {
+  currentCalendarDate = new Date(
+    currentCalendarDate.getFullYear(),
+    currentCalendarDate.getMonth() - 1,
+    1
+  );
   renderCalendar();
-  renderExams();
-  renderNotes();
-  renderPlanner();
 }
 
-addCourseBtn.addEventListener("click", () => {
-  const name = courseNameInput.value.trim();
-  const code = courseCodeInput.value.trim();
-  const color = courseColorInput.value;
-
-  if (!name || !code) return;
-
-  const courseData = { name, code, color };
-
-  if (editingCourseIndex !== null) {
-    const oldCode = courses[editingCourseIndex].code;
-
-    courses[editingCourseIndex] = courseData;
-
-    tasks = tasks.map((task) =>
-      task.courseCode === oldCode ? { ...task, courseCode: code } : task
-    );
-    exams = exams.map((exam) =>
-      exam.courseCode === oldCode ? { ...exam, courseCode: code } : exam
-    );
-    notes = notes.map((note) =>
-      note.courseCode === oldCode ? { ...note, courseCode: code } : note
-    );
-    plannerItems = plannerItems.map((item) =>
-      item.courseCode === oldCode ? { ...item, courseCode: code } : item
-    );
-  } else {
-    courses.push(courseData);
-  }
-
-  saveData();
-  renderAll();
-  clearCourseInputs();
-});
-
-addTaskBtn.addEventListener("click", () => {
-  const courseCode = taskCourseInput.value;
-  const text = taskInput.value.trim();
-  const dueDate = taskDueDateInput.value;
-  const status = taskStatusInput.value;
-  const priority = taskPriorityInput.value;
-
-  if (!courseCode || !text || !dueDate) return;
-
-  const taskData = { courseCode, text, dueDate, status, priority };
-
-  if (editingTaskIndex !== null) {
-    tasks[editingTaskIndex] = taskData;
-  } else {
-    tasks.push(taskData);
-  }
-
-  saveData();
-  renderAll();
-  clearTaskInputs();
-});
-
-if (taskSortInput) {
-  taskSortInput.addEventListener("change", renderTasks);
-}
-if (taskSearchInput) {
-  taskSearchInput.addEventListener("input", renderTasks);
-}
-if (taskFilterCourseInput) {
-  taskFilterCourseInput.addEventListener("change", renderTasks);
-}
-if (taskFilterStatusInput) {
-  taskFilterStatusInput.addEventListener("change", renderTasks);
-}
-if (taskFilterPriorityInput) {
-  taskFilterPriorityInput.addEventListener("change", renderTasks);
-}
-
-prevMonthBtn.addEventListener("click", () => {
-  currentCalendarMonth--;
-  if (currentCalendarMonth < 0) {
-    currentCalendarMonth = 11;
-    currentCalendarYear--;
-  }
+function goToNextMonth() {
+  currentCalendarDate = new Date(
+    currentCalendarDate.getFullYear(),
+    currentCalendarDate.getMonth() + 1,
+    1
+  );
   renderCalendar();
-});
+}
 
-nextMonthBtn.addEventListener("click", () => {
-  currentCalendarMonth++;
-  if (currentCalendarMonth > 11) {
-    currentCalendarMonth = 0;
-    currentCalendarYear++;
-  }
-  renderCalendar();
-});
+addSessionBtn.addEventListener("click", addSession);
+saveCourseBtn.addEventListener("click", saveCourse);
+sessionRepeatInput.addEventListener("change", updateSessionInputs);
 
-addExamBtn.addEventListener("click", () => {
-  const courseCode = examCourseInput.value;
-  const name = examInput.value.trim();
-  const date = examDateInput.value;
+saveNoteBtn.addEventListener("click", saveNote);
+addTaskBtn.addEventListener("click", addOrUpdateTask);
 
-  if (!courseCode || !name || !date) return;
+prevMonthBtn.addEventListener("click", goToPreviousMonth);
+nextMonthBtn.addEventListener("click", goToNextMonth);
 
-  const examData = { courseCode, name, date };
-
-  if (editingExamIndex !== null) {
-    exams[editingExamIndex] = examData;
-  } else {
-    exams.push(examData);
-  }
-
-  saveData();
-  renderAll();
-  clearExamInputs();
-});
-
-addNoteBtn.addEventListener("click", () => {
-  const courseCode = noteCourseInput.value;
-  const title = noteTitleInput.value.trim();
-  const text = noteTextInput.value.trim();
-
-  if (!courseCode || !title || !text) return;
-
-  const noteData = { courseCode, title, text };
-
-  if (editingNoteIndex !== null) {
-    notes[editingNoteIndex] = noteData;
-  } else {
-    notes.push(noteData);
-  }
-
-  saveData();
-  renderAll();
-  clearNoteInputs();
-});
-
-addPlannerBtn.addEventListener("click", () => {
-  const day = plannerDayInput.value;
-  const courseCode = plannerCourseInput.value;
-  const title = plannerTitleInput.value.trim();
-  const time = plannerTimeInput.value.trim();
-
-  if (!day || !courseCode || !title || !time) return;
-
-  const plannerData = { day, courseCode, title, time };
-
-  if (editingPlannerIndex !== null) {
-    plannerItems[editingPlannerIndex] = plannerData;
-  } else {
-    plannerItems.push(plannerData);
-  }
-
-  saveData();
-  renderAll();
-  clearPlannerInputs();
-});
-
-renderAll();
+updateSessionInputs();
+renderPendingSessions();
+renderCourses();
+renderNotes();
+renderTasks();
+renderCalendar();
+updateDashboard();
