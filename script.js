@@ -10,17 +10,24 @@ tabButtons.forEach(button => {
 
     button.classList.add("active");
     document.getElementById(tab).classList.add("active");
+
+    if (tab === "calendar" && calendar) {
+      setTimeout(() => calendar.updateSize(), 50);
+    }
   });
 });
 
 let courses = JSON.parse(localStorage.getItem("courses")) || [];
 let notes = JSON.parse(localStorage.getItem("notes")) || [];
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+let customEvents = JSON.parse(localStorage.getItem("customEvents")) || [];
 
 let pendingSessions = [];
 let editingCourseId = null;
 let editingNoteId = null;
 let editingTaskId = null;
+let editingEventId = null;
+let calendar = null;
 
 const courseNameInput = document.getElementById("courseName");
 const courseCodeInput = document.getElementById("courseCode");
@@ -51,16 +58,16 @@ const taskStatusInput = document.getElementById("taskStatus");
 const addTaskBtn = document.getElementById("addTaskBtn");
 const plannerList = document.getElementById("plannerList");
 
+const eventTitleInput = document.getElementById("eventTitle");
+const eventDateInput = document.getElementById("eventDate");
+const eventStartTimeInput = document.getElementById("eventStartTime");
+const eventEndTimeInput = document.getElementById("eventEndTime");
+const saveEventBtn = document.getElementById("saveEventBtn");
+const eventsList = document.getElementById("eventsList");
+
 const totalCoursesEl = document.getElementById("totalCourses");
 const totalTasksEl = document.getElementById("totalTasks");
-const upcomingExamsEl = document.getElementById("upcomingExams");
-
-const calendarGrid = document.getElementById("calendarGrid");
-const calendarMonthLabel = document.getElementById("calendarMonthLabel");
-const prevMonthBtn = document.getElementById("prevMonthBtn");
-const nextMonthBtn = document.getElementById("nextMonthBtn");
-
-let currentCalendarDate = new Date();
+const totalEventsEl = document.getElementById("totalEvents");
 
 function saveCourses() {
   localStorage.setItem("courses", JSON.stringify(courses));
@@ -74,24 +81,14 @@ function saveTasks() {
   localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
+function saveCustomEvents() {
+  localStorage.setItem("customEvents", JSON.stringify(customEvents));
+}
+
 function updateDashboard() {
   totalCoursesEl.textContent = courses.length;
   totalTasksEl.textContent = tasks.length;
-
-  const today = new Date();
-  const upcomingCount = courses.reduce((count, course) => {
-    const specificSessions = (course.sessions || []).filter(session => {
-      return session.repeat === "specific" && session.date;
-    });
-
-    const futureSessions = specificSessions.filter(session => {
-      return new Date(session.date) >= new Date(today.toDateString());
-    });
-
-    return count + futureSessions.length;
-  }, 0);
-
-  upcomingExamsEl.textContent = upcomingCount;
+  totalEventsEl.textContent = buildCalendarEvents().length;
 }
 
 function updateSessionInputs() {
@@ -233,8 +230,8 @@ function saveCourse() {
 
   saveCourses();
   renderCourses();
+  refreshCalendar();
   updateDashboard();
-  renderCalendar();
   clearCourseForm();
 }
 
@@ -260,8 +257,8 @@ function deleteCourse(id) {
   courses = courses.filter(course => course.id !== id);
   saveCourses();
   renderCourses();
+  refreshCalendar();
   updateDashboard();
-  renderCalendar();
 
   if (editingCourseId === id) {
     clearCourseForm();
@@ -357,8 +354,6 @@ function editNote(id) {
   noteTitleInput.value = note.title;
   noteContentInput.value = note.content;
   saveNoteBtn.textContent = "Update Note";
-
-  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function deleteNote(id) {
@@ -433,8 +428,8 @@ function addOrUpdateTask() {
 
   saveTasks();
   renderTasks();
+  refreshCalendar();
   updateDashboard();
-  renderCalendar();
   clearTaskForm();
 }
 
@@ -448,16 +443,14 @@ function editTask(id) {
   taskPriorityInput.value = task.priority;
   taskStatusInput.value = task.status;
   addTaskBtn.textContent = "Update Task";
-
-  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function deleteTask(id) {
   tasks = tasks.filter(task => task.id !== id);
   saveTasks();
   renderTasks();
+  refreshCalendar();
   updateDashboard();
-  renderCalendar();
 
   if (editingTaskId === id) {
     clearTaskForm();
@@ -504,146 +497,221 @@ function renderTasks() {
   });
 }
 
-function getWeeklySessionsForDate(date) {
-  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-  const dayName = days[date.getDay()];
-
-  const matches = [];
-
-  courses.forEach(course => {
-    (course.sessions || []).forEach(session => {
-      if (session.repeat === "weekly" && session.day === dayName) {
-        matches.push({
-          courseName: course.name,
-          courseCode: course.code,
-          color: course.color,
-          sessionType: session.type,
-          startTime: session.startTime,
-          endTime: session.endTime
-        });
-      }
-    });
-  });
-
-  return matches;
+function clearEventForm() {
+  eventTitleInput.value = "";
+  eventDateInput.value = "";
+  eventStartTimeInput.value = "";
+  eventEndTimeInput.value = "";
+  editingEventId = null;
+  saveEventBtn.textContent = "Save Event";
 }
 
-function getSpecificSessionsForDate(dateString) {
-  const matches = [];
+function saveCustomEventItem() {
+  const title = eventTitleInput.value.trim();
+  const date = eventDateInput.value;
+  const startTime = eventStartTimeInput.value;
+  const endTime = eventEndTimeInput.value;
 
-  courses.forEach(course => {
-    (course.sessions || []).forEach(session => {
-      if (session.repeat === "specific" && session.date === dateString) {
-        matches.push({
-          courseName: course.name,
-          courseCode: course.code,
-          color: course.color,
-          sessionType: session.type,
-          startTime: session.startTime,
-          endTime: session.endTime
-        });
-      }
-    });
-  });
-
-  return matches;
-}
-
-function renderCalendar() {
-  calendarGrid.innerHTML = "";
-
-  const year = currentCalendarDate.getFullYear();
-  const month = currentCalendarDate.getMonth();
-
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const startDayIndex = firstDay.getDay();
-  const totalDays = lastDay.getDate();
-
-  const monthName = currentCalendarDate.toLocaleString("en-US", {
-    month: "long",
-    year: "numeric"
-  });
-
-  calendarMonthLabel.textContent = monthName;
-
-  for (let i = 0; i < startDayIndex; i++) {
-    const emptyCell = document.createElement("div");
-    emptyCell.className = "calendar-day empty";
-    calendarGrid.appendChild(emptyCell);
+  if (!title || !date || !startTime || !endTime) {
+    alert("Please complete all event fields.");
+    return;
   }
 
-  const today = new Date();
-  const todayString = today.toISOString().split("T")[0];
+  const eventData = {
+    id: editingEventId || Date.now(),
+    title,
+    date,
+    startTime,
+    endTime
+  };
 
-  for (let day = 1; day <= totalDays; day++) {
-    const currentDate = new Date(year, month, day);
-    const dateString = currentDate.toISOString().split("T")[0];
+  if (editingEventId) {
+    customEvents = customEvents.map(event => event.id === editingEventId ? eventData : event);
+  } else {
+    customEvents.push(eventData);
+  }
 
-    const dayCell = document.createElement("div");
-    dayCell.className = "calendar-day";
+  saveCustomEvents();
+  renderCustomEvents();
+  refreshCalendar();
+  updateDashboard();
+  clearEventForm();
+}
 
-    if (dateString === todayString) {
-      dayCell.classList.add("today");
-    }
+function editCustomEvent(id) {
+  const event = customEvents.find(item => item.id === id);
+  if (!event) return;
 
-    const weeklySessions = getWeeklySessionsForDate(currentDate);
-    const specificSessions = getSpecificSessionsForDate(dateString);
-    const dayTasks = tasks.filter(task => task.date === dateString);
+  editingEventId = id;
+  eventTitleInput.value = event.title;
+  eventDateInput.value = event.date;
+  eventStartTimeInput.value = event.startTime;
+  eventEndTimeInput.value = event.endTime;
+  saveEventBtn.textContent = "Update Event";
+}
 
-    let itemsHtml = "";
+function deleteCustomEvent(id) {
+  customEvents = customEvents.filter(event => event.id !== id);
+  saveCustomEvents();
+  renderCustomEvents();
+  refreshCalendar();
+  updateDashboard();
 
-    weeklySessions.forEach(session => {
-      itemsHtml += `
-        <span class="calendar-exam">
-          ${session.courseCode} ${session.sessionType}<br>
-          ${session.startTime}-${session.endTime}
-        </span>
-      `;
-    });
+  if (editingEventId === id) {
+    clearEventForm();
+  }
+}
 
-    specificSessions.forEach(session => {
-      itemsHtml += `
-        <span class="calendar-exam">
-          ${session.courseCode} ${session.sessionType}<br>
-          ${session.startTime}-${session.endTime}
-        </span>
-      `;
-    });
+window.editCustomEvent = editCustomEvent;
+window.deleteCustomEvent = deleteCustomEvent;
 
-    dayTasks.forEach(task => {
-      itemsHtml += `
-        <span class="calendar-task">
-          ${task.title}
-        </span>
-      `;
-    });
+function renderCustomEvents() {
+  eventsList.innerHTML = "";
 
-    dayCell.innerHTML = `
-      <div class="calendar-day-number">${day}</div>
-      ${itemsHtml}
+  if (customEvents.length === 0) {
+    eventsList.innerHTML = "<p>No custom events added yet.</p>";
+    return;
+  }
+
+  customEvents.forEach(event => {
+    const card = document.createElement("div");
+    card.className = "event-card";
+    card.innerHTML = `
+      <h3>${event.title}</h3>
+      <p class="meta">${event.date} • ${event.startTime} - ${event.endTime}</p>
+      <div class="card-actions">
+        <button class="edit-btn" onclick="editCustomEvent(${event.id})">Edit</button>
+        <button class="delete-btn" onclick="deleteCustomEvent(${event.id})">Delete</button>
+      </div>
     `;
+    eventsList.appendChild(card);
+  });
+}
 
-    calendarGrid.appendChild(dayCell);
+function dayNameToNumber(dayName) {
+  const days = {
+    Sunday: 0,
+    Monday: 1,
+    Tuesday: 2,
+    Wednesday: 3,
+    Thursday: 4,
+    Friday: 5,
+    Saturday: 6
+  };
+  return days[dayName];
+}
+
+function getNextDateForDay(dayName) {
+  const today = new Date();
+  const result = new Date(today);
+  const targetDay = dayNameToNumber(dayName);
+  const currentDay = result.getDay();
+  let diff = targetDay - currentDay;
+
+  if (diff < 0) {
+    diff += 7;
   }
+
+  result.setDate(result.getDate() + diff);
+  return result.toISOString().split("T")[0];
 }
 
-function goToPreviousMonth() {
-  currentCalendarDate = new Date(
-    currentCalendarDate.getFullYear(),
-    currentCalendarDate.getMonth() - 1,
-    1
-  );
-  renderCalendar();
+function buildCalendarEvents() {
+  const allEvents = [];
+
+  courses.forEach(course => {
+    (course.sessions || []).forEach(session => {
+      if (session.repeat === "specific" && session.date) {
+        allEvents.push({
+          id: `course-${course.id}-${session.id}`,
+          title: `${course.code} ${session.type}`,
+          start: `${session.date}T${session.startTime}`,
+          end: `${session.date}T${session.endTime}`,
+          color: course.color,
+          extendedProps: {
+            sourceType: "course",
+            courseName: course.name
+          }
+        });
+      }
+
+      if (session.repeat === "weekly" && session.day) {
+        const startDate = getNextDateForDay(session.day);
+
+        allEvents.push({
+          id: `course-${course.id}-${session.id}`,
+          title: `${course.code} ${session.type}`,
+          startTime: session.startTime,
+          endTime: session.endTime,
+          daysOfWeek: [dayNameToNumber(session.day)],
+          startRecur: startDate,
+          color: course.color,
+          extendedProps: {
+            sourceType: "course",
+            courseName: course.name
+          }
+        });
+      }
+    });
+  });
+
+  tasks.forEach(task => {
+    allEvents.push({
+      id: `task-${task.id}`,
+      title: `Task: ${task.title}`,
+      start: task.date,
+      allDay: true,
+      color: "#dc2626",
+      extendedProps: {
+        sourceType: "task",
+        priority: task.priority,
+        status: task.status
+      }
+    });
+  });
+
+  customEvents.forEach(event => {
+    allEvents.push({
+      id: `custom-${event.id}`,
+      title: event.title,
+      start: `${event.date}T${event.startTime}`,
+      end: `${event.date}T${event.endTime}`,
+      color: "#0f766e",
+      extendedProps: {
+        sourceType: "custom"
+      }
+    });
+  });
+
+  return allEvents;
 }
 
-function goToNextMonth() {
-  currentCalendarDate = new Date(
-    currentCalendarDate.getFullYear(),
-    currentCalendarDate.getMonth() + 1,
-    1
-  );
-  renderCalendar();
+function initCalendar() {
+  const calendarEl = document.getElementById("calendarView");
+
+  calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: "dayGridMonth",
+    headerToolbar: {
+      left: "prev,next today",
+      center: "title",
+      right: "dayGridMonth,timeGridWeek,timeGridDay"
+    },
+    events: buildCalendarEvents(),
+    editable: false,
+    nowIndicator: true,
+    height: "auto"
+  });
+
+  calendar.render();
+}
+
+function refreshCalendar() {
+  if (!calendar) return;
+
+  calendar.removeAllEvents();
+  buildCalendarEvents().forEach(event => {
+    calendar.addEvent(event);
+  });
 }
 
 addSessionBtn.addEventListener("click", addSession);
@@ -652,14 +720,13 @@ sessionRepeatInput.addEventListener("change", updateSessionInputs);
 
 saveNoteBtn.addEventListener("click", saveNote);
 addTaskBtn.addEventListener("click", addOrUpdateTask);
-
-prevMonthBtn.addEventListener("click", goToPreviousMonth);
-nextMonthBtn.addEventListener("click", goToNextMonth);
+saveEventBtn.addEventListener("click", saveCustomEventItem);
 
 updateSessionInputs();
 renderPendingSessions();
 renderCourses();
 renderNotes();
 renderTasks();
-renderCalendar();
+renderCustomEvents();
+initCalendar();
 updateDashboard();
