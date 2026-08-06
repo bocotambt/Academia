@@ -1,115 +1,138 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Academia</title>
-  <link rel="stylesheet" href="style.css?v=3" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Planner Dashboard</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="app">
-    <h1>Academia</h1>
-    <p class="subtitle">Organize courses, tasks, exams, notes, and weekly study plans</p>
+    <h1>Student Planner Dashboard</h1>
+    <p class="subtitle">Track courses, notes, tasks, and your study schedule.</p>
 
     <section class="dashboard-summary">
       <div class="summary-card">
-        <h3>Total Tasks</h3>
-        <p id="totalTasksCount">0</p>
+        <h3>Total Courses</h3>
+        <p id="totalCourses">0</p>
       </div>
       <div class="summary-card">
-        <h3>Done Tasks</h3>
-        <p id="doneTasksCount">0</p>
+        <h3>Total Tasks</h3>
+        <p id="totalTasks">0</p>
       </div>
       <div class="summary-card">
         <h3>Upcoming Exams</h3>
-        <p id="upcomingExamsCount">0</p>
-      </div>
-      <div class="summary-card">
-        <h3>Saved Notes</h3>
-        <p id="savedNotesCount">0</p>
+        <p id="upcomingExams">0</p>
       </div>
     </section>
 
     <div class="tabs">
-      <button class="tab-btn active" data-tab="courses">Courses</button>
-      <button class="tab-btn" data-tab="tasks">Tasks</button>
-      <button class="tab-btn" data-tab="calendar">Calendar</button>
-      <button class="tab-btn" data-tab="exams">Exams</button>
+      <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+      <button class="tab-btn" data-tab="courses">Courses</button>
       <button class="tab-btn" data-tab="notes">Notes</button>
       <button class="tab-btn" data-tab="planner">Planner</button>
+      <button class="tab-btn" data-tab="calendar">Calendar</button>
     </div>
 
-    <section id="courses" class="tab-content active">
-      <h2>Courses</h2>
-      <div class="input-row">
-        <input id="courseNameInput" type="text" placeholder="Course name" />
-        <input id="courseCodeInput" type="text" placeholder="Course code" />
-        <input id="courseColorInput" type="color" value="#2563eb" />
-        <button id="addCourseBtn">Add Course</button>
-      </div>
-      <div id="courseList"></div>
+    <section id="dashboard" class="tab-content active">
+      <h2>Dashboard</h2>
+      <p>Use the tabs above to manage your school life.</p>
     </section>
 
-    <section id="tasks" class="tab-content">
-      <h2>Tasks</h2>
+    <section id="courses" class="tab-content">
+      <h2>Courses</h2>
+
+      <div class="course-form">
+        <div class="input-row">
+          <input type="text" id="courseName" placeholder="Course name">
+          <input type="text" id="courseCode" placeholder="Course code">
+          <input type="text" id="courseInstructor" placeholder="Instructor">
+          <input type="color" id="courseColor" value="#2563eb">
+        </div>
+
+        <h3>Add Session</h3>
+
+        <div class="input-row">
+          <select id="sessionType">
+            <option value="Lecture">Lecture</option>
+            <option value="Lab">Lab</option>
+            <option value="Tutorial">Tutorial</option>
+            <option value="Seminar">Seminar</option>
+          </select>
+
+          <select id="sessionRepeat">
+            <option value="weekly">Weekly</option>
+            <option value="specific">Specific Date</option>
+          </select>
+
+          <select id="sessionDay">
+            <option value="">Day</option>
+            <option value="Monday">Monday</option>
+            <option value="Tuesday">Tuesday</option>
+            <option value="Wednesday">Wednesday</option>
+            <option value="Thursday">Thursday</option>
+            <option value="Friday">Friday</option>
+            <option value="Saturday">Saturday</option>
+            <option value="Sunday">Sunday</option>
+          </select>
+
+          <input type="date" id="sessionDate">
+          <input type="time" id="sessionStartTime">
+          <input type="time" id="sessionEndTime">
+          <button id="addSessionBtn" type="button">Add Session</button>
+        </div>
+
+        <ul id="pendingSessionsList"></ul>
+
+        <button id="saveCourseBtn" type="button">Save Course</button>
+      </div>
+
+      <div id="coursesList"></div>
+    </section>
+
+    <section id="notes" class="tab-content">
+      <h2>Notes</h2>
+      <div class="notes-form">
+        <input type="text" id="noteTitle" placeholder="Note title">
+        <textarea id="noteContent" placeholder="Write your notes here..."></textarea>
+        <button id="saveNoteBtn" type="button">Save Note</button>
+      </div>
+      <div id="notesList"></div>
+    </section>
+
+    <section id="planner" class="tab-content">
+      <h2>Planner</h2>
       <div class="input-row">
-        <select id="taskCourseInput">
-          <option value="">Choose course</option>
+        <input type="text" id="taskTitle" placeholder="Task title">
+        <input type="date" id="taskDate">
+        <select id="taskPriority">
+          <option value="High">High Priority</option>
+          <option value="Medium">Medium Priority</option>
+          <option value="Low">Low Priority</option>
         </select>
-        <input id="taskInput" type="text" placeholder="Task name" />
-        <input id="taskDueDateInput" type="date" />
-        <select id="taskStatusInput">
-          <option value="To do">To do</option>
+        <select id="taskStatus">
+          <option value="To Do">To Do</option>
           <option value="Doing">Doing</option>
           <option value="Done">Done</option>
         </select>
-        <select id="taskPriorityInput">
-          <option value="High">High priority</option>
-          <option value="Medium">Medium priority</option>
-          <option value="Low">Low priority</option>
-        </select>
-        <button id="addTaskBtn">Add Task</button>
+        <button id="addTaskBtn" type="button">Add Task</button>
       </div>
-
-      <div class="input-row">
-        <input id="taskSearchInput" type="text" placeholder="Search tasks..." />
-        <select id="taskFilterCourseInput">
-          <option value="">All courses</option>
-        </select>
-        <select id="taskFilterStatusInput">
-          <option value="">All status</option>
-          <option value="To do">To do</option>
-          <option value="Doing">Doing</option>
-          <option value="Done">Done</option>
-        </select>
-        <select id="taskFilterPriorityInput">
-          <option value="">All priority</option>
-          <option value="High">High</option>
-          <option value="Medium">Medium</option>
-          <option value="Low">Low</option>
-        </select>
-        <select id="taskSortInput">
-          <option value="default">Sort tasks</option>
-          <option value="dueDate">Due date</option>
-          <option value="priority">Priority</option>
-          <option value="status">Status</option>
-        </select>
-      </div>
-
-      <ul id="taskList"></ul>
+      <div id="plannerList" class="planner-grid"></div>
     </section>
 
     <section id="calendar" class="tab-content">
+      <h2>Calendar</h2>
+
       <div class="calendar-header">
-        <button id="prevMonthBtn">←</button>
-        <h2 id="calendarMonthLabel">Month Year</h2>
-        <button id="nextMonthBtn">→</button>
+        <button id="prevMonthBtn" type="button">←</button>
+        <h3 id="calendarMonthLabel"></h3>
+        <button id="nextMonthBtn" type="button">→</button>
       </div>
 
       <div class="calendar-legend">
-        <span class="legend-item"><span class="legend-dot today-dot"></span>Today</span>
-        <span class="legend-item"><span class="legend-dot task-dot"></span>Task</span>
-        <span class="legend-item"><span class="legend-dot exam-dot"></span>Exam</span>
+        <span class="legend-item"><span class="legend-dot today-dot"></span> Today</span>
+        <span class="legend-item"><span class="legend-dot task-dot"></span> Task</span>
+        <span class="legend-item"><span class="legend-dot exam-dot"></span> Course Session</span>
       </div>
 
       <div class="calendar-weekdays">
@@ -124,68 +147,8 @@
 
       <div id="calendarGrid" class="calendar-grid"></div>
     </section>
-
-    <section id="exams" class="tab-content">
-      <h2>Exams</h2>
-      <div class="input-row">
-        <select id="examCourseInput">
-          <option value="">Choose course</option>
-        </select>
-        <input id="examInput" type="text" placeholder="Exam name" />
-        <input id="examDateInput" type="date" />
-        <button id="addExamBtn">Add</button>
-      </div>
-      <ul id="examList"></ul>
-    </section>
-
-    <section id="notes" class="tab-content">
-      <h2>Notes</h2>
-      <div class="notes-form">
-        <select id="noteCourseInput">
-          <option value="">Choose course</option>
-        </select>
-        <input id="noteTitleInput" type="text" placeholder="Note title" />
-        <textarea id="noteTextInput" placeholder="Write your note here"></textarea>
-        <button id="addNoteBtn">Save Note</button>
-      </div>
-      <div id="notesList"></div>
-    </section>
-
-    <section id="planner" class="tab-content">
-      <h2>Weekly Planner</h2>
-      <div class="input-row">
-        <select id="plannerDayInput">
-          <option value="">Choose a day</option>
-          <option value="Monday">Monday</option>
-          <option value="Tuesday">Tuesday</option>
-          <option value="Wednesday">Wednesday</option>
-          <option value="Thursday">Thursday</option>
-          <option value="Friday">Friday</option>
-          <option value="Saturday">Saturday</option>
-          <option value="Sunday">Sunday</option>
-        </select>
-
-        <select id="plannerCourseInput">
-          <option value="">Choose course</option>
-        </select>
-
-        <input id="plannerTitleInput" type="text" placeholder="Study session or class" />
-        <input id="plannerTimeInput" type="text" placeholder="Time, e.g. 14:00 - 16:00" />
-        <button id="addPlannerBtn">Add</button>
-      </div>
-
-      <div class="planner-grid">
-        <div class="day-card"><h3>Monday</h3><ul id="MondayList"></ul></div>
-        <div class="day-card"><h3>Tuesday</h3><ul id="TuesdayList"></ul></div>
-        <div class="day-card"><h3>Wednesday</h3><ul id="WednesdayList"></ul></div>
-        <div class="day-card"><h3>Thursday</h3><ul id="ThursdayList"></ul></div>
-        <div class="day-card"><h3>Friday</h3><ul id="FridayList"></ul></div>
-        <div class="day-card"><h3>Saturday</h3><ul id="SaturdayList"></ul></div>
-        <div class="day-card"><h3>Sunday</h3><ul id="SundayList"></ul></div>
-      </div>
-    </section>
   </div>
 
-  <script src="script.js?v=2"></script>
+  <script src="script.js"></script>
 </body>
 </html>
