@@ -1,18 +1,20 @@
 const tabButtons = document.querySelectorAll(".tab-btn");
 const tabContents = document.querySelectorAll(".tab-content");
 
-tabButtons.forEach(button => {
+let calendar = null;
+
+tabButtons.forEach((button) => {
   button.addEventListener("click", () => {
     const tab = button.dataset.tab;
 
-    tabButtons.forEach(btn => btn.classList.remove("active"));
-    tabContents.forEach(content => content.classList.remove("active"));
+    tabButtons.forEach((btn) => btn.classList.remove("active"));
+    tabContents.forEach((content) => content.classList.remove("active"));
 
     button.classList.add("active");
     document.getElementById(tab).classList.add("active");
 
     if (tab === "calendar" && calendar) {
-      setTimeout(() => calendar.updateSize(), 50);
+      setTimeout(() => calendar.updateSize(), 100);
     }
   });
 });
@@ -27,20 +29,17 @@ let editingCourseId = null;
 let editingNoteId = null;
 let editingTaskId = null;
 let editingEventId = null;
-let calendar = null;
 
 const courseNameInput = document.getElementById("courseName");
 const courseCodeInput = document.getElementById("courseCode");
 const courseInstructorInput = document.getElementById("courseInstructor");
 const courseColorInput = document.getElementById("courseColor");
-
 const sessionTypeInput = document.getElementById("sessionType");
 const sessionRepeatInput = document.getElementById("sessionRepeat");
 const sessionDayInput = document.getElementById("sessionDay");
 const sessionDateInput = document.getElementById("sessionDate");
 const sessionStartTimeInput = document.getElementById("sessionStartTime");
 const sessionEndTimeInput = document.getElementById("sessionEndTime");
-
 const addSessionBtn = document.getElementById("addSessionBtn");
 const saveCourseBtn = document.getElementById("saveCourseBtn");
 const pendingSessionsList = document.getElementById("pendingSessionsList");
@@ -129,7 +128,6 @@ function removePendingSession(index) {
   pendingSessions.splice(index, 1);
   renderPendingSessions();
 }
-
 window.removePendingSession = removePendingSession;
 
 function clearCourseForm() {
@@ -137,18 +135,15 @@ function clearCourseForm() {
   courseCodeInput.value = "";
   courseInstructorInput.value = "";
   courseColorInput.value = "#2563eb";
-
   sessionTypeInput.value = "Lecture";
   sessionRepeatInput.value = "weekly";
   sessionDayInput.value = "";
   sessionDateInput.value = "";
   sessionStartTimeInput.value = "";
   sessionEndTimeInput.value = "";
-
   pendingSessions = [];
   editingCourseId = null;
   saveCourseBtn.textContent = "Save Course";
-
   updateSessionInputs();
   renderPendingSessions();
 }
@@ -223,7 +218,9 @@ function saveCourse() {
   };
 
   if (editingCourseId) {
-    courses = courses.map(course => course.id === editingCourseId ? courseData : course);
+    courses = courses.map((course) =>
+      course.id === editingCourseId ? courseData : course
+    );
   } else {
     courses.push(courseData);
   }
@@ -236,7 +233,7 @@ function saveCourse() {
 }
 
 function editCourse(id) {
-  const course = courses.find(course => course.id === id);
+  const course = courses.find((course) => course.id === id);
   if (!course) return;
 
   editingCourseId = id;
@@ -249,12 +246,11 @@ function editCourse(id) {
   saveCourseBtn.textContent = "Update Course";
   renderPendingSessions();
   updateSessionInputs();
-
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function deleteCourse(id) {
-  courses = courses.filter(course => course.id !== id);
+  courses = courses.filter((course) => course.id !== id);
   saveCourses();
   renderCourses();
   refreshCalendar();
@@ -264,7 +260,6 @@ function deleteCourse(id) {
     clearCourseForm();
   }
 }
-
 window.editCourse = editCourse;
 window.deleteCourse = deleteCourse;
 
@@ -276,14 +271,12 @@ function renderCourses() {
     return;
   }
 
-  courses.forEach(course => {
+  courses.forEach((course) => {
     const card = document.createElement("div");
     card.className = "course-card";
 
-    let sessionsHtml = "<p>No sessions saved.</p>";
-
-    if (course.sessions && course.sessions.length > 0) {
-      sessionsHtml = course.sessions.map(session => `
+    const sessionsHtml = (course.sessions && course.sessions.length > 0)
+      ? course.sessions.map((session) => `
         <div class="planner-item">
           <span class="course-badge" style="background:${course.color};">${session.type}</span>
           <p class="meta">
@@ -292,8 +285,8 @@ function renderCourses() {
               : `${session.date} • ${session.startTime} - ${session.endTime} • Specific Date`}
           </p>
         </div>
-      `).join("");
-    }
+      `).join("")
+      : "<p>No sessions saved.</p>";
 
     card.innerHTML = `
       <h3>${course.name} (${course.code})</h3>
@@ -308,7 +301,6 @@ function renderCourses() {
         <button class="delete-btn" onclick="deleteCourse(${course.id})">Delete</button>
       </div>
     `;
-
     coursesList.appendChild(card);
   });
 }
@@ -336,7 +328,7 @@ function saveNote() {
   };
 
   if (editingNoteId) {
-    notes = notes.map(note => note.id === editingNoteId ? noteData : note);
+    notes = notes.map((note) => note.id === editingNoteId ? noteData : note);
   } else {
     notes.push(noteData);
   }
@@ -347,7 +339,7 @@ function saveNote() {
 }
 
 function editNote(id) {
-  const note = notes.find(note => note.id === id);
+  const note = notes.find((note) => note.id === id);
   if (!note) return;
 
   editingNoteId = id;
@@ -355,9 +347,10 @@ function editNote(id) {
   noteContentInput.value = note.content;
   saveNoteBtn.textContent = "Update Note";
 }
+window.editNote = editNote;
 
 function deleteNote(id) {
-  notes = notes.filter(note => note.id !== id);
+  notes = notes.filter((note) => note.id !== id);
   saveNotes();
   renderNotes();
 
@@ -365,8 +358,6 @@ function deleteNote(id) {
     clearNoteForm();
   }
 }
-
-window.editNote = editNote;
 window.deleteNote = deleteNote;
 
 function renderNotes() {
@@ -377,7 +368,7 @@ function renderNotes() {
     return;
   }
 
-  notes.forEach(note => {
+  notes.forEach((note) => {
     const card = document.createElement("div");
     card.className = "note-card";
     card.innerHTML = `
@@ -421,7 +412,7 @@ function addOrUpdateTask() {
   };
 
   if (editingTaskId) {
-    tasks = tasks.map(task => task.id === editingTaskId ? taskData : task);
+    tasks = tasks.map((task) => task.id === editingTaskId ? taskData : task);
   } else {
     tasks.push(taskData);
   }
@@ -434,7 +425,7 @@ function addOrUpdateTask() {
 }
 
 function editTask(id) {
-  const task = tasks.find(task => task.id === id);
+  const task = tasks.find((task) => task.id === id);
   if (!task) return;
 
   editingTaskId = id;
@@ -444,9 +435,10 @@ function editTask(id) {
   taskStatusInput.value = task.status;
   addTaskBtn.textContent = "Update Task";
 }
+window.editTask = editTask;
 
 function deleteTask(id) {
-  tasks = tasks.filter(task => task.id !== id);
+  tasks = tasks.filter((task) => task.id !== id);
   saveTasks();
   renderTasks();
   refreshCalendar();
@@ -456,8 +448,6 @@ function deleteTask(id) {
     clearTaskForm();
   }
 }
-
-window.editTask = editTask;
 window.deleteTask = deleteTask;
 
 function renderTasks() {
@@ -468,7 +458,7 @@ function renderTasks() {
     return;
   }
 
-  tasks.forEach(task => {
+  tasks.forEach((task) => {
     const card = document.createElement("div");
     card.className = "day-card";
 
@@ -492,7 +482,6 @@ function renderTasks() {
         <button class="delete-btn" onclick="deleteTask(${task.id})">Delete</button>
       </div>
     `;
-
     plannerList.appendChild(card);
   });
 }
@@ -526,7 +515,9 @@ function saveCustomEventItem() {
   };
 
   if (editingEventId) {
-    customEvents = customEvents.map(event => event.id === editingEventId ? eventData : event);
+    customEvents = customEvents.map((event) =>
+      event.id === editingEventId ? eventData : event
+    );
   } else {
     customEvents.push(eventData);
   }
@@ -539,7 +530,7 @@ function saveCustomEventItem() {
 }
 
 function editCustomEvent(id) {
-  const event = customEvents.find(item => item.id === id);
+  const event = customEvents.find((item) => item.id === id);
   if (!event) return;
 
   editingEventId = id;
@@ -549,9 +540,10 @@ function editCustomEvent(id) {
   eventEndTimeInput.value = event.endTime;
   saveEventBtn.textContent = "Update Event";
 }
+window.editCustomEvent = editCustomEvent;
 
 function deleteCustomEvent(id) {
-  customEvents = customEvents.filter(event => event.id !== id);
+  customEvents = customEvents.filter((event) => event.id !== id);
   saveCustomEvents();
   renderCustomEvents();
   refreshCalendar();
@@ -561,8 +553,6 @@ function deleteCustomEvent(id) {
     clearEventForm();
   }
 }
-
-window.editCustomEvent = editCustomEvent;
 window.deleteCustomEvent = deleteCustomEvent;
 
 function renderCustomEvents() {
@@ -573,7 +563,7 @@ function renderCustomEvents() {
     return;
   }
 
-  customEvents.forEach(event => {
+  customEvents.forEach((event) => {
     const card = document.createElement("div");
     card.className = "event-card";
     card.innerHTML = `
@@ -589,7 +579,7 @@ function renderCustomEvents() {
 }
 
 function dayNameToNumber(dayName) {
-  const days = {
+  return {
     Sunday: 0,
     Monday: 1,
     Tuesday: 2,
@@ -597,89 +587,54 @@ function dayNameToNumber(dayName) {
     Thursday: 4,
     Friday: 5,
     Saturday: 6
-  };
-  return days[dayName];
-}
-
-function getNextDateForDay(dayName) {
-  const today = new Date();
-  const result = new Date(today);
-  const targetDay = dayNameToNumber(dayName);
-  const currentDay = result.getDay();
-  let diff = targetDay - currentDay;
-
-  if (diff < 0) {
-    diff += 7;
-  }
-
-  result.setDate(result.getDate() + diff);
-  return result.toISOString().split("T")[0];
+  }[dayName];
 }
 
 function buildCalendarEvents() {
   const allEvents = [];
 
-  courses.forEach(course => {
-    (course.sessions || []).forEach(session => {
+  courses.forEach((course) => {
+    (course.sessions || []).forEach((session) => {
       if (session.repeat === "specific" && session.date) {
         allEvents.push({
           id: `course-${course.id}-${session.id}`,
           title: `${course.code} ${session.type}`,
           start: `${session.date}T${session.startTime}`,
           end: `${session.date}T${session.endTime}`,
-          color: course.color,
-          extendedProps: {
-            sourceType: "course",
-            courseName: course.name
-          }
+          color: course.color
         });
       }
 
       if (session.repeat === "weekly" && session.day) {
-        const startDate = getNextDateForDay(session.day);
-
         allEvents.push({
           id: `course-${course.id}-${session.id}`,
           title: `${course.code} ${session.type}`,
+          daysOfWeek: [dayNameToNumber(session.day)],
           startTime: session.startTime,
           endTime: session.endTime,
-          daysOfWeek: [dayNameToNumber(session.day)],
-          startRecur: startDate,
-          color: course.color,
-          extendedProps: {
-            sourceType: "course",
-            courseName: course.name
-          }
+          color: course.color
         });
       }
     });
   });
 
-  tasks.forEach(task => {
+  tasks.forEach((task) => {
     allEvents.push({
       id: `task-${task.id}`,
       title: `Task: ${task.title}`,
       start: task.date,
       allDay: true,
-      color: "#dc2626",
-      extendedProps: {
-        sourceType: "task",
-        priority: task.priority,
-        status: task.status
-      }
+      color: "#dc2626"
     });
   });
 
-  customEvents.forEach(event => {
+  customEvents.forEach((event) => {
     allEvents.push({
       id: `custom-${event.id}`,
       title: event.title,
       start: `${event.date}T${event.startTime}`,
       end: `${event.date}T${event.endTime}`,
-      color: "#0f766e",
-      extendedProps: {
-        sourceType: "custom"
-      }
+      color: "#0f766e"
     });
   });
 
@@ -697,7 +652,6 @@ function initCalendar() {
       right: "dayGridMonth,timeGridWeek,timeGridDay"
     },
     events: buildCalendarEvents(),
-    editable: false,
     nowIndicator: true,
     height: "auto"
   });
@@ -707,17 +661,13 @@ function initCalendar() {
 
 function refreshCalendar() {
   if (!calendar) return;
-
   calendar.removeAllEvents();
-  buildCalendarEvents().forEach(event => {
-    calendar.addEvent(event);
-  });
+  buildCalendarEvents().forEach((event) => calendar.addEvent(event));
 }
 
 addSessionBtn.addEventListener("click", addSession);
 saveCourseBtn.addEventListener("click", saveCourse);
 sessionRepeatInput.addEventListener("change", updateSessionInputs);
-
 saveNoteBtn.addEventListener("click", saveNote);
 addTaskBtn.addEventListener("click", addOrUpdateTask);
 saveEventBtn.addEventListener("click", saveCustomEventItem);
