@@ -26,6 +26,11 @@ h2 {
   color: #1e3a8a;
 }
 
+h3,
+h4 {
+  color: #1e3a8a;
+}
+
 .subtitle {
   color: #6b7280;
   margin-bottom: 20px;
@@ -52,4 +57,67 @@ h2 {
 }
 
 .summary-card p {
-  ma
+  margin: 0;
+  font-size: 32px;
+  font-weight: bold;
+  color: #111827;
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  padding: 10px 16px;
+  border: none;
+  background: #dbeafe;
+  color: #1e3a8a;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.tab-btn.active {
+  background: #2563eb;
+  color: white;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.input-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+input,
+textarea,
+select {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  min-width: 140px;
+  font-size: 16px;
+  background: white;
+  color: #1f2937;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid #93c5fd;
+  border-color: #2563eb;
+}
+
+input
