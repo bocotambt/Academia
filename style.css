@@ -7,7 +7,7 @@ body {
 }
 
 .app {
-  max-width: 1100px;
+  max-width: 1200px;
   margin: 0 auto;
   background: white;
   padding: 24px;
@@ -53,7 +53,6 @@ h4 {
 .summary-card h3 {
   margin: 0 0 8px 0;
   font-size: 16px;
-  color: #1e3a8a;
 }
 
 .summary-card p {
@@ -162,13 +161,10 @@ li {
   border: 1px solid #dbeafe;
 }
 
-.notes-form {
-  margin-bottom: 20px;
-}
-
 .note-card,
 .course-card,
-.day-card {
+.day-card,
+.event-card {
   background: #f8fafc;
   border: 1px solid #dbeafe;
   border-radius: 14px;
@@ -178,10 +174,10 @@ li {
 
 .note-card h3,
 .course-card h3,
-.day-card h3 {
+.day-card h3,
+.event-card h3 {
   margin-top: 0;
   margin-bottom: 8px;
-  color: #1e3a8a;
 }
 
 .note-card p {
@@ -268,94 +264,66 @@ li {
   border: 1px solid #dbeafe;
 }
 
-.planner-item strong {
-  display: block;
-  margin-bottom: 4px;
-}
-
 .meta {
   color: #6b7280;
   font-size: 14px;
 }
 
-.calendar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.calendar-header button {
-  padding: 10px 14px;
-  min-width: 56px;
-}
-
-#calendarMonthLabel {
-  flex: 1;
-  text-align: center;
-  color: #1e3a8a;
-  font-size: 28px;
-  margin-bottom: 0;
-}
-
-.calendar-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 16px;
-  color: #475569;
-  font-size: 14px;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.legend-dot {
-  width: 14px;
-  height: 14px;
-  border-radius: 999px;
-  display: inline-block;
-}
-
-.today-dot {
-  background: #facc15;
-}
-
-.task-dot {
-  background: #2563eb;
-}
-
-.exam-dot {
-  background: #dc2626;
-}
-
-.calendar-weekdays {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.calendar-weekdays div {
-  text-align: center;
-  font-weight: bold;
-  color: #475569;
-  background: #eff6ff;
-  border-radius: 8px;
-  padding: 10px 6px;
-}
-
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.calendar-day {
-  background: #f8fafc;
+#calendarView {
+  background: white;
   border: 1px solid #dbeafe;
-  border-radius
+  border-radius: 14px;
+  padding: 16px;
+  margin-top: 20px;
+  margin-bottom: 24px;
+}
+
+.custom-events-section {
+  margin-top: 24px;
+}
+
+.fc .fc-button-primary {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.fc .fc-button-primary:hover {
+  background: #1e40af;
+  border-color: #1e40af;
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active,
+.fc .fc-button-primary:not(:disabled):active {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.fc .fc-toolbar-title {
+  color: #1e3a8a;
+  font-size: 22px;
+}
+
+.fc-theme-standard td,
+.fc-theme-standard th,
+.fc-theme-standard .fc-scrollgrid {
+  border-color: #dbeafe;
+}
+
+@media (max-width: 640px) {
+  body {
+    padding: 16px;
+  }
+
+  .app {
+    padding: 16px;
+  }
+
+  .tab-btn,
+  button {
+    width: 100%;
+  }
+
+  #calendarView {
+    padding: 8px;
+  }
+}
