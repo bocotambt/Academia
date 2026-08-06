@@ -276,6 +276,7 @@ li {
   padding: 16px;
   margin-top: 20px;
   margin-bottom: 24px;
+  min-height: 700px;
 }
 
 .custom-events-section {
@@ -293,7 +294,7 @@ li {
 }
 
 .fc .fc-button-primary:not(:disabled).fc-button-active,
-.fc .fc-button-primary:not(:disabled):active {
+.fc .fc .fc-button-primary:not(:disabled):active {
   background: #1d4ed8;
   border-color: #1d4ed8;
 }
@@ -325,5 +326,6 @@ li {
 
   #calendarView {
     padding: 8px;
+    min-height: 500px;
   }
 }
