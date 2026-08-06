@@ -5,11 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Student Planner Dashboard</title>
   <link rel="stylesheet" href="style.css">
+
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@7.0.2/skeleton.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@7.0.2/all/global.js"></script>
 </head>
 <body>
   <div class="app">
     <h1>Student Planner Dashboard</h1>
-    <p class="subtitle">Track courses, notes, tasks, and your study schedule.</p>
+    <p class="subtitle">Track courses, notes, tasks, and events in one place.</p>
 
     <section class="dashboard-summary">
       <div class="summary-card">
@@ -21,8 +24,8 @@
         <p id="totalTasks">0</p>
       </div>
       <div class="summary-card">
-        <h3>Upcoming Exams</h3>
-        <p id="upcomingExams">0</p>
+        <h3>Total Events</h3>
+        <p id="totalEvents">0</p>
       </div>
     </section>
 
@@ -36,7 +39,7 @@
 
     <section id="dashboard" class="tab-content active">
       <h2>Dashboard</h2>
-      <p>Use the tabs above to manage your school life.</p>
+      <p>Use the tabs above to manage courses, notes, tasks, and your schedule.</p>
     </section>
 
     <section id="courses" class="tab-content">
@@ -123,29 +126,22 @@
     <section id="calendar" class="tab-content">
       <h2>Calendar</h2>
 
-      <div class="calendar-header">
-        <button id="prevMonthBtn" type="button">←</button>
-        <h3 id="calendarMonthLabel"></h3>
-        <button id="nextMonthBtn" type="button">→</button>
+      <div class="event-form">
+        <div class="input-row">
+          <input type="text" id="eventTitle" placeholder="Event title">
+          <input type="date" id="eventDate">
+          <input type="time" id="eventStartTime">
+          <input type="time" id="eventEndTime">
+          <button id="saveEventBtn" type="button">Save Event</button>
+        </div>
       </div>
 
-      <div class="calendar-legend">
-        <span class="legend-item"><span class="legend-dot today-dot"></span> Today</span>
-        <span class="legend-item"><span class="legend-dot task-dot"></span> Task</span>
-        <span class="legend-item"><span class="legend-dot exam-dot"></span> Course Session</span>
-      </div>
+      <div id="calendarView"></div>
 
-      <div class="calendar-weekdays">
-        <div>Sun</div>
-        <div>Mon</div>
-        <div>Tue</div>
-        <div>Wed</div>
-        <div>Thu</div>
-        <div>Fri</div>
-        <div>Sat</div>
+      <div class="custom-events-section">
+        <h3>Custom Events</h3>
+        <div id="eventsList"></div>
       </div>
-
-      <div id="calendarGrid" class="calendar-grid"></div>
     </section>
   </div>
 
