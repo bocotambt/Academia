@@ -20,25 +20,55 @@ document.addEventListener("DOMContentLoaded", function () {
   const openModalButtons = document.querySelectorAll(".open-modal-btn");
   const closeModalButtons = document.querySelectorAll(".close-modal-btn");
 
+  let academicYears = getSavedArray("academicYears");
+  let semesters = getSavedArray("semesters");
   let courses = getSavedArray("courses");
   let notes = getSavedArray("notes");
   let tasks = getSavedArray("tasks");
   let customEvents = getSavedArray("customEvents");
 
   let pendingSessions = [];
+  let editingAcademicYearId = null;
+  let editingSemesterId = null;
   let editingCourseId = null;
   let editingNoteId = null;
   let editingTaskId = null;
   let editingEventId = null;
 
   let currentCalendarDate = new Date();
+  let currentCalendarView = "month";
 
   const pageTitle = $("pageTitle");
 
+  const totalAcademicYearsEl = $("totalAcademicYears");
+  const totalCoursesEl = $("totalCourses");
+  const totalTasksEl = $("totalTasks");
+  const totalEventsEl = $("totalEvents");
+
+  const academicYearsList = $("academicYearsList");
+  const coursesList = $("coursesList");
+  const notesList = $("notesList");
+  const plannerList = $("plannerList");
+  const dashboardTasks = $("dashboardTasks");
+  const dashboardNotes = $("dashboardNotes");
+
+  const academicYearModalTitle = $("academicYearModalTitle");
+  const academicYearNameInput = $("academicYearName");
+  const saveAcademicYearBtn = $("saveAcademicYearBtn");
+
+  const semesterModalTitle = $("semesterModalTitle");
+  const semesterAcademicYearInput = $("semesterAcademicYear");
+  const semesterNameInput = $("semesterName");
+  const semesterStartDateInput = $("semesterStartDate");
+  const semesterEndDateInput = $("semesterEndDate");
+  const saveSemesterBtn = $("saveSemesterBtn");
+
+  const courseModalTitle = $("courseModalTitle");
   const courseNameInput = $("courseName");
   const courseCodeInput = $("courseCode");
   const courseInstructorInput = $("courseInstructor");
   const courseColorInput = $("courseColor");
+  const courseSemesterInput = $("courseSemester");
   const sessionTypeInput = $("sessionType");
   const sessionRepeatInput = $("sessionRepeat");
   const sessionDayInput = $("sessionDay");
@@ -49,45 +79,51 @@ document.addEventListener("DOMContentLoaded", function () {
   const addSessionBtn = $("addSessionBtn");
   const saveCourseBtn = $("saveCourseBtn");
   const pendingSessionsList = $("pendingSessionsList");
-  const coursesList = $("coursesList");
-  const courseModalTitle = $("courseModalTitle");
 
+  const noteModalTitle = $("noteModalTitle");
   const noteTitleInput = $("noteTitle");
   const noteContentInput = $("noteContent");
   const saveNoteBtn = $("saveNoteBtn");
-  const notesList = $("notesList");
-  const noteModalTitle = $("noteModalTitle");
 
+  const taskModalTitle = $("taskModalTitle");
   const taskTitleInput = $("taskTitle");
   const taskDetailsInput = $("taskDetails");
   const taskDateInput = $("taskDate");
   const taskPriorityInput = $("taskPriority");
   const taskStatusInput = $("taskStatus");
   const addTaskBtn = $("addTaskBtn");
-  const plannerList = $("plannerList");
-  const taskModalTitle = $("taskModalTitle");
 
+  const eventModalTitle = $("eventModalTitle");
   const eventTitleInput = $("eventTitle");
   const eventDetailsInput = $("eventDetails");
   const eventDateInput = $("eventDate");
   const eventStartTimeInput = $("eventStartTime");
   const eventEndTimeInput = $("eventEndTime");
   const saveEventBtn = $("saveEventBtn");
-  const eventModalTitle = $("eventModalTitle");
-
-  const totalCoursesEl = $("totalCourses");
-  const totalTasksEl = $("totalTasks");
-  const totalEventsEl = $("totalEvents");
-  const dashboardTasks = $("dashboardTasks");
-  const dashboardNotes = $("dashboardNotes");
 
   const detailTitle = $("detailTitle");
   const detailBody = $("detailBody");
 
-  const prevMonthBtn = $("prevMonthBtn");
-  const nextMonthBtn = $("nextMonthBtn");
+  const monthViewBtn = $("monthViewBtn");
+  const weekViewBtn = $("weekViewBtn");
+  const dayViewBtn = $("dayViewBtn");
+  const prevPeriodBtn = $("prevPeriodBtn");
+  const nextPeriodBtn = $("nextPeriodBtn");
   const calendarMonthLabel = $("calendarMonthLabel");
   const calendarGrid = $("calendarGrid");
+  const weekCalendarGrid = $("weekCalendarGrid");
+  const dayCalendarGrid = $("dayCalendarGrid");
+  const monthCalendarWrap = $("monthCalendarWrap");
+  const weekCalendarWrap = $("weekCalendarWrap");
+  const dayCalendarWrap = $("dayCalendarWrap");
+
+  function saveAcademicYears() {
+    localStorage.setItem("academicYears", JSON.stringify(academicYears));
+  }
+
+  function saveSemesters() {
+    localStorage.setItem("semesters", JSON.stringify(semesters));
+  }
 
   function saveCourses() {
     localStorage.setItem("courses", JSON.stringify(courses));
@@ -122,10 +158,20 @@ document.addEventListener("DOMContentLoaded", function () {
   openModalButtons.forEach(function (btn) {
     btn.addEventListener("click", function () {
       const modalId = btn.dataset.openModal;
-      if (modalId === "courseModal") resetCourseModal();
+
+      if (modalId === "academicYearModal") resetAcademicYearModal();
+      if (modalId === "semesterModal") {
+        resetSemesterModal();
+        fillAcademicYearOptions();
+      }
+      if (modalId === "courseModal") {
+        resetCourseModal();
+        fillSemesterOptions();
+      }
       if (modalId === "noteModal") resetNoteModal();
       if (modalId === "taskModal") resetTaskModal();
       if (modalId === "eventModal") resetEventModal();
+
       openModal(modalId);
     });
   });
@@ -162,19 +208,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const titles = {
       dashboard: "Dashboard",
+      academic: "Academic",
       courses: "Courses",
       notes: "Notes",
       planner: "Tasks",
       calendar: "Calendar"
     };
 
-    if (pageTitle) {
-      pageTitle.textContent = titles[tabId] || "Academia";
-    }
+    if (pageTitle) pageTitle.textContent = titles[tabId] || "Academia";
 
-    if (tabId === "calendar") {
-      renderCalendar();
-    }
+    if (tabId === "calendar") renderCalendar();
   }
 
   tabButtons.forEach(function (button) {
@@ -183,11 +226,313 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
+  function pad(num) {
+    return String(num).padStart(2, "0");
+  }
+
+  function formatDateKey(date) {
+    return date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate());
+  }
+
+  function formatDateLabel(dateString) {
+    const date = new Date(dateString + "T00:00:00");
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric"
+    });
+  }
+
+  function isDateBetween(dateKey, startKey, endKey) {
+    return dateKey >= startKey && dateKey <= endKey;
+  }
+
+  function getSemesterById(id) {
+    return semesters.find(function (semester) {
+      return semester.id === id;
+    });
+  }
+
+  function getAcademicYearById(id) {
+    return academicYears.find(function (year) {
+      return year.id === id;
+    });
+  }
+
+  function dayNameToNumber(dayName) {
+    return {
+      Sunday: 0,
+      Monday: 1,
+      Tuesday: 2,
+      Wednesday: 3,
+      Thursday: 4,
+      Friday: 5,
+      Saturday: 6
+    }[dayName];
+  }
+
+  function getDatesForWeeklySessionInRange(dayName, startKey, endKey) {
+    const results = [];
+    const dayNumber = dayNameToNumber(dayName);
+    let current = new Date(startKey + "T00:00:00");
+    const end = new Date(endKey + "T00:00:00");
+
+    while (current <= end) {
+      if (current.getDay() === dayNumber) {
+        results.push(formatDateKey(current));
+      }
+      current.setDate(current.getDate() + 1);
+    }
+
+    return results;
+  }
+
   function updateDashboard() {
+    totalAcademicYearsEl.textContent = academicYears.length;
     totalCoursesEl.textContent = courses.length;
     totalTasksEl.textContent = tasks.length;
     totalEventsEl.textContent = getAllCalendarItems().length;
   }
+
+  function fillAcademicYearOptions() {
+    semesterAcademicYearInput.innerHTML = "";
+
+    if (academicYears.length === 0) {
+      semesterAcademicYearInput.innerHTML = '<option value="">No academic year yet</option>';
+      return;
+    }
+
+    academicYears.forEach(function (year) {
+      const option = document.createElement("option");
+      option.value = year.id;
+      option.textContent = year.name;
+      semesterAcademicYearInput.appendChild(option);
+    });
+  }
+
+  function fillSemesterOptions() {
+    courseSemesterInput.innerHTML = "";
+
+    if (semesters.length === 0) {
+      courseSemesterInput.innerHTML = '<option value="">No semester yet</option>';
+      return;
+    }
+
+    semesters.forEach(function (semester) {
+      const year = getAcademicYearById(semester.academicYearId);
+      const option = document.createElement("option");
+      option.value = semester.id;
+      option.textContent = semester.name + " (" + (year ? year.name : "No Year") + ")";
+      courseSemesterInput.appendChild(option);
+    });
+  }
+
+  function resetAcademicYearModal() {
+    academicYearModalTitle.textContent = "Add Academic Year";
+    academicYearNameInput.value = "";
+    editingAcademicYearId = null;
+    saveAcademicYearBtn.textContent = "Save Academic Year";
+  }
+
+  function saveAcademicYear() {
+    const name = academicYearNameInput.value.trim();
+
+    if (!name) {
+      alert("Please enter an academic year name.");
+      return;
+    }
+
+    const academicYearData = {
+      id: editingAcademicYearId || Date.now(),
+      name: name
+    };
+
+    if (editingAcademicYearId) {
+      academicYears = academicYears.map(function (year) {
+        return year.id === editingAcademicYearId ? academicYearData : year;
+      });
+    } else {
+      academicYears.push(academicYearData);
+    }
+
+    saveAcademicYears();
+    renderAcademicYears();
+    updateDashboard();
+    closeModal("academicYearModal");
+    resetAcademicYearModal();
+  }
+
+  function editAcademicYear(id) {
+    const year = getAcademicYearById(id);
+    if (!year) return;
+
+    academicYearModalTitle.textContent = "Edit Academic Year";
+    academicYearNameInput.value = year.name;
+    editingAcademicYearId = id;
+    saveAcademicYearBtn.textContent = "Update Academic Year";
+    openModal("academicYearModal");
+  }
+
+  function deleteAcademicYear(id) {
+    const yearSemesters = semesters.filter(function (semester) {
+      return semester.academicYearId === id;
+    });
+
+    if (yearSemesters.length > 0) {
+      alert("Delete the semesters inside this academic year first.");
+      return;
+    }
+
+    academicYears = academicYears.filter(function (year) {
+      return year.id !== id;
+    });
+
+    saveAcademicYears();
+    renderAcademicYears();
+    updateDashboard();
+  }
+
+  function resetSemesterModal() {
+    semesterModalTitle.textContent = "Add Semester";
+    semesterNameInput.value = "";
+    semesterStartDateInput.value = "";
+    semesterEndDateInput.value = "";
+    editingSemesterId = null;
+    saveSemesterBtn.textContent = "Save Semester";
+  }
+
+  function saveSemester() {
+    const academicYearId = Number(semesterAcademicYearInput.value);
+    const name = semesterNameInput.value.trim();
+    const startDate = semesterStartDateInput.value;
+    const endDate = semesterEndDateInput.value;
+
+    if (!academicYearId || !name || !startDate || !endDate) {
+      alert("Please complete all semester fields.");
+      return;
+    }
+
+    if (endDate < startDate) {
+      alert("Semester end date cannot be before start date.");
+      return;
+    }
+
+    const semesterData = {
+      id: editingSemesterId || Date.now(),
+      academicYearId: academicYearId,
+      name: name,
+      startDate: startDate,
+      endDate: endDate
+    };
+
+    if (editingSemesterId) {
+      semesters = semesters.map(function (semester) {
+        return semester.id === editingSemesterId ? semesterData : semester;
+      });
+    } else {
+      semesters.push(semesterData);
+    }
+
+    saveSemesters();
+    renderAcademicYears();
+    renderCourses();
+    renderCalendar();
+    updateDashboard();
+    closeModal("semesterModal");
+    resetSemesterModal();
+  }
+
+  function editSemester(id) {
+    const semester = getSemesterById(id);
+    if (!semester) return;
+
+    fillAcademicYearOptions();
+    semesterModalTitle.textContent = "Edit Semester";
+    semesterAcademicYearInput.value = semester.academicYearId;
+    semesterNameInput.value = semester.name;
+    semesterStartDateInput.value = semester.startDate;
+    semesterEndDateInput.value = semester.endDate;
+    editingSemesterId = id;
+    saveSemesterBtn.textContent = "Update Semester";
+    openModal("semesterModal");
+  }
+
+  function deleteSemester(id) {
+    const semesterCourses = courses.filter(function (course) {
+      return course.semesterId === id;
+    });
+
+    if (semesterCourses.length > 0) {
+      alert("Delete or move courses in this semester first.");
+      return;
+    }
+
+    semesters = semesters.filter(function (semester) {
+      return semester.id !== id;
+    });
+
+    saveSemesters();
+    renderAcademicYears();
+    renderCourses();
+    renderCalendar();
+    updateDashboard();
+  }
+
+  function renderAcademicYears() {
+    academicYearsList.innerHTML = "";
+
+    if (academicYears.length === 0) {
+      academicYearsList.innerHTML = '<div class="empty-state">No academic years added yet.</div>';
+      return;
+    }
+
+    academicYears.forEach(function (year) {
+      const card = document.createElement("div");
+      card.className = "academic-card";
+
+      const yearSemesters = semesters.filter(function (semester) {
+        return semester.academicYearId === year.id;
+      });
+
+      const semestersHtml = yearSemesters.length === 0
+        ? '<div class="empty-state">No semesters yet.</div>'
+        : yearSemesters.map(function (semester) {
+            return `
+              <div class="semester-box">
+                <strong>${semester.name}</strong>
+                <p class="meta">${formatDateLabel(semester.startDate)} - ${formatDateLabel(semester.endDate)}</p>
+                <div class="card-actions">
+                  <button class="edit-btn" data-edit-semester="${semester.id}" type="button">Edit Semester</button>
+                  <button class="delete-btn" data-delete-semester="${semester.id}" type="button">Delete Semester</button>
+                </div>
+              </div>
+            `;
+          }).join("");
+
+      card.innerHTML = `
+        <h3>${year.name}</h3>
+        <div class="card-actions">
+          <button class="edit-btn" data-edit-year="${year.id}" type="button">Edit Year</button>
+          <button class="delete-btn" data-delete-year="${year.id}" type="button">Delete Year</button>
+        </div>
+        <div>${semestersHtml}</div>
+      `;
+
+      academicYearsList.appendChild(card);
+    });
+  }
+
+  academicYearsList.addEventListener("click", function (e) {
+    const editYearId = e.target.getAttribute("data-edit-year");
+    const deleteYearId = e.target.getAttribute("data-delete-year");
+    const editSemesterIdValue = e.target.getAttribute("data-edit-semester");
+    const deleteSemesterIdValue = e.target.getAttribute("data-delete-semester");
+
+    if (editYearId !== null) editAcademicYear(Number(editYearId));
+    if (deleteYearId !== null) deleteAcademicYear(Number(deleteYearId));
+    if (editSemesterIdValue !== null) editSemester(Number(editSemesterIdValue));
+    if (deleteSemesterIdValue !== null) deleteSemester(Number(deleteSemesterIdValue));
+  });
 
   function updateSessionInputs() {
     if (sessionRepeatInput.value === "weekly") {
@@ -249,6 +594,7 @@ document.addEventListener("DOMContentLoaded", function () {
     pendingSessions = [];
     editingCourseId = null;
     saveCourseBtn.textContent = "Save Course";
+    fillSemesterOptions();
     updateSessionInputs();
     renderPendingSessions();
   }
@@ -304,14 +650,35 @@ document.addEventListener("DOMContentLoaded", function () {
     const code = courseCodeInput.value.trim();
     const instructor = courseInstructorInput.value.trim();
     const color = courseColorInput.value;
+    const semesterId = Number(courseSemesterInput.value);
 
     if (!name || !code) {
       alert("Please enter both course name and course code.");
       return;
     }
 
+    if (!semesterId) {
+      alert("Please select a semester.");
+      return;
+    }
+
     if (pendingSessions.length === 0) {
       alert("Please add at least one session.");
+      return;
+    }
+
+    const semester = getSemesterById(semesterId);
+    if (!semester) {
+      alert("Selected semester was not found.");
+      return;
+    }
+
+    const invalidSpecificSession = pendingSessions.find(function (session) {
+      return session.repeat === "specific" && !isDateBetween(session.date, semester.startDate, semester.endDate);
+    });
+
+    if (invalidSpecificSession) {
+      alert("A specific-date session is outside the selected semester.");
       return;
     }
 
@@ -321,6 +688,7 @@ document.addEventListener("DOMContentLoaded", function () {
       code: code,
       instructor: instructor,
       color: color,
+      semesterId: semesterId,
       sessions: pendingSessions.slice()
     };
 
@@ -347,11 +715,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (!course) return;
 
+    fillSemesterOptions();
     courseModalTitle.textContent = "Edit Course";
     courseNameInput.value = course.name || "";
     courseCodeInput.value = course.code || "";
     courseInstructorInput.value = course.instructor || "";
     courseColorInput.value = course.color || "#2563eb";
+    courseSemesterInput.value = course.semesterId || "";
     pendingSessions = Array.isArray(course.sessions) ? course.sessions.slice() : [];
     editingCourseId = id;
     saveCourseBtn.textContent = "Update Course";
@@ -382,7 +752,10 @@ document.addEventListener("DOMContentLoaded", function () {
       const card = document.createElement("div");
       card.className = "course-card";
 
+      const semester = getSemesterById(course.semesterId);
+      const year = semester ? getAcademicYearById(semester.academicYearId) : null;
       const sessions = Array.isArray(course.sessions) ? course.sessions : [];
+
       const sessionsHtml = sessions.map(function (session) {
         return `
           <div class="planner-item">
@@ -400,6 +773,7 @@ document.addEventListener("DOMContentLoaded", function () {
       card.innerHTML = `
         <h3>${course.name} (${course.code})</h3>
         <p class="meta">Instructor: ${course.instructor || "N/A"}</p>
+        <p class="meta">Semester: ${semester ? semester.name : "N/A"}${year ? " • " + year.name : ""}</p>
         <div class="course-badge" style="background:${course.color};">${course.code}</div>
         <div>${sessionsHtml}</div>
         <div class="card-actions">
@@ -557,7 +931,7 @@ document.addEventListener("DOMContentLoaded", function () {
     addTaskBtn.textContent = "Save Task";
   }
 
-  function addOrUpdateTask() {
+  function saveTask() {
     const title = taskTitleInput.value.trim();
     const details = taskDetailsInput.value.trim();
     const date = taskDateInput.value;
@@ -624,6 +998,28 @@ document.addEventListener("DOMContentLoaded", function () {
     updateDashboard();
   }
 
+  function updateTaskStatus(id, status) {
+    tasks = tasks.map(function (task) {
+      if (task.id === id) {
+        return {
+          id: task.id,
+          title: task.title,
+          details: task.details,
+          date: task.date,
+          priority: task.priority,
+          status: status
+        };
+      }
+      return task;
+    });
+
+    saveTasks();
+    renderTasks();
+    renderDashboardTasks();
+    renderCalendar();
+    updateDashboard();
+  }
+
   function renderTasks() {
     plannerList.innerHTML = "";
 
@@ -643,7 +1039,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const statusClass =
         task.status === "To Do" ? "status-todo" :
-        task.status === "Doing" ? "status-doing" :
+        task.status === "In Progress" ? "status-progress" :
         "status-done";
 
       card.innerHTML = `
@@ -652,6 +1048,13 @@ document.addEventListener("DOMContentLoaded", function () {
         <span class="status-badge ${statusClass}">${task.status}</span>
         <p class="meta">Due: ${task.date}</p>
         <p class="meta">${task.details ? String(task.details).replace(/\n/g, "<br>") : "No details added."}</p>
+
+        <div class="inline-status-controls">
+          <button class="mini-btn secondary-btn" data-task-status="${task.id}" data-status-value="To Do" type="button">To Do</button>
+          <button class="mini-btn secondary-btn" data-task-status="${task.id}" data-status-value="In Progress" type="button">In Progress</button>
+          <button class="mini-btn secondary-btn" data-task-status="${task.id}" data-status-value="Done" type="button">Done</button>
+        </div>
+
         <div class="card-actions">
           <button class="edit-btn" data-edit-task="${task.id}" type="button">Edit</button>
           <button class="delete-btn" data-delete-task="${task.id}" type="button">Delete</button>
@@ -681,7 +1084,7 @@ document.addEventListener("DOMContentLoaded", function () {
         item.className = "detail-item";
         item.innerHTML = `
           <strong>${task.title}</strong>
-          <div class="meta">Due ${task.date}</div>
+          <div class="meta">Due ${task.date} • ${task.status}</div>
         `;
         dashboardTasks.appendChild(item);
       });
@@ -691,9 +1094,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const editId = e.target.getAttribute("data-edit-task");
     const deleteId = e.target.getAttribute("data-delete-task");
     const viewId = e.target.getAttribute("data-view-task");
+    const taskStatusId = e.target.getAttribute("data-task-status");
+    const nextStatus = e.target.getAttribute("data-status-value");
 
     if (editId !== null) editTask(Number(editId));
     if (deleteId !== null) deleteTask(Number(deleteId));
+    if (taskStatusId !== null && nextStatus) updateTaskStatus(Number(taskStatusId), nextStatus);
     if (viewId !== null) {
       const task = tasks.find(function (t) {
         return t.id === Number(viewId);
@@ -759,92 +1165,67 @@ document.addEventListener("DOMContentLoaded", function () {
     resetEventModal();
   }
 
-  function deleteCustomEvent(id) {
-    customEvents = customEvents.filter(function (event) {
-      return event.id !== id;
-    });
-    saveCustomEvents();
-    renderCalendar();
-    updateDashboard();
-  }
-
-  function editCustomEvent(id) {
-    const event = customEvents.find(function (item) {
-      return item.id === id;
-    });
-
-    if (!event) return;
-
-    eventModalTitle.textContent = "Edit Event";
-    eventTitleInput.value = event.title || "";
-    eventDetailsInput.value = event.details || "";
-    eventDateInput.value = event.date || "";
-    eventStartTimeInput.value = event.startTime || "";
-    eventEndTimeInput.value = event.endTime || "";
-    editingEventId = id;
-    saveEventBtn.textContent = "Update Event";
-    openModal("eventModal");
-  }
-
-  function dayNameToNumber(dayName) {
-    return {
-      Sunday: 0,
-      Monday: 1,
-      Tuesday: 2,
-      Wednesday: 3,
-      Thursday: 4,
-      Friday: 5,
-      Saturday: 6
-    }[dayName];
-  }
-
-  function pad(num) {
-    return String(num).padStart(2, "0");
-  }
-
-  function formatDateKey(date) {
-    return date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate());
-  }
-
-  function getDatesForWeeklySession(dayName, year, month) {
-    const results = [];
-    const dayNumber = dayNameToNumber(dayName);
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(year, month, day);
-      if (date.getDay() === dayNumber) {
-        results.push(formatDateKey(date));
-      }
-    }
-
-    return results;
-  }
-
   function getAllCalendarItems() {
     const items = [];
 
     courses.forEach(function (course) {
+      const semester = getSemesterById(course.semesterId);
+      if (!semester) return;
+
       const sessions = Array.isArray(course.sessions) ? course.sessions : [];
 
       sessions.forEach(function (session) {
         if (session.repeat === "specific" && session.date) {
-          items.push({
-            type: "course",
-            id: "course-" + course.id + "-" + session.id,
-            title: course.code + " " + session.type,
-            date: session.date,
-            color: course.color || "#2563eb",
-            data: {
-              courseName: course.name,
-              courseCode: course.code,
-              instructor: course.instructor || "N/A",
-              sessionType: session.type,
-              location: session.location || "Not set",
-              repeat: "Specific Date",
-              startTime: session.startTime,
-              endTime: session.endTime
-            }
+          if (isDateBetween(session.date, semester.startDate, semester.endDate)) {
+            items.push({
+              type: "course",
+              id: "course-" + course.id + "-" + session.id,
+              title: course.code + " " + session.type,
+              date: session.date,
+              timeLabel: session.startTime + " - " + session.endTime,
+              color: course.color || "#2563eb",
+              data: {
+                courseName: course.name,
+                courseCode: course.code,
+                instructor: course.instructor || "N/A",
+                sessionType: session.type,
+                location: session.location || "Not set",
+                repeat: "Specific Date",
+                semesterName: semester.name,
+                startTime: session.startTime,
+                endTime: session.endTime
+              }
+            });
+          }
+        }
+
+        if (session.repeat === "weekly" && session.day) {
+          const dates = getDatesForWeeklySessionInRange(
+            session.day,
+            semester.startDate,
+            semester.endDate
+          );
+
+          dates.forEach(function (dateKey) {
+            items.push({
+              type: "course",
+              id: "course-" + course.id + "-" + session.id + "-" + dateKey,
+              title: course.code + " " + session.type,
+              date: dateKey,
+              timeLabel: session.startTime + " - " + session.endTime,
+              color: course.color || "#2563eb",
+              data: {
+                courseName: course.name,
+                courseCode: course.code,
+                instructor: course.instructor || "N/A",
+                sessionType: session.type,
+                location: session.location || "Not set",
+                repeat: "Weekly on " + session.day,
+                semesterName: semester.name,
+                startTime: session.startTime,
+                endTime: session.endTime
+              }
+            });
           });
         }
       });
@@ -856,6 +1237,7 @@ document.addEventListener("DOMContentLoaded", function () {
         id: "task-" + task.id,
         title: "Task: " + task.title,
         date: task.date,
+        timeLabel: "All day",
         color: "#dc2626",
         data: {
           title: task.title,
@@ -873,6 +1255,7 @@ document.addEventListener("DOMContentLoaded", function () {
         id: "custom-" + event.id,
         title: event.title,
         date: event.date,
+        timeLabel: event.startTime + " - " + event.endTime,
         color: "#0f766e",
         data: {
           title: event.title,
@@ -887,55 +1270,12 @@ document.addEventListener("DOMContentLoaded", function () {
     return items;
   }
 
-  function getCalendarItemsForMonth(year, month) {
-    const items = [];
-    const baseItems = getAllCalendarItems();
-
-    baseItems.forEach(function (item) {
-      if (item.type === "course" && item.data.repeat === "Specific Date") {
-        const itemDate = new Date(item.date + "T00:00:00");
-        if (itemDate.getFullYear() === year && itemDate.getMonth() === month) {
-          items.push(item);
-        }
-      } else if (item.type === "task" || item.type === "custom") {
-        const itemDate = new Date(item.date + "T00:00:00");
-        if (itemDate.getFullYear() === year && itemDate.getMonth() === month) {
-          items.push(item);
-        }
-      }
+  function getItemsForDate(dateKey) {
+    return getAllCalendarItems().filter(function (item) {
+      return item.date === dateKey;
+    }).sort(function (a, b) {
+      return String(a.timeLabel).localeCompare(String(b.timeLabel));
     });
-
-    courses.forEach(function (course) {
-      const sessions = Array.isArray(course.sessions) ? course.sessions : [];
-
-      sessions.forEach(function (session) {
-        if (session.repeat === "weekly" && session.day) {
-          const dates = getDatesForWeeklySession(session.day, year, month);
-
-          dates.forEach(function (dateKey) {
-            items.push({
-              type: "course",
-              id: "course-" + course.id + "-" + session.id + "-" + dateKey,
-              title: course.code + " " + session.type,
-              date: dateKey,
-              color: course.color || "#2563eb",
-              data: {
-                courseName: course.name,
-                courseCode: course.code,
-                instructor: course.instructor || "N/A",
-                sessionType: session.type,
-                location: session.location || "Not set",
-                repeat: "Weekly on " + session.day,
-                startTime: session.startTime,
-                endTime: session.endTime
-              }
-            });
-          });
-        }
-      });
-    });
-
-    return items;
   }
 
   function showDetailModal(title, items) {
@@ -952,62 +1292,44 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function openCalendarItem(itemId) {
-    if (itemId.indexOf("task-") === 0) {
-      const taskId = Number(itemId.replace("task-", ""));
-      const task = tasks.find(function (t) {
-        return t.id === taskId;
-      });
+    const item = getAllCalendarItems().find(function (entry) {
+      return entry.id === itemId;
+    });
 
-      if (!task) return;
+    if (!item) return;
 
-      showDetailModal(task.title, [
+    if (item.type === "task") {
+      showDetailModal(item.title, [
         ["Type", "Task"],
-        ["Title", task.title],
-        ["Due Date", task.date],
-        ["Priority", task.priority],
-        ["Status", task.status],
-        ["Details", task.details || "No details added."]
+        ["Title", item.data.title],
+        ["Due Date", item.data.dueDate],
+        ["Priority", item.data.priority],
+        ["Status", item.data.status],
+        ["Details", item.data.details]
       ]);
       return;
     }
 
-    if (itemId.indexOf("custom-") === 0) {
-      const eventId = Number(itemId.replace("custom-", ""));
-      const event = customEvents.find(function (e) {
-        return e.id === eventId;
-      });
-
-      if (!event) return;
-
-      showDetailModal(event.title, [
+    if (item.type === "custom") {
+      showDetailModal(item.title, [
         ["Type", "Custom Event"],
-        ["Title", event.title],
-        ["Date", event.date],
-        ["Start", event.startTime],
-        ["End", event.endTime],
-        ["Details", event.details || "No details added."]
+        ["Title", item.data.title],
+        ["Date", item.data.date],
+        ["Start", item.data.startTime],
+        ["End", item.data.endTime],
+        ["Details", item.data.details]
       ]);
       return;
     }
 
-    if (itemId.indexOf("course-") === 0) {
-      const currentMonthItems = getCalendarItemsForMonth(
-        currentCalendarDate.getFullYear(),
-        currentCalendarDate.getMonth()
-      );
-
-      const item = currentMonthItems.find(function (entry) {
-        return entry.id === itemId;
-      });
-
-      if (!item) return;
-
+    if (item.type === "course") {
       showDetailModal(item.title, [
         ["Type", "Course Session"],
         ["Course", item.data.courseName + " (" + item.data.courseCode + ")"],
         ["Session", item.data.sessionType],
         ["Instructor", item.data.instructor],
         ["Location", item.data.location],
+        ["Semester", item.data.semesterName],
         ["Repeat", item.data.repeat],
         ["Date", item.date],
         ["Start", item.data.startTime],
@@ -1016,12 +1338,34 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  function renderCalendar() {
-    if (!calendarGrid || !calendarMonthLabel) return;
+  function setCalendarView(view) {
+    currentCalendarView = view;
 
+    monthViewBtn.classList.remove("active-view-btn");
+    weekViewBtn.classList.remove("active-view-btn");
+    dayViewBtn.classList.remove("active-view-btn");
+
+    monthCalendarWrap.classList.add("hidden");
+    weekCalendarWrap.classList.add("hidden");
+    dayCalendarWrap.classList.add("hidden");
+
+    if (view === "month") {
+      monthViewBtn.classList.add("active-view-btn");
+      monthCalendarWrap.classList.remove("hidden");
+    } else if (view === "week") {
+      weekViewBtn.classList.add("active-view-btn");
+      weekCalendarWrap.classList.remove("hidden");
+    } else {
+      dayViewBtn.classList.add("active-view-btn");
+      dayCalendarWrap.classList.remove("hidden");
+    }
+
+    renderCalendar();
+  }
+
+  function renderMonthView() {
     const year = currentCalendarDate.getFullYear();
     const month = currentCalendarDate.getMonth();
-
     const monthLabel = currentCalendarDate.toLocaleString("en-US", {
       month: "long",
       year: "numeric"
@@ -1034,8 +1378,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const startWeekday = firstDay.getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const prevMonthDays = new Date(year, month, 0).getDate();
-
-    const items = getCalendarItemsForMonth(year, month);
     const todayKey = formatDateKey(new Date());
 
     for (let i = 0; i < 42; i++) {
@@ -1070,17 +1412,10 @@ document.addEventListener("DOMContentLoaded", function () {
       const cellDate = new Date(displayYear, displayMonth, displayDay);
       const cellKey = formatDateKey(cellDate);
 
-      if (isOtherMonth) {
-        cell.classList.add("other-month");
-      }
+      if (isOtherMonth) cell.classList.add("other-month");
+      if (cellKey === todayKey) cell.classList.add("today");
 
-      if (cellKey === todayKey) {
-        cell.classList.add("today");
-      }
-
-      const dayItems = items.filter(function (item) {
-        return item.date === cellKey;
-      });
+      const dayItems = getItemsForDate(cellKey);
 
       const itemsHtml = dayItems.map(function (item) {
         return `
@@ -1104,48 +1439,175 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  calendarGrid.addEventListener("click", function (e) {
-    const itemId = e.target.getAttribute("data-calendar-item");
-    if (itemId) {
-      openCalendarItem(itemId);
+  function getStartOfWeek(date) {
+    const result = new Date(date);
+    result.setHours(0, 0, 0, 0);
+    result.setDate(result.getDate() - result.getDay());
+    return result;
+  }
+
+  function renderWeekView() {
+    const start = getStartOfWeek(currentCalendarDate);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+
+    calendarMonthLabel.textContent =
+      formatDateLabel(formatDateKey(start)) + " - " + formatDateLabel(formatDateKey(end));
+
+    weekCalendarGrid.innerHTML = "";
+
+    for (let i = 0; i < 7; i++) {
+      const dayDate = new Date(start);
+      dayDate.setDate(start.getDate() + i);
+      const dateKey = formatDateKey(dayDate);
+      const items = getItemsForDate(dateKey);
+
+      const column = document.createElement("div");
+      column.className = "week-day-column";
+
+      const itemsHtml = items.length === 0
+        ? '<div class="empty-state">No items</div>'
+        : items.map(function (item) {
+            return `
+              <button
+                type="button"
+                class="calendar-item ${item.type}"
+                data-calendar-item="${item.id}"
+                title="${item.title}"
+              >
+                ${item.timeLabel} • ${item.title}
+              </button>
+            `;
+          }).join("");
+
+      column.innerHTML = `
+        <div class="week-day-title">
+          ${dayDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+        </div>
+        <div class="week-items">${itemsHtml}</div>
+      `;
+
+      weekCalendarGrid.appendChild(column);
     }
+  }
+
+  function renderDayView() {
+    const dateKey = formatDateKey(currentCalendarDate);
+    const items = getItemsForDate(dateKey);
+
+    calendarMonthLabel.textContent = currentCalendarDate.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric"
+    });
+
+    const itemsHtml = items.length === 0
+      ? '<div class="empty-state">No items for this day.</div>'
+      : items.map(function (item) {
+          return `
+            <button
+              type="button"
+              class="calendar-item ${item.type}"
+              data-calendar-item="${item.id}"
+              title="${item.title}"
+            >
+              ${item.timeLabel} • ${item.title}
+            </button>
+          `;
+        }).join("");
+
+    dayCalendarGrid.innerHTML = `
+      <div class="day-view-card">
+        <div class="day-view-title">${calendarMonthLabel.textContent}</div>
+        <div class="day-items">${itemsHtml}</div>
+      </div>
+    `;
+  }
+
+  function renderCalendar() {
+    if (currentCalendarView === "month") {
+      renderMonthView();
+    } else if (currentCalendarView === "week") {
+      renderWeekView();
+    } else {
+      renderDayView();
+    }
+  }
+
+  function moveCalendar(direction) {
+    if (currentCalendarView === "month") {
+      currentCalendarDate = new Date(
+        currentCalendarDate.getFullYear(),
+        currentCalendarDate.getMonth() + direction,
+        1
+      );
+    } else if (currentCalendarView === "week") {
+      currentCalendarDate = new Date(
+        currentCalendarDate.getFullYear(),
+        currentCalendarDate.getMonth(),
+        currentCalendarDate.getDate() + (7 * direction)
+      );
+    } else {
+      currentCalendarDate = new Date(
+        currentCalendarDate.getFullYear(),
+        currentCalendarDate.getMonth(),
+        currentCalendarDate.getDate() + direction
+      );
+    }
+
+    renderCalendar();
+  }
+
+  monthViewBtn.addEventListener("click", function () {
+    setCalendarView("month");
   });
 
-  prevMonthBtn.addEventListener("click", function () {
-    currentCalendarDate = new Date(
-      currentCalendarDate.getFullYear(),
-      currentCalendarDate.getMonth() - 1,
-      1
-    );
-    renderCalendar();
+  weekViewBtn.addEventListener("click", function () {
+    setCalendarView("week");
   });
 
-  nextMonthBtn.addEventListener("click", function () {
-    currentCalendarDate = new Date(
-      currentCalendarDate.getFullYear(),
-      currentCalendarDate.getMonth() + 1,
-      1
-    );
-    renderCalendar();
+  dayViewBtn.addEventListener("click", function () {
+    setCalendarView("day");
+  });
+
+  prevPeriodBtn.addEventListener("click", function () {
+    moveCalendar(-1);
+  });
+
+  nextPeriodBtn.addEventListener("click", function () {
+    moveCalendar(1);
+  });
+
+  document.addEventListener("click", function (e) {
+    const itemId = e.target.getAttribute("data-calendar-item");
+    if (itemId) openCalendarItem(itemId);
   });
 
   addSessionBtn.addEventListener("click", addSession);
   saveCourseBtn.addEventListener("click", saveCourse);
+  saveAcademicYearBtn.addEventListener("click", saveAcademicYear);
+  saveSemesterBtn.addEventListener("click", saveSemester);
   sessionRepeatInput.addEventListener("change", updateSessionInputs);
   saveNoteBtn.addEventListener("click", saveNote);
-  addTaskBtn.addEventListener("click", addOrUpdateTask);
+  addTaskBtn.addEventListener("click", saveTask);
   saveEventBtn.addEventListener("click", saveCustomEventItem);
 
   updateSessionInputs();
+  fillAcademicYearOptions();
+  fillSemesterOptions();
+  resetAcademicYearModal();
+  resetSemesterModal();
   resetCourseModal();
   resetNoteModal();
   resetTaskModal();
   resetEventModal();
+  renderAcademicYears();
   renderCourses();
   renderNotes();
   renderTasks();
   renderDashboardNotes();
   renderDashboardTasks();
-  renderCalendar();
+  setCalendarView("month");
   updateDashboard();
 });
