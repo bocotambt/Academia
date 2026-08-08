@@ -374,6 +374,10 @@ li,
   min-height: 760px;
 }
 
+.fc {
+  max-width: 100%;
+}
+
 .fc .fc-toolbar {
   gap: 10px;
   flex-wrap: wrap;
@@ -383,6 +387,10 @@ li,
 .fc .fc-toolbar-title {
   color: var(--text);
   font-size: 24px;
+}
+
+.fc .fc-button {
+  border-radius: 10px !important;
 }
 
 .fc .fc-button-primary {
