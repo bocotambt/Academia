@@ -11,6 +11,8 @@
   --danger: #dc2626;
   --warning: #ea580c;
   --teal: #0f766e;
+  --calendar-task: #dc2626;
+  --calendar-event: #0f766e;
   --shadow: 0 16px 40px rgba(37, 99, 235, 0.08);
   --radius: 18px;
 }
@@ -168,8 +170,7 @@ button {
 .panel,
 .note-card,
 .course-card,
-.day-card,
-.event-card {
+.day-card {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -178,7 +179,8 @@ button {
 }
 
 .section-head,
-.panel-head {
+.panel-head,
+.calendar-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -188,8 +190,23 @@ button {
 
 .section-head h3,
 .panel-head h3,
-.panel-head h4 {
+.panel-head h4,
+.calendar-head h3 {
   margin: 0;
+}
+
+.calendar-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.calendar-month-label {
+  min-width: 170px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--text);
 }
 
 .primary-btn,
@@ -365,70 +382,83 @@ li,
   line-height: 1.5;
 }
 
-#calendarView {
+.calendar-board {
   background: white;
   border: 1px solid var(--line);
   border-radius: 20px;
   padding: 16px;
   box-shadow: var(--shadow);
-  min-height: 760px;
 }
 
-.fc {
-  max-width: 100%;
-}
-
-.fc .fc-toolbar {
+.calendar-weekdays,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 18px !important;
 }
 
-.fc .fc-toolbar-title {
-  color: var(--text);
-  font-size: 24px;
+.calendar-weekdays {
+  margin-bottom: 10px;
 }
 
-.fc .fc-button {
-  border-radius: 10px !important;
+.calendar-weekdays div {
+  text-align: center;
+  font-weight: 700;
+  color: var(--muted);
+  padding: 10px 0;
 }
 
-.fc .fc-button-primary {
-  background: #eaf1ff !important;
-  border: 1px solid #d5e3ff !important;
-  color: var(--primary-dark) !important;
-  box-shadow: none !important;
+.calendar-cell {
+  min-height: 130px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.fc .fc-button-primary:hover {
-  background: #dbe8ff !important;
+.calendar-cell.other-month {
+  opacity: 0.45;
 }
 
-.fc .fc-button-primary:not(:disabled).fc-button-active,
-.fc .fc-button-primary:not(:disabled):active {
-  background: var(--primary) !important;
-  border-color: var(--primary) !important;
-  color: white !important;
+.calendar-cell.today {
+  border: 2px solid var(--primary);
+  background: #eef4ff;
 }
 
-.fc-theme-standard td,
-.fc-theme-standard th,
-.fc-theme-standard .fc-scrollgrid {
-  border-color: #dbe7f5 !important;
+.calendar-date {
+  font-weight: 700;
+  font-size: 14px;
 }
 
-.fc .fc-daygrid-day-number,
-.fc .fc-col-header-cell-cushion {
-  color: var(--text);
-  text-decoration: none;
-  font-weight: 600;
+.calendar-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.fc .fc-event {
-  border: none !important;
-  border-radius: 10px !important;
-  padding: 3px 6px !important;
-  font-weight: 600;
+.calendar-item {
+  border: none;
+  border-radius: 10px;
+  padding: 8px 10px;
+  color: white;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.calendar-item.course {
+  background: var(--primary);
+}
+
+.calendar-item.task {
+  background: var(--calendar-task);
+}
+
+.calendar-item.custom {
+  background: var(--calendar-event);
 }
 
 .modal {
@@ -542,6 +572,16 @@ li,
   .input-row {
     grid-template-columns: 1fr 1fr;
   }
+
+  .calendar-grid,
+  .calendar-weekdays {
+    gap: 6px;
+  }
+
+  .calendar-cell {
+    min-height: 110px;
+    padding: 8px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -560,9 +600,19 @@ li,
   .section-head,
   .panel-head,
   .modal-head,
-  .modal-footer {
+  .modal-footer,
+  .calendar-head {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .calendar-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .calendar-month-label {
+    min-width: 0;
   }
 
   .primary-btn,
@@ -579,18 +629,27 @@ li,
     height: 46px;
   }
 
-  #calendarView {
-    padding: 10px;
-    min-height: 560px;
+  .calendar-weekdays div {
+    font-size: 12px;
+    padding: 6px 0;
   }
 
-  .fc .fc-toolbar {
-    align-items: stretch;
+  .calendar-grid,
+  .calendar-weekdays {
+    gap: 4px;
   }
 
-  .fc .fc-toolbar-chunk {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+  .calendar-cell {
+    min-height: 96px;
+    padding: 6px;
+  }
+
+  .calendar-date {
+    font-size: 12px;
+  }
+
+  .calendar-item {
+    font-size: 11px;
+    padding: 6px 8px;
   }
 }
