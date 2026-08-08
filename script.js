@@ -52,7 +52,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const dashboardAllTasks = $("dashboardAllTasks");
   const dashboardToday = $("dashboardToday");
   const dashboardTomorrow = $("dashboardTomorrow");
-  const dashboardNotes = $("dashboardNotes");
 
   const academicYearModalTitle = $("academicYearModalTitle");
   const academicYearNameInput = $("academicYearName");
@@ -171,12 +170,16 @@ document.addEventListener("DOMContentLoaded", function () {
         resetCourseModal();
         fillSemesterOptions();
       }
-      if (modalId === "noteModal") resetNoteModal();
+      if (modalId === "noteModal") {
+        resetNoteModal();
+      }
       if (modalId === "taskModal") {
         resetTaskModal();
         fillCourseOptions();
       }
-      if (modalId === "eventModal") resetEventModal();
+      if (modalId === "eventModal") {
+        resetEventModal();
+      }
 
       openModal(modalId);
     });
@@ -221,7 +224,9 @@ document.addEventListener("DOMContentLoaded", function () {
       calendar: "Calendar"
     };
 
-    if (pageTitle) pageTitle.textContent = titles[tabId] || "Academia";
+    if (pageTitle) {
+      pageTitle.textContent = titles[tabId] || "Academia";
+    }
 
     if (tabId === "calendar") renderCalendar();
     if (tabId === "dashboard") renderDashboard();
@@ -300,7 +305,16 @@ document.addEventListener("DOMContentLoaded", function () {
     return results;
   }
 
+  function updateDashboard() {
+    if (totalAcademicYearsEl) totalAcademicYearsEl.textContent = academicYears.length;
+    if (totalCoursesEl) totalCoursesEl.textContent = courses.length;
+    if (totalTasksEl) totalTasksEl.textContent = tasks.length;
+    if (totalEventsEl) totalEventsEl.textContent = getAllCalendarItems().length;
+  }
+
   function fillAcademicYearOptions() {
+    if (!semesterAcademicYearInput) return;
+
     semesterAcademicYearInput.innerHTML = "";
 
     if (academicYears.length === 0) {
@@ -317,6 +331,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function fillSemesterOptions() {
+    if (!courseSemesterInput) return;
+
     courseSemesterInput.innerHTML = "";
 
     if (semesters.length === 0) {
@@ -334,12 +350,9 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function fillCourseOptions() {
-    taskCourseInput.innerHTML = "";
+    if (!taskCourseInput) return;
 
-    if (courses.length === 0) {
-      taskCourseInput.innerHTML = '<option value="">No course yet</option>';
-      return;
-    }
+    taskCourseInput.innerHTML = "";
 
     const optionNone = document.createElement("option");
     optionNone.value = "";
@@ -355,6 +368,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function resetAcademicYearModal() {
+    if (!academicYearNameInput) return;
+
     academicYearModalTitle.textContent = "Add Academic Year";
     academicYearNameInput.value = "";
     editingAcademicYearId = null;
@@ -506,6 +521,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderAcademicYears() {
+    if (!academicYearsList) return;
+
     academicYearsList.innerHTML = "";
 
     if (academicYears.length === 0) {
@@ -549,19 +566,23 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  academicYearsList.addEventListener("click", function (e) {
-    const editYearId = e.target.getAttribute("data-edit-year");
-    const deleteYearId = e.target.getAttribute("data-delete-year");
-    const editSemesterIdValue = e.target.getAttribute("data-edit-semester");
-    const deleteSemesterIdValue = e.target.getAttribute("data-delete-semester");
+  if (academicYearsList) {
+    academicYearsList.addEventListener("click", function (e) {
+      const editYearId = e.target.getAttribute("data-edit-year");
+      const deleteYearId = e.target.getAttribute("data-delete-year");
+      const editSemesterIdValue = e.target.getAttribute("data-edit-semester");
+      const deleteSemesterIdValue = e.target.getAttribute("data-delete-semester");
 
-    if (editYearId !== null) editAcademicYear(Number(editYearId));
-    if (deleteYearId !== null) deleteAcademicYear(Number(deleteYearId));
-    if (editSemesterIdValue !== null) editSemester(Number(editSemesterIdValue));
-    if (deleteSemesterIdValue !== null) deleteSemester(Number(deleteSemesterIdValue));
-  });
+      if (editYearId !== null) editAcademicYear(Number(editYearId));
+      if (deleteYearId !== null) deleteAcademicYear(Number(deleteYearId));
+      if (editSemesterIdValue !== null) editSemester(Number(editSemesterIdValue));
+      if (deleteSemesterIdValue !== null) deleteSemester(Number(deleteSemesterIdValue));
+    });
+  }
 
   function updateSessionInputs() {
+    if (!sessionRepeatInput) return;
+
     if (sessionRepeatInput.value === "weekly") {
       sessionDayInput.disabled = false;
       sessionDateInput.disabled = true;
@@ -574,6 +595,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderPendingSessions() {
+    if (!pendingSessionsList) return;
+
     pendingSessionsList.innerHTML = "";
 
     if (pendingSessions.length === 0) {
@@ -597,13 +620,15 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  pendingSessionsList.addEventListener("click", function (e) {
-    const index = e.target.getAttribute("data-remove-session");
-    if (index !== null) {
-      pendingSessions.splice(Number(index), 1);
-      renderPendingSessions();
-    }
-  });
+  if (pendingSessionsList) {
+    pendingSessionsList.addEventListener("click", function (e) {
+      const index = e.target.getAttribute("data-remove-session");
+      if (index !== null) {
+        pendingSessions.splice(Number(index), 1);
+        renderPendingSessions();
+      }
+    });
+  }
 
   function resetCourseModal() {
     courseModalTitle.textContent = "Add Course";
@@ -729,7 +754,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     saveCourses();
     renderCourses();
+    fillCourseOptions();
     renderCalendar();
+    renderDashboard();
     updateDashboard();
     closeModal("courseModal");
     resetCourseModal();
@@ -758,16 +785,38 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function deleteCourse(id) {
+    tasks = tasks.map(function (task) {
+      if (task.courseId === id) {
+        return {
+          id: task.id,
+          title: task.title,
+          details: task.details,
+          courseId: null,
+          date: task.date,
+          priority: task.priority,
+          status: task.status
+        };
+      }
+      return task;
+    });
+
     courses = courses.filter(function (course) {
       return course.id !== id;
     });
+
+    saveTasks();
     saveCourses();
     renderCourses();
+    fillCourseOptions();
+    renderTasks();
     renderCalendar();
+    renderDashboard();
     updateDashboard();
   }
 
   function renderCourses() {
+    if (!coursesList) return;
+
     coursesList.innerHTML = "";
 
     if (courses.length === 0) {
@@ -812,13 +861,15 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  coursesList.addEventListener("click", function (e) {
-    const editId = e.target.getAttribute("data-edit-course");
-    const deleteId = e.target.getAttribute("data-delete-course");
+  if (coursesList) {
+    coursesList.addEventListener("click", function (e) {
+      const editId = e.target.getAttribute("data-edit-course");
+      const deleteId = e.target.getAttribute("data-delete-course");
 
-    if (editId !== null) editCourse(Number(editId));
-    if (deleteId !== null) deleteCourse(Number(deleteId));
-  });
+      if (editId !== null) editCourse(Number(editId));
+      if (deleteId !== null) deleteCourse(Number(deleteId));
+    });
+  }
 
   function resetNoteModal() {
     noteModalTitle.textContent = "Add Note";
@@ -881,6 +932,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderNotes() {
+    if (!notesList) return;
+
     notesList.innerHTML = "";
 
     if (notes.length === 0) {
@@ -903,19 +956,21 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  notesList.addEventListener("click", function (e) {
-    const editId = e.target.getAttribute("data-edit-note");
-    const deleteId = e.target.getAttribute("data-delete-note");
+  if (notesList) {
+    notesList.addEventListener("click", function (e) {
+      const editId = e.target.getAttribute("data-edit-note");
+      const deleteId = e.target.getAttribute("data-delete-note");
 
-    if (editId !== null) editNote(Number(editId));
-    if (deleteId !== null) deleteNote(Number(deleteId));
-  });
+      if (editId !== null) editNote(Number(editId));
+      if (deleteId !== null) deleteNote(Number(deleteId));
+    });
+  }
 
   function resetTaskModal() {
     taskModalTitle.textContent = "Add Task";
     taskTitleInput.value = "";
     taskDetailsInput.value = "";
-    taskCourseInput.value = "";
+    if (taskCourseInput) taskCourseInput.value = "";
     taskDateInput.value = "";
     taskPriorityInput.value = "High";
     taskStatusInput.value = "To Do";
@@ -926,7 +981,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function saveTask() {
     const title = taskTitleInput.value.trim();
     const details = taskDetailsInput.value.trim();
-    const courseId = taskCourseInput.value ? Number(taskCourseInput.value) : null;
+    const courseId = taskCourseInput && taskCourseInput.value ? Number(taskCourseInput.value) : null;
     const date = taskDateInput.value;
     const priority = taskPriorityInput.value;
     const status = taskStatusInput.value;
@@ -974,7 +1029,7 @@ document.addEventListener("DOMContentLoaded", function () {
     taskModalTitle.textContent = "Edit Task";
     taskTitleInput.value = task.title || "";
     taskDetailsInput.value = task.details || "";
-    taskCourseInput.value = task.courseId || "";
+    if (taskCourseInput) taskCourseInput.value = task.courseId || "";
     taskDateInput.value = task.date || "";
     taskPriorityInput.value = task.priority || "High";
     taskStatusInput.value = task.status || "To Do";
@@ -1018,6 +1073,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderTasks() {
+    if (!plannerList) return;
+
     plannerList.innerHTML = "";
 
     if (tasks.length === 0) {
@@ -1067,16 +1124,18 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  plannerList.addEventListener("click", function (e) {
-    const editId = e.target.getAttribute("data-edit-task");
-    const deleteId = e.target.getAttribute("data-delete-task");
-    const taskStatusId = e.target.getAttribute("data-task-status");
-    const nextStatus = e.target.getAttribute("data-status-value");
+  if (plannerList) {
+    plannerList.addEventListener("click", function (e) {
+      const editId = e.target.getAttribute("data-edit-task");
+      const deleteId = e.target.getAttribute("data-delete-task");
+      const taskStatusId = e.target.getAttribute("data-task-status");
+      const nextStatus = e.target.getAttribute("data-status-value");
 
-    if (editId !== null) editTask(Number(editId));
-    if (deleteId !== null) deleteTask(Number(deleteId));
-    if (taskStatusId !== null && nextStatus) updateTaskStatus(Number(taskStatusId), nextStatus);
-  });
+      if (editId !== null) editTask(Number(editId));
+      if (deleteId !== null) deleteTask(Number(deleteId));
+      if (taskStatusId !== null && nextStatus) updateTaskStatus(Number(taskStatusId), nextStatus);
+    });
+  }
 
   function resetEventModal() {
     eventModalTitle.textContent = "Add Event";
@@ -1120,6 +1179,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     saveCustomEvents();
     renderCalendar();
+    renderDashboard();
     updateDashboard();
     closeModal("eventModal");
     resetEventModal();
@@ -1304,23 +1364,23 @@ document.addEventListener("DOMContentLoaded", function () {
   function setCalendarView(view) {
     currentCalendarView = view;
 
-    monthViewBtn.classList.remove("active-view-btn");
-    weekViewBtn.classList.remove("active-view-btn");
-    dayViewBtn.classList.remove("active-view-btn");
+    if (monthViewBtn) monthViewBtn.classList.remove("active-view-btn");
+    if (weekViewBtn) weekViewBtn.classList.remove("active-view-btn");
+    if (dayViewBtn) dayViewBtn.classList.remove("active-view-btn");
 
-    monthCalendarWrap.classList.add("hidden");
-    weekCalendarWrap.classList.add("hidden");
-    dayCalendarWrap.classList.add("hidden");
+    if (monthCalendarWrap) monthCalendarWrap.classList.add("hidden");
+    if (weekCalendarWrap) weekCalendarWrap.classList.add("hidden");
+    if (dayCalendarWrap) dayCalendarWrap.classList.add("hidden");
 
     if (view === "month") {
-      monthViewBtn.classList.add("active-view-btn");
-      monthCalendarWrap.classList.remove("hidden");
+      if (monthViewBtn) monthViewBtn.classList.add("active-view-btn");
+      if (monthCalendarWrap) monthCalendarWrap.classList.remove("hidden");
     } else if (view === "week") {
-      weekViewBtn.classList.add("active-view-btn");
-      weekCalendarWrap.classList.remove("hidden");
+      if (weekViewBtn) weekViewBtn.classList.add("active-view-btn");
+      if (weekCalendarWrap) weekCalendarWrap.classList.remove("hidden");
     } else {
-      dayViewBtn.classList.add("active-view-btn");
-      dayCalendarWrap.classList.remove("hidden");
+      if (dayViewBtn) dayViewBtn.classList.add("active-view-btn");
+      if (dayCalendarWrap) dayCalendarWrap.classList.remove("hidden");
     }
 
     renderCalendar();
@@ -1334,7 +1394,9 @@ document.addEventListener("DOMContentLoaded", function () {
       year: "numeric"
     });
 
-    calendarMonthLabel.textContent = monthLabel;
+    if (calendarMonthLabel) calendarMonthLabel.textContent = monthLabel;
+    if (!calendarGrid) return;
+
     calendarGrid.innerHTML = "";
 
     const firstDay = new Date(year, month, 1);
@@ -1387,6 +1449,7 @@ document.addEventListener("DOMContentLoaded", function () {
             class="calendar-item ${item.type}"
             data-calendar-item="${item.id}"
             title="${item.title}"
+            style="background:${item.color};"
           >
             ${item.title}
           </button>
@@ -1410,12 +1473,16 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderWeekView() {
+    if (!weekCalendarGrid) return;
+
     const start = getStartOfWeek(currentCalendarDate);
     const end = new Date(start);
     end.setDate(start.getDate() + 6);
 
-    calendarMonthLabel.textContent =
-      formatDateLabel(formatDateKey(start)) + " - " + formatDateLabel(formatDateKey(end));
+    if (calendarMonthLabel) {
+      calendarMonthLabel.textContent =
+        formatDateLabel(formatDateKey(start)) + " - " + formatDateLabel(formatDateKey(end));
+    }
 
     weekCalendarGrid.innerHTML = "";
 
@@ -1437,6 +1504,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 class="calendar-item ${item.type}"
                 data-calendar-item="${item.id}"
                 title="${item.title}"
+                style="background:${item.color};"
               >
                 ${item.timeLabel} • ${item.title}
               </button>
@@ -1455,15 +1523,19 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderDayView() {
+    if (!dayCalendarGrid) return;
+
     const dateKey = formatDateKey(currentCalendarDate);
     const items = getItemsForDate(dateKey);
 
-    calendarMonthLabel.textContent = currentCalendarDate.toLocaleDateString("en-US", {
+    const label = currentCalendarDate.toLocaleDateString("en-US", {
       weekday: "long",
       month: "long",
       day: "numeric",
       year: "numeric"
     });
+
+    if (calendarMonthLabel) calendarMonthLabel.textContent = label;
 
     const itemsHtml = items.length === 0
       ? '<div class="empty-state">No items for this day.</div>'
@@ -1474,6 +1546,7 @@ document.addEventListener("DOMContentLoaded", function () {
               class="calendar-item ${item.type}"
               data-calendar-item="${item.id}"
               title="${item.title}"
+              style="background:${item.color};"
             >
               ${item.timeLabel} • ${item.title}
             </button>
@@ -1482,7 +1555,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     dayCalendarGrid.innerHTML = `
       <div class="day-view-card">
-        <div class="day-view-title">${calendarMonthLabel.textContent}</div>
+        <div class="day-view-title">${label}</div>
         <div class="day-items">${itemsHtml}</div>
       </div>
     `;
@@ -1523,6 +1596,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderDashboardTasksList() {
+    if (!dashboardAllTasks) return;
+
     dashboardAllTasks.innerHTML = "";
 
     if (tasks.length === 0) {
@@ -1552,9 +1627,97 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderDashboardDaySchedule(dayKey, container) {
-    const items = getItemsForDate(dayKey);
+    if (!container) return;
 
+    const items = getItemsForDate(dayKey);
     container.innerHTML = "";
 
     if (items.length === 0) {
       container.innerHTML = '<div class="empty-state">No items scheduled.</div>';
+      return;
+    }
+
+    items.forEach(function (item) {
+      const row = document.createElement("div");
+      row.className = "detail-item";
+      row.innerHTML = `
+        <strong>${item.title}</strong>
+        <div class="meta">${item.timeLabel}</div>
+      `;
+      container.appendChild(row);
+    });
+  }
+
+  function renderDashboard() {
+    renderDashboardTasksList();
+
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(today.getDate() + 1);
+
+    renderDashboardDaySchedule(formatDateKey(today), dashboardToday);
+    renderDashboardDaySchedule(formatDateKey(tomorrow), dashboardTomorrow);
+  }
+
+  if (monthViewBtn) {
+    monthViewBtn.addEventListener("click", function () {
+      setCalendarView("month");
+    });
+  }
+
+  if (weekViewBtn) {
+    weekViewBtn.addEventListener("click", function () {
+      setCalendarView("week");
+    });
+  }
+
+  if (dayViewBtn) {
+    dayViewBtn.addEventListener("click", function () {
+      setCalendarView("day");
+    });
+  }
+
+  if (prevPeriodBtn) {
+    prevPeriodBtn.addEventListener("click", function () {
+      moveCalendar(-1);
+    });
+  }
+
+  if (nextPeriodBtn) {
+    nextPeriodBtn.addEventListener("click", function () {
+      moveCalendar(1);
+    });
+  }
+
+  document.addEventListener("click", function (e) {
+    const itemId = e.target.getAttribute("data-calendar-item");
+    if (itemId) openCalendarItem(itemId);
+  });
+
+  if (addSessionBtn) addSessionBtn.addEventListener("click", addSession);
+  if (saveCourseBtn) saveCourseBtn.addEventListener("click", saveCourse);
+  if (saveAcademicYearBtn) saveAcademicYearBtn.addEventListener("click", saveAcademicYear);
+  if (saveSemesterBtn) saveSemesterBtn.addEventListener("click", saveSemester);
+  if (sessionRepeatInput) sessionRepeatInput.addEventListener("change", updateSessionInputs);
+  if (saveNoteBtn) saveNoteBtn.addEventListener("click", saveNote);
+  if (addTaskBtn) addTaskBtn.addEventListener("click", saveTask);
+  if (saveEventBtn) saveEventBtn.addEventListener("click", saveCustomEventItem);
+
+  updateSessionInputs();
+  fillAcademicYearOptions();
+  fillSemesterOptions();
+  fillCourseOptions();
+  resetAcademicYearModal();
+  resetSemesterModal();
+  resetCourseModal();
+  resetNoteModal();
+  resetTaskModal();
+  resetEventModal();
+  renderAcademicYears();
+  renderCourses();
+  renderNotes();
+  renderTasks();
+  renderDashboard();
+  setCalendarView("month");
+  updateDashboard();
+});
