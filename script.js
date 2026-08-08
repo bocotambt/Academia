@@ -49,7 +49,9 @@ document.addEventListener("DOMContentLoaded", function () {
   const coursesList = $("coursesList");
   const notesList = $("notesList");
   const plannerList = $("plannerList");
-  const dashboardTasks = $("dashboardTasks");
+  const dashboardAllTasks = $("dashboardAllTasks");
+  const dashboardToday = $("dashboardToday");
+  const dashboardTomorrow = $("dashboardTomorrow");
   const dashboardNotes = $("dashboardNotes");
 
   const academicYearModalTitle = $("academicYearModalTitle");
@@ -88,6 +90,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const taskModalTitle = $("taskModalTitle");
   const taskTitleInput = $("taskTitle");
   const taskDetailsInput = $("taskDetails");
+  const taskCourseInput = $("taskCourse");
   const taskDateInput = $("taskDate");
   const taskPriorityInput = $("taskPriority");
   const taskStatusInput = $("taskStatus");
@@ -169,7 +172,10 @@ document.addEventListener("DOMContentLoaded", function () {
         fillSemesterOptions();
       }
       if (modalId === "noteModal") resetNoteModal();
-      if (modalId === "taskModal") resetTaskModal();
+      if (modalId === "taskModal") {
+        resetTaskModal();
+        fillCourseOptions();
+      }
       if (modalId === "eventModal") resetEventModal();
 
       openModal(modalId);
@@ -218,6 +224,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (pageTitle) pageTitle.textContent = titles[tabId] || "Academia";
 
     if (tabId === "calendar") renderCalendar();
+    if (tabId === "dashboard") renderDashboard();
   }
 
   tabButtons.forEach(function (button) {
@@ -259,6 +266,12 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  function getCourseById(id) {
+    return courses.find(function (course) {
+      return course.id === id;
+    });
+  }
+
   function dayNameToNumber(dayName) {
     return {
       Sunday: 0,
@@ -285,13 +298,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     return results;
-  }
-
-  function updateDashboard() {
-    totalAcademicYearsEl.textContent = academicYears.length;
-    totalCoursesEl.textContent = courses.length;
-    totalTasksEl.textContent = tasks.length;
-    totalEventsEl.textContent = getAllCalendarItems().length;
   }
 
   function fillAcademicYearOptions() {
@@ -324,6 +330,27 @@ document.addEventListener("DOMContentLoaded", function () {
       option.value = semester.id;
       option.textContent = semester.name + " (" + (year ? year.name : "No Year") + ")";
       courseSemesterInput.appendChild(option);
+    });
+  }
+
+  function fillCourseOptions() {
+    taskCourseInput.innerHTML = "";
+
+    if (courses.length === 0) {
+      taskCourseInput.innerHTML = '<option value="">No course yet</option>';
+      return;
+    }
+
+    const optionNone = document.createElement("option");
+    optionNone.value = "";
+    optionNone.textContent = "(No course)";
+    taskCourseInput.appendChild(optionNone);
+
+    courses.forEach(function (course) {
+      const option = document.createElement("option");
+      option.value = course.id;
+      option.textContent = course.code + " - " + course.name;
+      taskCourseInput.appendChild(option);
     });
   }
 
@@ -826,7 +853,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     saveNotes();
     renderNotes();
-    renderDashboardNotes();
     closeModal("noteModal");
     resetNoteModal();
   }
@@ -852,7 +878,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
     saveNotes();
     renderNotes();
-    renderDashboardNotes();
   }
 
   function renderNotes() {
@@ -872,58 +897,25 @@ document.addEventListener("DOMContentLoaded", function () {
         <div class="card-actions">
           <button class="edit-btn" data-edit-note="${note.id}" type="button">Edit</button>
           <button class="delete-btn" data-delete-note="${note.id}" type="button">Delete</button>
-          <button class="view-btn" data-view-note="${note.id}" type="button">View</button>
         </div>
       `;
       notesList.appendChild(card);
     });
   }
 
-  function renderDashboardNotes() {
-    dashboardNotes.innerHTML = "";
-
-    if (notes.length === 0) {
-      dashboardNotes.innerHTML = '<div class="empty-state">No notes yet.</div>';
-      return;
-    }
-
-    notes.slice(0, 3).forEach(function (note) {
-      const item = document.createElement("div");
-      item.className = "detail-item";
-      item.innerHTML = `
-        <strong>${note.title}</strong>
-        <div class="meta">${String(note.content || "").slice(0, 80)}${String(note.content || "").length > 80 ? "..." : ""}</div>
-      `;
-      dashboardNotes.appendChild(item);
-    });
-  }
-
   notesList.addEventListener("click", function (e) {
     const editId = e.target.getAttribute("data-edit-note");
     const deleteId = e.target.getAttribute("data-delete-note");
-    const viewId = e.target.getAttribute("data-view-note");
 
     if (editId !== null) editNote(Number(editId));
     if (deleteId !== null) deleteNote(Number(deleteId));
-    if (viewId !== null) {
-      const note = notes.find(function (n) {
-        return n.id === Number(viewId);
-      });
-
-      if (!note) return;
-
-      showDetailModal(note.title, [
-        ["Type", "Note"],
-        ["Title", note.title],
-        ["Content", note.content || ""]
-      ]);
-    }
   });
 
   function resetTaskModal() {
     taskModalTitle.textContent = "Add Task";
     taskTitleInput.value = "";
     taskDetailsInput.value = "";
+    taskCourseInput.value = "";
     taskDateInput.value = "";
     taskPriorityInput.value = "High";
     taskStatusInput.value = "To Do";
@@ -934,6 +926,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function saveTask() {
     const title = taskTitleInput.value.trim();
     const details = taskDetailsInput.value.trim();
+    const courseId = taskCourseInput.value ? Number(taskCourseInput.value) : null;
     const date = taskDateInput.value;
     const priority = taskPriorityInput.value;
     const status = taskStatusInput.value;
@@ -947,6 +940,7 @@ document.addEventListener("DOMContentLoaded", function () {
       id: editingTaskId || Date.now(),
       title: title,
       details: details,
+      courseId: courseId,
       date: date,
       priority: priority,
       status: status
@@ -962,7 +956,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     saveTasks();
     renderTasks();
-    renderDashboardTasks();
+    renderDashboard();
     renderCalendar();
     updateDashboard();
     closeModal("taskModal");
@@ -976,9 +970,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (!task) return;
 
+    fillCourseOptions();
     taskModalTitle.textContent = "Edit Task";
     taskTitleInput.value = task.title || "";
     taskDetailsInput.value = task.details || "";
+    taskCourseInput.value = task.courseId || "";
     taskDateInput.value = task.date || "";
     taskPriorityInput.value = task.priority || "High";
     taskStatusInput.value = task.status || "To Do";
@@ -993,7 +989,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
     saveTasks();
     renderTasks();
-    renderDashboardTasks();
+    renderDashboard();
     renderCalendar();
     updateDashboard();
   }
@@ -1005,6 +1001,7 @@ document.addEventListener("DOMContentLoaded", function () {
           id: task.id,
           title: task.title,
           details: task.details,
+          courseId: task.courseId,
           date: task.date,
           priority: task.priority,
           status: status
@@ -1015,7 +1012,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     saveTasks();
     renderTasks();
-    renderDashboardTasks();
+    renderDashboard();
     renderCalendar();
     updateDashboard();
   }
@@ -1042,8 +1039,14 @@ document.addEventListener("DOMContentLoaded", function () {
         task.status === "In Progress" ? "status-progress" :
         "status-done";
 
+      const course = task.courseId ? getCourseById(task.courseId) : null;
+      const courseBadge = course
+        ? `<span class="course-badge" style="background:${course.color};">${course.code}</span>`
+        : "";
+
       card.innerHTML = `
         <h3>${task.title}</h3>
+        ${courseBadge}
         <span class="priority-badge ${priorityClass}">${task.priority}</span>
         <span class="status-badge ${statusClass}">${task.status}</span>
         <p class="meta">Due: ${task.date}</p>
@@ -1058,64 +1061,21 @@ document.addEventListener("DOMContentLoaded", function () {
         <div class="card-actions">
           <button class="edit-btn" data-edit-task="${task.id}" type="button">Edit</button>
           <button class="delete-btn" data-delete-task="${task.id}" type="button">Delete</button>
-          <button class="view-btn" data-view-task="${task.id}" type="button">View</button>
         </div>
       `;
       plannerList.appendChild(card);
     });
   }
 
-  function renderDashboardTasks() {
-    dashboardTasks.innerHTML = "";
-
-    if (tasks.length === 0) {
-      dashboardTasks.innerHTML = '<div class="empty-state">No tasks yet.</div>';
-      return;
-    }
-
-    tasks
-      .slice()
-      .sort(function (a, b) {
-        return String(a.date).localeCompare(String(b.date));
-      })
-      .slice(0, 3)
-      .forEach(function (task) {
-        const item = document.createElement("div");
-        item.className = "detail-item";
-        item.innerHTML = `
-          <strong>${task.title}</strong>
-          <div class="meta">Due ${task.date} • ${task.status}</div>
-        `;
-        dashboardTasks.appendChild(item);
-      });
-  }
-
   plannerList.addEventListener("click", function (e) {
     const editId = e.target.getAttribute("data-edit-task");
     const deleteId = e.target.getAttribute("data-delete-task");
-    const viewId = e.target.getAttribute("data-view-task");
     const taskStatusId = e.target.getAttribute("data-task-status");
     const nextStatus = e.target.getAttribute("data-status-value");
 
     if (editId !== null) editTask(Number(editId));
     if (deleteId !== null) deleteTask(Number(deleteId));
     if (taskStatusId !== null && nextStatus) updateTaskStatus(Number(taskStatusId), nextStatus);
-    if (viewId !== null) {
-      const task = tasks.find(function (t) {
-        return t.id === Number(viewId);
-      });
-
-      if (!task) return;
-
-      showDetailModal(task.title, [
-        ["Type", "Task"],
-        ["Title", task.title],
-        ["Due Date", task.date],
-        ["Priority", task.priority],
-        ["Status", task.status],
-        ["Details", task.details || "No details added."]
-      ]);
-    }
   });
 
   function resetEventModal() {
@@ -1232,19 +1192,21 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     tasks.forEach(function (task) {
+      const course = task.courseId ? getCourseById(task.courseId) : null;
       items.push({
         type: "task",
         id: "task-" + task.id,
-        title: "Task: " + task.title,
+        title: (course ? course.code + " • " : "") + "Task: " + task.title,
         date: task.date,
         timeLabel: "All day",
-        color: "#dc2626",
+        color: course ? course.color : "#dc2626",
         data: {
           title: task.title,
           dueDate: task.date,
           priority: task.priority,
           status: task.status,
-          details: task.details || "No details added."
+          details: task.details || "No details added.",
+          courseName: course ? course.name : null
         }
       });
     });
@@ -1305,7 +1267,8 @@ document.addEventListener("DOMContentLoaded", function () {
         ["Due Date", item.data.dueDate],
         ["Priority", item.data.priority],
         ["Status", item.data.status],
-        ["Details", item.data.details]
+        ["Details", item.data.details],
+        ["Course", item.data.courseName || "(No course)"]
       ]);
       return;
     }
@@ -1559,55 +1522,39 @@ document.addEventListener("DOMContentLoaded", function () {
     renderCalendar();
   }
 
-  monthViewBtn.addEventListener("click", function () {
-    setCalendarView("month");
-  });
+  function renderDashboardTasksList() {
+    dashboardAllTasks.innerHTML = "";
 
-  weekViewBtn.addEventListener("click", function () {
-    setCalendarView("week");
-  });
+    if (tasks.length === 0) {
+      dashboardAllTasks.innerHTML = '<div class="empty-state">No tasks yet.</div>';
+      return;
+    }
 
-  dayViewBtn.addEventListener("click", function () {
-    setCalendarView("day");
-  });
+    tasks
+      .slice()
+      .sort(function (a, b) {
+        return String(a.date).localeCompare(String(b.date));
+      })
+      .forEach(function (task) {
+        const item = document.createElement("div");
+        item.className = "detail-item";
 
-  prevPeriodBtn.addEventListener("click", function () {
-    moveCalendar(-1);
-  });
+        const course = task.courseId ? getCourseById(task.courseId) : null;
+        const courseText = course ? " • " + course.code : "";
 
-  nextPeriodBtn.addEventListener("click", function () {
-    moveCalendar(1);
-  });
+        item.innerHTML = `
+          <strong>${task.title}${courseText}</strong>
+          <div class="meta">Due ${task.date} • ${task.status} • ${task.priority}</div>
+        `;
 
-  document.addEventListener("click", function (e) {
-    const itemId = e.target.getAttribute("data-calendar-item");
-    if (itemId) openCalendarItem(itemId);
-  });
+        dashboardAllTasks.appendChild(item);
+      });
+  }
 
-  addSessionBtn.addEventListener("click", addSession);
-  saveCourseBtn.addEventListener("click", saveCourse);
-  saveAcademicYearBtn.addEventListener("click", saveAcademicYear);
-  saveSemesterBtn.addEventListener("click", saveSemester);
-  sessionRepeatInput.addEventListener("change", updateSessionInputs);
-  saveNoteBtn.addEventListener("click", saveNote);
-  addTaskBtn.addEventListener("click", saveTask);
-  saveEventBtn.addEventListener("click", saveCustomEventItem);
+  function renderDashboardDaySchedule(dayKey, container) {
+    const items = getItemsForDate(dayKey);
 
-  updateSessionInputs();
-  fillAcademicYearOptions();
-  fillSemesterOptions();
-  resetAcademicYearModal();
-  resetSemesterModal();
-  resetCourseModal();
-  resetNoteModal();
-  resetTaskModal();
-  resetEventModal();
-  renderAcademicYears();
-  renderCourses();
-  renderNotes();
-  renderTasks();
-  renderDashboardNotes();
-  renderDashboardTasks();
-  setCalendarView("month");
-  updateDashboard();
-});
+    container.innerHTML = "";
+
+    if (items.length === 0) {
+      container.innerHTML = '<div class="empty-state">No items scheduled.</div>';
