@@ -20,6 +20,7 @@
 
       <nav class="tab-nav">
         <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+        <button class="tab-btn" data-tab="academic">Academic</button>
         <button class="tab-btn" data-tab="courses">Courses</button>
         <button class="tab-btn" data-tab="notes">Notes</button>
         <button class="tab-btn" data-tab="planner">Tasks</button>
@@ -31,12 +32,16 @@
       <header class="topbar">
         <div>
           <h2 id="pageTitle">Dashboard</h2>
-          <p class="topbar-subtitle">Track classes, notes, tasks, and events in one place.</p>
+          <p class="topbar-subtitle">Track classes, semesters, notes, tasks, and events in one place.</p>
         </div>
       </header>
 
       <section id="dashboard" class="tab-content active">
         <div class="dashboard-summary">
+          <div class="summary-card">
+            <span>Total Academic Years</span>
+            <h3 id="totalAcademicYears">0</h3>
+          </div>
           <div class="summary-card">
             <span>Total Courses</span>
             <h3 id="totalCourses">0</h3>
@@ -46,7 +51,7 @@
             <h3 id="totalTasks">0</h3>
           </div>
           <div class="summary-card">
-            <span>Total Events</span>
+            <span>Total Calendar Items</span>
             <h3 id="totalEvents">0</h3>
           </div>
         </div>
@@ -68,6 +73,17 @@
             <div id="dashboardNotes"></div>
           </div>
         </div>
+      </section>
+
+      <section id="academic" class="tab-content">
+        <div class="section-head">
+          <h3>Academic Years & Semesters</h3>
+          <div class="head-btns">
+            <button class="secondary-btn open-modal-btn" data-open-modal="semesterModal">Add Semester</button>
+            <button class="primary-btn open-modal-btn" data-open-modal="academicYearModal">Add Academic Year</button>
+          </div>
+        </div>
+        <div id="academicYearsList" class="card-grid"></div>
       </section>
 
       <section id="courses" class="tab-content">
@@ -98,27 +114,83 @@
         <div class="section-head calendar-head">
           <h3>Calendar</h3>
           <div class="calendar-controls">
-            <button id="prevMonthBtn" class="secondary-btn" type="button">Prev</button>
+            <div class="view-switch">
+              <button id="monthViewBtn" class="secondary-btn active-view-btn" type="button">Month</button>
+              <button id="weekViewBtn" class="secondary-btn" type="button">Week</button>
+              <button id="dayViewBtn" class="secondary-btn" type="button">Day</button>
+            </div>
+            <button id="prevPeriodBtn" class="secondary-btn" type="button">Prev</button>
             <div id="calendarMonthLabel" class="calendar-month-label">Month Year</div>
-            <button id="nextMonthBtn" class="secondary-btn" type="button">Next</button>
+            <button id="nextPeriodBtn" class="secondary-btn" type="button">Next</button>
             <button class="primary-btn open-modal-btn" data-open-modal="eventModal">Add Event</button>
           </div>
         </div>
 
         <div class="calendar-board">
-          <div class="calendar-weekdays">
-            <div>Sun</div>
-            <div>Mon</div>
-            <div>Tue</div>
-            <div>Wed</div>
-            <div>Thu</div>
-            <div>Fri</div>
-            <div>Sat</div>
+          <div id="monthCalendarWrap">
+            <div class="calendar-weekdays">
+              <div>Sun</div>
+              <div>Mon</div>
+              <div>Tue</div>
+              <div>Wed</div>
+              <div>Thu</div>
+              <div>Fri</div>
+              <div>Sat</div>
+            </div>
+            <div id="calendarGrid" class="calendar-grid"></div>
           </div>
-          <div id="calendarGrid" class="calendar-grid"></div>
+
+          <div id="weekCalendarWrap" class="hidden">
+            <div id="weekCalendarGrid" class="week-calendar-grid"></div>
+          </div>
+
+          <div id="dayCalendarWrap" class="hidden">
+            <div id="dayCalendarGrid" class="day-calendar-grid"></div>
+          </div>
         </div>
       </section>
     </main>
+  </div>
+
+  <div class="modal hidden" id="academicYearModal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3 id="academicYearModalTitle">Add Academic Year</h3>
+        <button class="icon-btn close-modal-btn" data-close-modal="academicYearModal" type="button">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <input type="text" id="academicYearName" placeholder="Example: 2026 - 2027">
+      </div>
+
+      <div class="modal-footer">
+        <button class="ghost-btn close-modal-btn" data-close-modal="academicYearModal" type="button">Cancel</button>
+        <button id="saveAcademicYearBtn" type="button" class="primary-btn">Save Academic Year</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="semesterModal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3 id="semesterModalTitle">Add Semester</h3>
+        <button class="icon-btn close-modal-btn" data-close-modal="semesterModal" type="button">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <select id="semesterAcademicYear"></select>
+        <input type="text" id="semesterName" placeholder="Example: Fall Semester">
+        <div class="input-row">
+          <input type="date" id="semesterStartDate">
+          <input type="date" id="semesterEndDate">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="ghost-btn close-modal-btn" data-close-modal="semesterModal" type="button">Cancel</button>
+        <button id="saveSemesterBtn" type="button" class="primary-btn">Save Semester</button>
+      </div>
+    </div>
   </div>
 
   <div class="modal hidden" id="courseModal">
@@ -139,12 +211,14 @@
           <input type="color" id="courseColor" value="#2563eb">
         </div>
 
+        <select id="courseSemester"></select>
+
         <div class="subsection-box">
           <div class="panel-head">
             <h4>Add Session</h4>
           </div>
 
-          <div class="input-row">
+          <div class="input-row four-cols">
             <select id="sessionType">
               <option value="Lecture">Lecture</option>
               <option value="Lab">Lab</option>
@@ -171,7 +245,7 @@
             <input type="date" id="sessionDate">
           </div>
 
-          <div class="input-row">
+          <div class="input-row four-cols">
             <input type="time" id="sessionStartTime">
             <input type="time" id="sessionEndTime">
             <input type="text" id="sessionLocation" placeholder="Location">
@@ -228,7 +302,7 @@
           </select>
           <select id="taskStatus">
             <option value="To Do">To Do</option>
-            <option value="Doing">Doing</option>
+            <option value="In Progress">In Progress</option>
             <option value="Done">Done</option>
           </select>
         </div>
