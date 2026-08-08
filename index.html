@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Academia</title>
   <link rel="stylesheet" href="style.css">
-  <script defer src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"></script>
   <script defer src="script.js"></script>
 </head>
 <body>
@@ -96,11 +95,28 @@
       </section>
 
       <section id="calendar" class="tab-content">
-        <div class="section-head">
+        <div class="section-head calendar-head">
           <h3>Calendar</h3>
-          <button class="primary-btn open-modal-btn" data-open-modal="eventModal">Add Event</button>
+          <div class="calendar-controls">
+            <button id="prevMonthBtn" class="secondary-btn" type="button">Prev</button>
+            <div id="calendarMonthLabel" class="calendar-month-label">Month Year</div>
+            <button id="nextMonthBtn" class="secondary-btn" type="button">Next</button>
+            <button class="primary-btn open-modal-btn" data-open-modal="eventModal">Add Event</button>
+          </div>
         </div>
-        <div id="calendarView"></div>
+
+        <div class="calendar-board">
+          <div class="calendar-weekdays">
+            <div>Sun</div>
+            <div>Mon</div>
+            <div>Tue</div>
+            <div>Wed</div>
+            <div>Thu</div>
+            <div>Fri</div>
+            <div>Sat</div>
+          </div>
+          <div id="calendarGrid" class="calendar-grid"></div>
+        </div>
       </section>
     </main>
   </div>
@@ -109,7 +125,7 @@
     <div class="modal-card large-modal">
       <div class="modal-head">
         <h3 id="courseModalTitle">Add Course</h3>
-        <button class="icon-btn close-modal-btn" data-close-modal="courseModal">&times;</button>
+        <button class="icon-btn close-modal-btn" data-close-modal="courseModal" type="button">&times;</button>
       </div>
 
       <div class="modal-body">
@@ -143,13 +159,13 @@
 
             <select id="sessionDay">
               <option value="">Day</option>
+              <option value="Sunday">Sunday</option>
               <option value="Monday">Monday</option>
               <option value="Tuesday">Tuesday</option>
               <option value="Wednesday">Wednesday</option>
               <option value="Thursday">Thursday</option>
               <option value="Friday">Friday</option>
               <option value="Saturday">Saturday</option>
-              <option value="Sunday">Sunday</option>
             </select>
 
             <input type="date" id="sessionDate">
@@ -167,7 +183,7 @@
       </div>
 
       <div class="modal-footer">
-        <button class="ghost-btn close-modal-btn" data-close-modal="courseModal">Cancel</button>
+        <button class="ghost-btn close-modal-btn" data-close-modal="courseModal" type="button">Cancel</button>
         <button id="saveCourseBtn" type="button" class="primary-btn">Save Course</button>
       </div>
     </div>
@@ -177,7 +193,7 @@
     <div class="modal-card">
       <div class="modal-head">
         <h3 id="noteModalTitle">Add Note</h3>
-        <button class="icon-btn close-modal-btn" data-close-modal="noteModal">&times;</button>
+        <button class="icon-btn close-modal-btn" data-close-modal="noteModal" type="button">&times;</button>
       </div>
 
       <div class="modal-body">
@@ -186,7 +202,7 @@
       </div>
 
       <div class="modal-footer">
-        <button class="ghost-btn close-modal-btn" data-close-modal="noteModal">Cancel</button>
+        <button class="ghost-btn close-modal-btn" data-close-modal="noteModal" type="button">Cancel</button>
         <button id="saveNoteBtn" type="button" class="primary-btn">Save Note</button>
       </div>
     </div>
@@ -196,7 +212,7 @@
     <div class="modal-card">
       <div class="modal-head">
         <h3 id="taskModalTitle">Add Task</h3>
-        <button class="icon-btn close-modal-btn" data-close-modal="taskModal">&times;</button>
+        <button class="icon-btn close-modal-btn" data-close-modal="taskModal" type="button">&times;</button>
       </div>
 
       <div class="modal-body">
@@ -219,7 +235,7 @@
       </div>
 
       <div class="modal-footer">
-        <button class="ghost-btn close-modal-btn" data-close-modal="taskModal">Cancel</button>
+        <button class="ghost-btn close-modal-btn" data-close-modal="taskModal" type="button">Cancel</button>
         <button id="addTaskBtn" type="button" class="primary-btn">Save Task</button>
       </div>
     </div>
@@ -229,7 +245,7 @@
     <div class="modal-card">
       <div class="modal-head">
         <h3 id="eventModalTitle">Add Event</h3>
-        <button class="icon-btn close-modal-btn" data-close-modal="eventModal">&times;</button>
+        <button class="icon-btn close-modal-btn" data-close-modal="eventModal" type="button">&times;</button>
       </div>
 
       <div class="modal-body">
@@ -244,7 +260,7 @@
       </div>
 
       <div class="modal-footer">
-        <button class="ghost-btn close-modal-btn" data-close-modal="eventModal">Cancel</button>
+        <button class="ghost-btn close-modal-btn" data-close-modal="eventModal" type="button">Cancel</button>
         <button id="saveEventBtn" type="button" class="primary-btn">Save Event</button>
       </div>
     </div>
@@ -254,13 +270,13 @@
     <div class="modal-card">
       <div class="modal-head">
         <h3 id="detailTitle">Item Details</h3>
-        <button class="icon-btn close-modal-btn" data-close-modal="detailModal">&times;</button>
+        <button class="icon-btn close-modal-btn" data-close-modal="detailModal" type="button">&times;</button>
       </div>
 
       <div class="modal-body detail-stack" id="detailBody"></div>
 
       <div class="modal-footer">
-        <button class="primary-btn close-modal-btn" data-close-modal="detailModal">Close</button>
+        <button class="primary-btn close-modal-btn" data-close-modal="detailModal" type="button">Close</button>
       </div>
     </div>
   </div>
