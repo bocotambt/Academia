@@ -59,18 +59,24 @@
         <div class="dashboard-grid">
           <div class="panel">
             <div class="panel-head">
-              <h3>Upcoming Tasks</h3>
+              <h3>All Tasks</h3>
               <button class="secondary-btn open-modal-btn" data-open-modal="taskModal">Add Task</button>
             </div>
-            <div id="dashboardTasks"></div>
+            <div id="dashboardAllTasks"></div>
           </div>
 
           <div class="panel">
             <div class="panel-head">
-              <h3>Recent Notes</h3>
-              <button class="secondary-btn open-modal-btn" data-open-modal="noteModal">Add Note</button>
+              <h3>Today’s Schedule</h3>
             </div>
-            <div id="dashboardNotes"></div>
+            <div id="dashboardToday"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Tomorrow’s Schedule</h3>
+            </div>
+            <div id="dashboardTomorrow"></div>
           </div>
         </div>
       </section>
@@ -292,6 +298,8 @@
       <div class="modal-body">
         <input type="text" id="taskTitle" placeholder="Task title">
         <textarea id="taskDetails" placeholder="Task details"></textarea>
+
+        <select id="taskCourse"></select>
 
         <div class="input-row">
           <input type="date" id="taskDate">
