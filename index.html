@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Academia</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="script.js"></script>
 </head>
 <body>
@@ -15,6 +16,25 @@
         <div>
           <h1>Academia</h1>
           <p>Your academic planner</p>
+        </div>
+      </div>
+
+      <div class="auth-box">
+        <div id="authSignedOut">
+          <p class="meta strongish">Sign in to sync across devices</p>
+          <input type="email" id="authEmail" placeholder="Email">
+          <input type="password" id="authPassword" placeholder="Password">
+          <div class="auth-btn-row">
+            <button id="signUpBtn" class="secondary-btn" type="button">Sign Up</button>
+            <button id="signInBtn" class="primary-btn" type="button">Sign In</button>
+          </div>
+          <p id="authMessage" class="meta"></p>
+        </div>
+
+        <div id="authSignedIn" class="hidden">
+          <p class="meta strongish">Signed in as</p>
+          <p id="currentUserEmail" class="meta"></p>
+          <button id="signOutBtn" class="ghost-btn" type="button">Sign Out</button>
         </div>
       </div>
 
@@ -39,20 +59,12 @@
       <section id="dashboard" class="tab-content active">
         <div class="dashboard-summary">
           <div class="summary-card">
-            <span>Total Academic Years</span>
-            <h3 id="totalAcademicYears">0</h3>
-          </div>
-          <div class="summary-card">
             <span>Total Courses</span>
             <h3 id="totalCourses">0</h3>
           </div>
           <div class="summary-card">
             <span>Total Tasks</span>
             <h3 id="totalTasks">0</h3>
-          </div>
-          <div class="summary-card">
-            <span>Total Calendar Items</span>
-            <h3 id="totalEvents">0</h3>
           </div>
         </div>
 
@@ -164,11 +176,9 @@
         <h3 id="academicYearModalTitle">Add Academic Year</h3>
         <button class="icon-btn close-modal-btn" data-close-modal="academicYearModal" type="button">&times;</button>
       </div>
-
       <div class="modal-body">
         <input type="text" id="academicYearName" placeholder="Example: 2026 - 2027">
       </div>
-
       <div class="modal-footer">
         <button class="ghost-btn close-modal-btn" data-close-modal="academicYearModal" type="button">Cancel</button>
         <button id="saveAcademicYearBtn" type="button" class="primary-btn">Save Academic Year</button>
@@ -182,7 +192,6 @@
         <h3 id="semesterModalTitle">Add Semester</h3>
         <button class="icon-btn close-modal-btn" data-close-modal="semesterModal" type="button">&times;</button>
       </div>
-
       <div class="modal-body">
         <select id="semesterAcademicYear"></select>
         <input type="text" id="semesterName" placeholder="Example: Fall Semester">
@@ -191,7 +200,6 @@
           <input type="date" id="semesterEndDate">
         </div>
       </div>
-
       <div class="modal-footer">
         <button class="ghost-btn close-modal-btn" data-close-modal="semesterModal" type="button">Cancel</button>
         <button id="saveSemesterBtn" type="button" class="primary-btn">Save Semester</button>
@@ -205,7 +213,6 @@
         <h3 id="courseModalTitle">Add Course</h3>
         <button class="icon-btn close-modal-btn" data-close-modal="courseModal" type="button">&times;</button>
       </div>
-
       <div class="modal-body">
         <div class="input-row">
           <input type="text" id="courseName" placeholder="Course name">
@@ -261,7 +268,6 @@
           <ul id="pendingSessionsList"></ul>
         </div>
       </div>
-
       <div class="modal-footer">
         <button class="ghost-btn close-modal-btn" data-close-modal="courseModal" type="button">Cancel</button>
         <button id="saveCourseBtn" type="button" class="primary-btn">Save Course</button>
@@ -275,12 +281,10 @@
         <h3 id="noteModalTitle">Add Note</h3>
         <button class="icon-btn close-modal-btn" data-close-modal="noteModal" type="button">&times;</button>
       </div>
-
       <div class="modal-body">
         <input type="text" id="noteTitle" placeholder="Note title">
         <textarea id="noteContent" placeholder="Write your notes here..."></textarea>
       </div>
-
       <div class="modal-footer">
         <button class="ghost-btn close-modal-btn" data-close-modal="noteModal" type="button">Cancel</button>
         <button id="saveNoteBtn" type="button" class="primary-btn">Save Note</button>
@@ -294,13 +298,10 @@
         <h3 id="taskModalTitle">Add Task</h3>
         <button class="icon-btn close-modal-btn" data-close-modal="taskModal" type="button">&times;</button>
       </div>
-
       <div class="modal-body">
         <input type="text" id="taskTitle" placeholder="Task title">
         <textarea id="taskDetails" placeholder="Task details"></textarea>
-
         <select id="taskCourse"></select>
-
         <div class="input-row">
           <input type="date" id="taskDate">
           <select id="taskPriority">
@@ -315,7 +316,6 @@
           </select>
         </div>
       </div>
-
       <div class="modal-footer">
         <button class="ghost-btn close-modal-btn" data-close-modal="taskModal" type="button">Cancel</button>
         <button id="addTaskBtn" type="button" class="primary-btn">Save Task</button>
@@ -329,18 +329,16 @@
         <h3 id="eventModalTitle">Add Event</h3>
         <button class="icon-btn close-modal-btn" data-close-modal="eventModal" type="button">&times;</button>
       </div>
-
       <div class="modal-body">
         <input type="text" id="eventTitle" placeholder="Event title">
         <textarea id="eventDetails" placeholder="Event details"></textarea>
-
         <div class="input-row">
           <input type="date" id="eventDate">
           <input type="time" id="eventStartTime">
           <input type="time" id="eventEndTime">
         </div>
+        <input type="text" id="eventLocation" placeholder="Location">
       </div>
-
       <div class="modal-footer">
         <button class="ghost-btn close-modal-btn" data-close-modal="eventModal" type="button">Cancel</button>
         <button id="saveEventBtn" type="button" class="primary-btn">Save Event</button>
@@ -354,9 +352,7 @@
         <h3 id="detailTitle">Item Details</h3>
         <button class="icon-btn close-modal-btn" data-close-modal="detailModal" type="button">&times;</button>
       </div>
-
       <div class="modal-body detail-stack" id="detailBody"></div>
-
       <div class="modal-footer">
         <button class="primary-btn close-modal-btn" data-close-modal="detailModal" type="button">Close</button>
       </div>
