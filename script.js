@@ -8,18 +8,11 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   let currentUser = null;
-  let academicYears = [];
-  let semesters = [];
   let courses = [];
-  let notes = [];
   let tasks = [];
-  let customEvents = [];
-
-  let pendingSessions = [];
-  let editingTaskId = null;
-
   let currentCalendarDate = new Date();
   let currentCalendarView = "month";
+  let editingTaskId = null;
 
   const tabButtons = document.querySelectorAll(".tab-btn");
   const tabContents = document.querySelectorAll(".tab-content");
@@ -53,7 +46,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const taskStatusInput = $("taskStatus");
   const addTaskBtn = $("addTaskBtn");
 
-  const eventLocationInput = $("eventLocation");
   const monthViewBtn = $("monthViewBtn");
   const weekViewBtn = $("weekViewBtn");
   const dayViewBtn = $("dayViewBtn");
@@ -102,19 +94,19 @@ document.addEventListener("DOMContentLoaded", function () {
     showAuthMessage("Creating account...", false);
 
     const { error } = await supabase.auth.signUp({
-  email: email,
-  password: password,
-  options: {
-    emailRedirectTo: "https://bocotambt.github.io/Academia/auth-confirm.html"
-  }
-});
+      email: email,
+      password: password,
+      options: {
+        emailRedirectTo: "https://bocotambt.github.io/Academia/auth-confirm.html"
+      }
+    });
 
     if (error) {
       showAuthMessage(error.message, true);
       return;
     }
 
-    showAuthMessage("Sign-up submitted. Check your email if confirmation is required.", false);
+    showAuthMessage("Sign-up submitted. Check your email and click the confirmation link.", false);
   }
 
   async function signIn() {
@@ -358,13 +350,6 @@ document.addEventListener("DOMContentLoaded", function () {
     optionNone.value = "";
     optionNone.textContent = "(No course)";
     taskCourseInput.appendChild(optionNone);
-
-    courses.forEach(function (course) {
-      const option = document.createElement("option");
-      option.value = course.id;
-      option.textContent = course.code + " - " + course.name;
-      taskCourseInput.appendChild(option);
-    });
   }
 
   function resetTaskModal() {
@@ -409,7 +394,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function editTask(id) {
     const task = tasks.find(function (item) {
-      return item.id === id;
+      return String(item.id) === String(id);
     });
 
     if (!task) return;
@@ -423,12 +408,6 @@ document.addEventListener("DOMContentLoaded", function () {
     editingTaskId = id;
     addTaskBtn.textContent = "Update Task";
     openModal("taskModal");
-  }
-
-  function getCourseById(id) {
-    return courses.find(function (course) {
-      return String(course.id) === String(id);
-    });
   }
 
   function renderTasks() {
@@ -460,14 +439,8 @@ document.addEventListener("DOMContentLoaded", function () {
         task.status === "In Progress" ? "status-progress" :
         "status-done";
 
-      const course = task.courseId ? getCourseById(task.courseId) : null;
-      const courseBadge = course
-        ? `<span class="course-badge" style="background:${course.color};">${course.code}</span>`
-        : "";
-
       card.innerHTML = `
         <h3>${task.title}</h3>
-        ${courseBadge}
         <span class="priority-badge ${priorityClass}">${task.priority}</span>
         <span class="status-badge ${statusClass}">${task.status}</span>
         <p class="meta">Due: ${task.date}</p>
@@ -519,25 +492,22 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function getItemsForDate(dateKey) {
-    const taskItems = tasks
+    return tasks
       .filter(function (task) {
         return task.date === dateKey;
       })
       .map(function (task) {
-        const course = task.courseId ? getCourseById(task.courseId) : null;
         return {
           type: "task",
           id: "task-" + task.id,
-          title: (course ? course.code + " • " : "") + "Task: " + task.title,
+          title: "Task: " + task.title,
           date: task.date,
           timeLabel: "All day",
           location: "",
-          color: course ? course.color : "#dc2626",
+          color: "#dc2626",
           data: task
         };
       });
-
-    return taskItems;
   }
 
   function showDetailModal(title, items) {
@@ -563,15 +533,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (!task) return;
 
-    const course = task.courseId ? getCourseById(task.courseId) : null;
-
     showDetailModal(task.title, [
       ["Type", "Task"],
       ["Title", task.title],
       ["Due Date", task.date],
       ["Priority", task.priority],
       ["Status", task.status],
-      ["Course", course ? course.name : "(No course)"],
       ["Details", task.details || "No details added."]
     ]);
   }
@@ -667,7 +634,6 @@ document.addEventListener("DOMContentLoaded", function () {
             style="background:${item.color};"
           >
             <span>${item.title}</span>
-            ${item.location ? `<small>${item.location}</small>` : ""}
           </button>
         `;
       }).join("");
@@ -723,7 +689,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 style="background:${item.color};"
               >
                 <span>${item.timeLabel} • ${item.title}</span>
-                ${item.location ? `<small>${item.location}</small>` : ""}
               </button>
             `;
           }).join("");
@@ -766,7 +731,6 @@ document.addEventListener("DOMContentLoaded", function () {
               style="background:${item.color};"
             >
               <span>${item.timeLabel} • ${item.title}</span>
-              ${item.location ? `<small>${item.location}</small>` : ""}
             </button>
           `;
         }).join("");
