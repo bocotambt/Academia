@@ -102,9 +102,12 @@ document.addEventListener("DOMContentLoaded", function () {
     showAuthMessage("Creating account...", false);
 
     const { error } = await supabase.auth.signUp({
-      email: email,
-      password: password
-    });
+  email: email,
+  password: password,
+  options: {
+    emailRedirectTo: "https://bocotambt.github.io/Academia/auth-confirm.html"
+  }
+});
 
     if (error) {
       showAuthMessage(error.message, true);
