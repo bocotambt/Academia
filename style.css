@@ -11,8 +11,10 @@
   --danger: #dc2626;
   --warning: #ea580c;
   --teal: #0f766e;
+  --purple: #7c3aed;
   --calendar-task: #dc2626;
-  --calendar-event: #0f766e;
+  --calendar-exam: #0f766e;
+  --calendar-note: #7c3aed;
   --shadow: 0 16px 40px rgba(37, 99, 235, 0.08);
   --radius: 18px;
   --past-text: #94a3b8;
@@ -165,7 +167,7 @@ button {
 
 .dashboard-summary {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
   margin-bottom: 18px;
 }
@@ -221,7 +223,6 @@ button {
   margin: 0;
 }
 
-.head-btns,
 .calendar-controls,
 .view-switch,
 .inline-status-controls,
@@ -353,9 +354,11 @@ textarea {
   border-color: #e2e8f0;
 }
 
+.badge,
 .course-badge,
 .status-badge,
-.priority-badge {
+.priority-badge,
+.note-badge {
   display: inline-block;
   color: white;
   padding: 5px 10px;
@@ -388,6 +391,14 @@ textarea {
 
 .priority-low {
   background: #0891b2;
+}
+
+.course-badge {
+  background: var(--teal);
+}
+
+.note-badge {
+  background: var(--purple);
 }
 
 .card-actions {
@@ -477,18 +488,18 @@ textarea {
   background: var(--calendar-task);
 }
 
-.calendar-item.custom {
-  background: var(--calendar-event);
+.calendar-item.exam {
+  background: var(--calendar-exam);
+}
+
+.calendar-item.note {
+  background: var(--calendar-note);
 }
 
 .week-calendar-grid,
 .day-calendar-grid {
   display: grid;
   gap: 12px;
-}
-
-.week-calendar-grid {
-  grid-template-columns: 1fr;
 }
 
 .week-day-column,
@@ -605,6 +616,10 @@ textarea {
     min-width: 130px;
     white-space: nowrap;
     scroll-snap-align: start;
+  }
+
+  .dashboard-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .input-row {
