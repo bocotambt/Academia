@@ -209,7 +209,8 @@ button {
 .note-card,
 .course-card,
 .day-card,
-.academic-card {
+.academic-card,
+.semester-box {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -338,6 +339,11 @@ textarea {
   min-height: 320px;
 }
 
+input[type="color"] {
+  min-height: 52px;
+  padding: 6px;
+}
+
 .input-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -396,6 +402,48 @@ textarea {
 
 .task-expand-btn {
   margin-top: 10px;
+}
+
+.badge-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.course-badge,
+.status-badge,
+.priority-badge {
+  display: inline-block;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.status-todo {
+  background: var(--warning);
+}
+
+.status-progress {
+  background: var(--primary);
+}
+
+.status-done {
+  background: var(--success);
+}
+
+.priority-high {
+  background: var(--danger);
+}
+
+.priority-medium {
+  background: #d97706;
+}
+
+.priority-low {
+  background: #0891b2;
 }
 
 .calendar-board {
@@ -476,6 +524,10 @@ textarea {
 .calendar-item small {
   font-size: 10px;
   opacity: 0.92;
+}
+
+.calendar-item.course {
+  background: var(--primary);
 }
 
 .calendar-item.task {
@@ -704,7 +756,8 @@ textarea {
   .note-card,
   .course-card,
   .day-card,
-  .academic-card {
+  .academic-card,
+  .semester-box {
     padding: 14px;
   }
 
@@ -717,7 +770,8 @@ textarea {
   .view-switch,
   .inline-status-controls,
   .card-actions,
-  .auth-btn-row {
+  .auth-btn-row,
+  .head-btns {
     flex-direction: column;
     align-items: stretch;
   }
