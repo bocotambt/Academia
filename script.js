@@ -139,12 +139,14 @@ document.addEventListener("DOMContentLoaded", function () {
       authSignedIn.classList.remove("hidden");
       brandUserArea.classList.remove("hidden");
       brandSignedInText.textContent = "Signed in as " + (currentUser.email || "");
+      signOutBtn.classList.remove("hidden");
       authBox.classList.add("hidden");
     } else {
       authSignedOut.classList.remove("hidden");
       authSignedIn.classList.add("hidden");
       brandUserArea.classList.add("hidden");
       brandSignedInText.textContent = "";
+      signOutBtn.classList.add("hidden");
       authBox.classList.remove("hidden");
     }
   }
