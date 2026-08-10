@@ -16,9 +16,11 @@
         <div class="brand-text-wrap">
           <div class="brand-top-row">
             <h1>Academia</h1>
-            <p id="brandSignedInText" class="brand-signed-in hidden"></p>
+            <div id="brandUserArea" class="brand-user-area hidden">
+              <p id="brandSignedInText" class="brand-signed-in"></p>
+              <button id="signOutBtn" class="ghost-btn brand-signout-btn" type="button">Sign Out</button>
+            </div>
           </div>
-          <p>Your academic planner</p>
         </div>
       </div>
 
@@ -35,7 +37,6 @@
         </div>
 
         <div id="authSignedIn" class="hidden">
-          <button id="signOutBtn" class="ghost-btn" type="button">Sign Out</button>
           <p id="authMessageSignedIn" class="meta"></p>
         </div>
       </div>
@@ -61,47 +62,25 @@
       <header class="topbar">
         <div>
           <h2 id="pageTitle">Dashboard</h2>
-          <p class="topbar-subtitle">Track classes, semesters, notes, tasks, exams, and events in one place.</p>
         </div>
       </header>
 
       <section id="dashboard" class="tab-content active">
-        <div class="dashboard-summary">
-          <div class="summary-card">
-            <span>Total Courses</span>
-            <h3 id="totalCourses">0</h3>
-          </div>
-          <div class="summary-card">
-            <span>Total Tasks</span>
-            <h3 id="totalTasks">0</h3>
-          </div>
-          <div class="summary-card">
-            <span>Total Exams</span>
-            <h3 id="totalExams">0</h3>
-          </div>
-        </div>
-
-        <div class="dashboard-grid dashboard-grid-custom">
-          <div class="panel schedule-panel">
+        <div class="dashboard-grid dashboard-single-column">
+          <div class="panel">
             <div class="panel-head">
-              <h3>Today’s Schedule</h3>
-            </div>
-            <div id="dashboardToday"></div>
-          </div>
-
-          <div class="panel tasks-panel">
-            <div class="panel-head">
-              <h3>All Tasks</h3>
+              <h3>Upcoming Tasks</h3>
               <button class="secondary-btn open-modal-btn" data-open-modal="taskModal" type="button">Add Task</button>
             </div>
-            <div id="dashboardAllTasks"></div>
+            <div id="dashboardUpcomingTasks"></div>
           </div>
 
-          <div class="panel schedule-panel">
+          <div class="panel">
             <div class="panel-head">
-              <h3>Tomorrow’s Schedule</h3>
+              <h3>Upcoming Exams</h3>
+              <button class="secondary-btn open-modal-btn" data-open-modal="examModal" type="button">Add Exam</button>
             </div>
-            <div id="dashboardTomorrow"></div>
+            <div id="dashboardUpcomingExams"></div>
           </div>
         </div>
       </section>
@@ -109,7 +88,6 @@
       <section id="courses" class="tab-content">
         <div class="section-head">
           <h3>Courses</h3>
-          <button class="primary-btn open-modal-btn" data-open-modal="courseModal" type="button">Add Course</button>
         </div>
         <div id="coursesList" class="card-grid"></div>
       </section>
@@ -141,10 +119,6 @@
       <section id="academic" class="tab-content">
         <div class="section-head">
           <h3>Academic Settings</h3>
-          <div class="head-btns">
-            <button class="secondary-btn open-modal-btn" data-open-modal="semesterModal" type="button">Add Semester</button>
-            <button class="primary-btn open-modal-btn" data-open-modal="academicYearModal" type="button">Add Academic Year</button>
-          </div>
         </div>
         <div id="academicYearsList" class="card-grid"></div>
       </section>
@@ -161,7 +135,6 @@
             <button id="prevPeriodBtn" class="secondary-btn" type="button">Prev</button>
             <div id="calendarMonthLabel" class="calendar-month-label">Month Year</div>
             <button id="nextPeriodBtn" class="secondary-btn" type="button">Next</button>
-            <button class="primary-btn open-modal-btn" data-open-modal="eventModal" type="button">Add Event</button>
           </div>
         </div>
 
@@ -191,115 +164,10 @@
     </main>
   </div>
 
-  <div class="modal hidden" id="academicYearModal">
-    <div class="modal-card">
-      <div class="modal-head">
-        <h3 id="academicYearModalTitle">Add Academic Year</h3>
-        <button class="icon-btn close-modal-btn" data-close-modal="academicYearModal" type="button">&times;</button>
-      </div>
-      <div class="modal-body">
-        <input type="text" id="academicYearName" placeholder="Example: 2026 - 2027">
-      </div>
-      <div class="modal-footer">
-        <button class="ghost-btn close-modal-btn" data-close-modal="academicYearModal" type="button">Cancel</button>
-        <button id="saveAcademicYearBtn" type="button" class="primary-btn">Save Academic Year</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="semesterModal">
-    <div class="modal-card">
-      <div class="modal-head">
-        <h3 id="semesterModalTitle">Add Semester</h3>
-        <button class="icon-btn close-modal-btn" data-close-modal="semesterModal" type="button">&times;</button>
-      </div>
-      <div class="modal-body">
-        <select id="semesterAcademicYear"></select>
-        <input type="text" id="semesterName" placeholder="Example: Fall Semester">
-        <div class="input-row">
-          <input type="date" id="semesterStartDate">
-          <input type="date" id="semesterEndDate">
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="ghost-btn close-modal-btn" data-close-modal="semesterModal" type="button">Cancel</button>
-        <button id="saveSemesterBtn" type="button" class="primary-btn">Save Semester</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="courseModal">
-    <div class="modal-card large-modal">
-      <div class="modal-head">
-        <h3 id="courseModalTitle">Add Course</h3>
-        <button class="icon-btn close-modal-btn" data-close-modal="courseModal" type="button">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="input-row">
-          <input type="text" id="courseName" placeholder="Course name">
-          <input type="text" id="courseCode" placeholder="Course code">
-        </div>
-
-        <div class="input-row">
-          <input type="text" id="courseInstructor" placeholder="Instructor">
-          <input type="color" id="courseColor" value="#2563eb">
-        </div>
-
-        <select id="courseSemester"></select>
-
-        <div class="subsection-box">
-          <div class="panel-head">
-            <h4>Add Session</h4>
-          </div>
-
-          <div class="input-row four-cols">
-            <select id="sessionType">
-              <option value="Lecture">Lecture</option>
-              <option value="Lab">Lab</option>
-              <option value="Tutorial">Tutorial</option>
-              <option value="Seminar">Seminar</option>
-            </select>
-
-            <select id="sessionRepeat">
-              <option value="weekly">Weekly</option>
-              <option value="specific">Specific Date</option>
-            </select>
-
-            <select id="sessionDay">
-              <option value="">Day</option>
-              <option value="Sunday">Sunday</option>
-              <option value="Monday">Monday</option>
-              <option value="Tuesday">Tuesday</option>
-              <option value="Wednesday">Wednesday</option>
-              <option value="Thursday">Thursday</option>
-              <option value="Friday">Friday</option>
-              <option value="Saturday">Saturday</option>
-            </select>
-
-            <input type="date" id="sessionDate">
-          </div>
-
-          <div class="input-row four-cols">
-            <input type="time" id="sessionStartTime">
-            <input type="time" id="sessionEndTime">
-            <input type="text" id="sessionLocation" placeholder="Location">
-            <button id="addSessionBtn" type="button" class="secondary-btn">Add Session</button>
-          </div>
-
-          <ul id="pendingSessionsList"></ul>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="ghost-btn close-modal-btn" data-close-modal="courseModal" type="button">Cancel</button>
-        <button id="saveCourseBtn" type="button" class="primary-btn">Save Course</button>
-      </div>
-    </div>
-  </div>
-
   <div class="modal hidden" id="noteModal">
     <div class="modal-card">
       <div class="modal-head">
-        <h3 id="noteModalTitle">Add Note</h3>
+        <h3>Add Note</h3>
         <button class="icon-btn close-modal-btn" data-close-modal="noteModal" type="button">&times;</button>
       </div>
       <div class="modal-body">
@@ -368,29 +236,6 @@
       <div class="modal-footer">
         <button class="ghost-btn close-modal-btn" data-close-modal="examModal" type="button">Cancel</button>
         <button id="saveExamBtn" type="button" class="primary-btn">Save Exam</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="eventModal">
-    <div class="modal-card">
-      <div class="modal-head">
-        <h3 id="eventModalTitle">Add Event</h3>
-        <button class="icon-btn close-modal-btn" data-close-modal="eventModal" type="button">&times;</button>
-      </div>
-      <div class="modal-body">
-        <input type="text" id="eventTitle" placeholder="Event title">
-        <textarea id="eventDetails" placeholder="Event details"></textarea>
-        <div class="input-row">
-          <input type="date" id="eventDate">
-          <input type="time" id="eventStartTime">
-          <input type="time" id="eventEndTime">
-        </div>
-        <input type="text" id="eventLocation" placeholder="Location">
-      </div>
-      <div class="modal-footer">
-        <button class="ghost-btn close-modal-btn" data-close-modal="eventModal" type="button">Cancel</button>
-        <button id="saveEventBtn" type="button" class="primary-btn">Save Event</button>
       </div>
     </div>
   </div>
