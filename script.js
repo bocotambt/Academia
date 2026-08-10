@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let notes = [];
   let tasks = [];
   let exams = [];
+  let courseSessions = [];
   let currentCalendarDate = new Date();
   let currentCalendarView = "month";
   let editingTaskId = null;
@@ -22,6 +23,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let editingNoteId = null;
   let editingAcademicYearId = null;
   let editingSemesterId = null;
+  let pendingSessions = [];
 
   const tabButtons = document.querySelectorAll(".tab-btn");
   const tabContents = document.querySelectorAll(".tab-content");
@@ -29,6 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const menuToggleBtn = $("menuToggleBtn");
   const brandUserArea = $("brandUserArea");
   const brandSignedInText = $("brandSignedInText");
+  const authBox = $("authBox");
   const openModalButtons = document.querySelectorAll(".open-modal-btn");
   const closeModalButtons = document.querySelectorAll(".close-modal-btn");
 
@@ -40,6 +43,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const academicYearsList = $("academicYearsList");
   const dashboardUpcomingTasks = $("dashboardUpcomingTasks");
   const dashboardUpcomingExams = $("dashboardUpcomingExams");
+  const dashboardToday = $("dashboardToday");
+  const dashboardTomorrow = $("dashboardTomorrow");
 
   const authSignedOut = $("authSignedOut");
   const authSignedIn = $("authSignedIn");
@@ -65,6 +70,15 @@ document.addEventListener("DOMContentLoaded", function () {
   const courseInstructorInput = $("courseInstructor");
   const courseColorInput = $("courseColor");
   const courseSemesterInput = $("courseSemester");
+  const sessionTypeInput = $("sessionType");
+  const sessionRepeatInput = $("sessionRepeat");
+  const sessionDayInput = $("sessionDay");
+  const sessionDateInput = $("sessionDate");
+  const sessionStartTimeInput = $("sessionStartTime");
+  const sessionEndTimeInput = $("sessionEndTime");
+  const sessionLocationInput = $("sessionLocation");
+  const addSessionBtn = $("addSessionBtn");
+  const pendingSessionsList = $("pendingSessionsList");
   const saveCourseBtn = $("saveCourseBtn");
 
   const noteTitleInput = $("noteTitle");
@@ -111,7 +125,6 @@ document.addEventListener("DOMContentLoaded", function () {
       authMessage.textContent = message;
       authMessage.style.color = isError ? "#b91c1c" : "#0f766e";
     }
-
     if (authMessageSignedIn) {
       authMessageSignedIn.textContent = message;
       authMessageSignedIn.style.color = isError ? "#b91c1c" : "#0f766e";
@@ -126,11 +139,13 @@ document.addEventListener("DOMContentLoaded", function () {
       authSignedIn.classList.remove("hidden");
       brandUserArea.classList.remove("hidden");
       brandSignedInText.textContent = "Signed in as " + (currentUser.email || "");
+      authBox.classList.add("hidden");
     } else {
       authSignedOut.classList.remove("hidden");
       authSignedIn.classList.add("hidden");
       brandUserArea.classList.add("hidden");
       brandSignedInText.textContent = "";
+      authBox.classList.remove("hidden");
     }
   }
 
@@ -184,18 +199,33 @@ document.addEventListener("DOMContentLoaded", function () {
 
   async function signOut() {
     const { error } = await supabase.auth.signOut();
-
     if (error) {
       showAuthMessage(error.message, true);
       return;
     }
-
     showAuthMessage("Signed out.", false);
   }
 
   async function getCurrentUser() {
     const { data } = await supabase.auth.getUser();
     return data.user || null;
+  }
+
+  function pad(num) {
+    return String(num).padStart(2, "0");
+  }
+
+  function formatDateKey(date) {
+    return date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate());
+  }
+
+  function formatDateLabel(dateString) {
+    const date = new Date(dateString + "T00:00:00");
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric"
+    });
   }
 
   function isPastDate(dateString) {
@@ -213,14 +243,14 @@ document.addEventListener("DOMContentLoaded", function () {
     return examDateTime < new Date();
   }
 
-  function isWithinNextMonth(dateString) {
+  function isWithinNext3Weeks(dateString) {
     if (!dateString) return false;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const nextMonth = new Date(today);
-    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    const threeWeeks = new Date(today);
+    threeWeeks.setDate(threeWeeks.getDate() + 21);
     const itemDate = new Date(dateString + "T00:00:00");
-    return itemDate >= today && itemDate <= nextMonth;
+    return itemDate >= today && itemDate <= threeWeeks;
   }
 
   function openModal(id) {
@@ -252,6 +282,16 @@ document.addEventListener("DOMContentLoaded", function () {
     saveSemesterBtn.textContent = "Save Semester";
   }
 
+  function resetCourseSessionInputs() {
+    sessionTypeInput.value = "";
+    sessionRepeatInput.value = "";
+    sessionDayInput.value = "";
+    sessionDateInput.value = "";
+    sessionStartTimeInput.value = "";
+    sessionEndTimeInput.value = "";
+    sessionLocationInput.value = "";
+  }
+
   function resetCourseModal() {
     courseNameInput.value = "";
     courseCodeInput.value = "";
@@ -259,6 +299,9 @@ document.addEventListener("DOMContentLoaded", function () {
     courseColorInput.value = "#2563eb";
     courseSemesterInput.value = "";
     editingCourseId = null;
+    pendingSessions = [];
+    renderPendingSessions();
+    resetCourseSessionInputs();
     saveCourseBtn.textContent = "Save Course";
   }
 
@@ -274,8 +317,8 @@ document.addEventListener("DOMContentLoaded", function () {
     taskDetailsInput.value = "";
     taskCourseInput.value = "";
     taskDateInput.value = "";
-    taskPriorityInput.value = "High";
-    taskStatusInput.value = "To Do";
+    taskPriorityInput.value = "";
+    taskStatusInput.value = "";
     editingTaskId = null;
     addTaskBtn.textContent = "Save Task";
   }
@@ -365,14 +408,9 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   function refreshAcademicYearOptions() {
-    if (!semesterAcademicYearInput) return;
-    semesterAcademicYearInput.innerHTML = "";
-
-    const defaultOption = document.createElement("option");
-    defaultOption.value = "";
-    defaultOption.textContent = academicYears.length ? "Select academic year" : "No academic years yet";
-    semesterAcademicYearInput.appendChild(defaultOption);
-
+    semesterAcademicYearInput.innerHTML = `
+      <option value="" selected disabled>Select academic year</option>
+    `;
     academicYears.forEach(function (year) {
       const option = document.createElement("option");
       option.value = year.id;
@@ -382,19 +420,13 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function refreshSemesterOptions() {
-    if (!courseSemesterInput) return;
-    courseSemesterInput.innerHTML = "";
-
-    const defaultOption = document.createElement("option");
-    defaultOption.value = "";
-    defaultOption.textContent = semesters.length ? "Select semester (optional)" : "No semesters yet";
-    courseSemesterInput.appendChild(defaultOption);
-
+    courseSemesterInput.innerHTML = `
+      <option value="">No semester</option>
+    `;
     semesters.forEach(function (semester) {
       const year = academicYears.find(function (item) {
         return item.id === semester.academicYearId;
       });
-
       const option = document.createElement("option");
       option.value = semester.id;
       option.textContent = year ? semester.name + " — " + year.name : semester.name;
@@ -403,20 +435,54 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function refreshTaskCourseOptions() {
-    if (!taskCourseInput) return;
-    taskCourseInput.innerHTML = "";
-
-    const optionNone = document.createElement("option");
-    optionNone.value = "";
-    optionNone.textContent = "(No course)";
-    taskCourseInput.appendChild(optionNone);
-
+    taskCourseInput.innerHTML = `
+      <option value="">No course</option>
+    `;
     courses.forEach(function (course) {
       const option = document.createElement("option");
       option.value = course.id;
       option.textContent = course.name + (course.code ? " (" + course.code + ")" : "");
       taskCourseInput.appendChild(option);
     });
+  }
+
+  function renderPendingSessions() {
+    pendingSessionsList.innerHTML = "";
+    if (pendingSessions.length === 0) {
+      pendingSessionsList.innerHTML = `<div class="empty-state">No sessions added yet.</div>`;
+      return;
+    }
+
+    pendingSessions.forEach(function (session, index) {
+      const box = document.createElement("div");
+      box.className = "pending-session-item";
+      box.innerHTML = `
+        <strong>${session.sessionType}</strong>
+        <div class="meta">Repeat: ${session.repeatType === "weekly" ? "Weekly" : "Specific date"}</div>
+        <div class="meta">${session.repeatType === "weekly" ? "Day: " + (session.dayOfWeek || "Not set") : "Date: " + (session.specificDate || "Not set")}</div>
+        <div class="meta">Time: ${session.startTime || "?"} - ${session.endTime || "?"}</div>
+        <div class="meta">Location: ${session.location || "Not set"}</div>
+        <div class="card-actions" style="margin-top:10px;">
+          <button class="delete-btn" data-remove-pending-session="${index}" type="button">Remove</button>
+        </div>
+      `;
+      pendingSessionsList.appendChild(box);
+    });
+  }
+
+  function getCourseName(courseId) {
+    if (!courseId) return "No course";
+    const course = courses.find(function (item) {
+      return item.id === courseId;
+    });
+    return course ? course.name : "Unknown course";
+  }
+
+  function getCourseColor(courseId) {
+    const course = courses.find(function (item) {
+      return item.id === courseId;
+    });
+    return course ? course.color || "#4f5fd7" : "#4f5fd7";
   }
 
   async function loadAcademicYears() {
@@ -436,15 +502,11 @@ document.addEventListener("DOMContentLoaded", function () {
       showAuthMessage(error.message, true);
       academicYears = [];
       renderAcademic();
-      refreshAcademicYearOptions();
       return;
     }
 
     academicYears = (data || []).map(function (item) {
-      return {
-        id: item.id,
-        name: item.name
-      };
+      return { id: item.id, name: item.name };
     });
 
     renderAcademic();
@@ -468,7 +530,6 @@ document.addEventListener("DOMContentLoaded", function () {
       showAuthMessage(error.message, true);
       semesters = [];
       renderAcademic();
-      refreshSemesterOptions();
       return;
     }
 
@@ -504,8 +565,6 @@ document.addEventListener("DOMContentLoaded", function () {
       showAuthMessage(error.message, true);
       courses = [];
       renderCourses();
-      refreshTaskCourseOptions();
-      renderCalendar();
       return;
     }
 
@@ -516,13 +575,50 @@ document.addEventListener("DOMContentLoaded", function () {
         name: item.name,
         code: item.code || "",
         instructor: item.instructor || "",
-        color: item.color || "#2563eb"
+        color: item.color || "#4f5fd7"
       };
     });
 
     renderCourses();
     refreshTaskCourseOptions();
     renderTasks();
+    renderCalendar();
+  }
+
+  async function loadCourseSessions() {
+    if (!currentUser) {
+      courseSessions = [];
+      renderCourses();
+      renderCalendar();
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("course_sessions")
+      .select("*")
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      showAuthMessage(error.message, true);
+      courseSessions = [];
+      return;
+    }
+
+    courseSessions = (data || []).map(function (item) {
+      return {
+        id: item.id,
+        courseId: item.course_id,
+        sessionType: item.session_type,
+        repeatType: item.repeat_type,
+        dayOfWeek: item.day_of_week || "",
+        specificDate: item.specific_date || "",
+        startTime: item.start_time || "",
+        endTime: item.end_time || "",
+        location: item.location || ""
+      };
+    });
+
+    renderCourses();
     renderCalendar();
   }
 
@@ -574,8 +670,6 @@ document.addEventListener("DOMContentLoaded", function () {
       showAuthMessage(error.message, true);
       tasks = [];
       renderTasks();
-      renderDashboard();
-      renderCalendar();
       return;
     }
 
@@ -614,8 +708,6 @@ document.addEventListener("DOMContentLoaded", function () {
       showAuthMessage(error.message, true);
       exams = [];
       renderExams();
-      renderDashboard();
-      renderCalendar();
       return;
     }
 
@@ -641,42 +733,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
   async function saveAcademicYear() {
     const name = academicYearNameInput.value.trim();
-
-    if (!currentUser) {
-      alert("Please sign in first.");
-      return;
-    }
-
-    if (!name) {
-      alert("Please enter an academic year name.");
-      return;
-    }
+    if (!currentUser) return alert("Please sign in first.");
+    if (!name) return alert("Please enter an academic year name.");
 
     let error;
-
     if (editingAcademicYearId) {
-      ({ error } = await supabase
-        .from("academic_years")
-        .update({ name: name })
-        .eq("id", editingAcademicYearId));
+      ({ error } = await supabase.from("academic_years").update({ name }).eq("id", editingAcademicYearId));
     } else {
-      ({ error } = await supabase
-        .from("academic_years")
-        .insert({
-          user_id: currentUser.id,
-          name: name
-        }));
+      ({ error } = await supabase.from("academic_years").insert({ user_id: currentUser.id, name }));
     }
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+    if (error) return alert(error.message);
 
     closeModal("academicYearModal");
     resetAcademicYearModal();
     await loadAcademicYears();
-    refreshAcademicYearOptions();
   }
 
   async function saveSemester() {
@@ -685,143 +756,159 @@ document.addEventListener("DOMContentLoaded", function () {
     const startDate = semesterStartDateInput.value || null;
     const endDate = semesterEndDateInput.value || null;
 
-    if (!currentUser) {
-      alert("Please sign in first.");
-      return;
-    }
-
-    if (!academicYearId || !name) {
-      alert("Please select an academic year and enter a semester name.");
-      return;
-    }
+    if (!currentUser) return alert("Please sign in first.");
+    if (!academicYearId || !name) return alert("Please select an academic year and enter a semester name.");
 
     let error;
-
     if (editingSemesterId) {
-      ({ error } = await supabase
-        .from("semesters")
-        .update({
-          academic_year_id: academicYearId,
-          name: name,
-          start_date: startDate,
-          end_date: endDate
-        })
-        .eq("id", editingSemesterId));
+      ({ error } = await supabase.from("semesters").update({
+        academic_year_id: academicYearId,
+        name,
+        start_date: startDate,
+        end_date: endDate
+      }).eq("id", editingSemesterId));
     } else {
-      ({ error } = await supabase
-        .from("semesters")
-        .insert({
-          user_id: currentUser.id,
-          academic_year_id: academicYearId,
-          name: name,
-          start_date: startDate,
-          end_date: endDate
-        }));
+      ({ error } = await supabase.from("semesters").insert({
+        user_id: currentUser.id,
+        academic_year_id: academicYearId,
+        name,
+        start_date: startDate,
+        end_date: endDate
+      }));
     }
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+    if (error) return alert(error.message);
 
     closeModal("semesterModal");
     resetSemesterModal();
     await loadSemesters();
-    refreshSemesterOptions();
+  }
+
+  function addPendingSession() {
+    const sessionType = sessionTypeInput.value;
+    const repeatType = sessionRepeatInput.value;
+    const dayOfWeek = sessionDayInput.value;
+    const specificDate = sessionDateInput.value;
+    const startTime = sessionStartTimeInput.value;
+    const endTime = sessionEndTimeInput.value;
+    const location = sessionLocationInput.value.trim();
+
+    if (!sessionType || !repeatType || !startTime || !endTime) {
+      alert("Please choose session type, repeat rule, start time, and end time.");
+      return;
+    }
+
+    if (repeatType === "weekly" && !dayOfWeek) {
+      alert("Please choose a weekly day.");
+      return;
+    }
+
+    if (repeatType === "specific" && !specificDate) {
+      alert("Please choose a specific date.");
+      return;
+    }
+
+    pendingSessions.push({
+      sessionType,
+      repeatType,
+      dayOfWeek: repeatType === "weekly" ? dayOfWeek : "",
+      specificDate: repeatType === "specific" ? specificDate : "",
+      startTime,
+      endTime,
+      location
+    });
+
+    resetCourseSessionInputs();
+    renderPendingSessions();
   }
 
   async function saveCourse() {
     const name = courseNameInput.value.trim();
     const code = courseCodeInput.value.trim();
     const instructor = courseInstructorInput.value.trim();
-    const color = courseColorInput.value || "#2563eb";
+    const color = courseColorInput.value || "#4f5fd7";
     const semesterId = courseSemesterInput.value || null;
 
-    if (!currentUser) {
-      alert("Please sign in first.");
-      return;
-    }
+    if (!currentUser) return alert("Please sign in first.");
+    if (!name) return alert("Please enter a course name.");
 
-    if (!name) {
-      alert("Please enter a course name.");
-      return;
-    }
-
+    let courseId = editingCourseId;
     let error;
 
     if (editingCourseId) {
-      ({ error } = await supabase
-        .from("courses")
-        .update({
-          semester_id: semesterId,
-          name: name,
-          code: code,
-          instructor: instructor,
-          color: color
-        })
-        .eq("id", editingCourseId));
+      ({ error } = await supabase.from("courses").update({
+        semester_id: semesterId,
+        name,
+        code,
+        instructor,
+        color
+      }).eq("id", editingCourseId));
+      if (error) return alert(error.message);
+
+      const deleteOld = await supabase.from("course_sessions").delete().eq("course_id", editingCourseId);
+      if (deleteOld.error) return alert(deleteOld.error.message);
     } else {
-      ({ error } = await supabase
+      const inserted = await supabase
         .from("courses")
         .insert({
           user_id: currentUser.id,
           semester_id: semesterId,
-          name: name,
-          code: code,
-          instructor: instructor,
-          color: color
-        }));
+          name,
+          code,
+          instructor,
+          color
+        })
+        .select()
+        .single();
+
+      if (inserted.error) return alert(inserted.error.message);
+      courseId = inserted.data.id;
     }
 
-    if (error) {
-      alert(error.message);
-      return;
+    if (pendingSessions.length > 0) {
+      const sessionRows = pendingSessions.map(function (session) {
+        return {
+          user_id: currentUser.id,
+          course_id: courseId,
+          session_type: session.sessionType,
+          repeat_type: session.repeatType,
+          day_of_week: session.dayOfWeek || null,
+          specific_date: session.specificDate || null,
+          start_time: session.startTime || null,
+          end_time: session.endTime || null,
+          location: session.location || null
+        };
+      });
+
+      const sessionInsert = await supabase.from("course_sessions").insert(sessionRows);
+      if (sessionInsert.error) return alert(sessionInsert.error.message);
     }
 
     closeModal("courseModal");
     resetCourseModal();
     await loadCourses();
-    refreshTaskCourseOptions();
+    await loadCourseSessions();
   }
 
   async function saveNote() {
     const title = noteTitleInput.value.trim();
     const content = noteContentInput.value.trim();
 
-    if (!currentUser) {
-      alert("Please sign in first.");
-      return;
-    }
-
-    if (!title && !content) {
-      alert("Please enter a note title or note content.");
-      return;
-    }
+    if (!currentUser) return alert("Please sign in first.");
+    if (!title && !content) return alert("Please enter a note title or note content.");
 
     let error;
-
     if (editingNoteId) {
-      ({ error } = await supabase
-        .from("notes")
-        .update({
-          title: title,
-          content: content
-        })
-        .eq("id", editingNoteId));
+      ({ error } = await supabase.from("notes").update({ title, content }).eq("id", editingNoteId));
     } else {
-      ({ error } = await supabase
-        .from("notes")
-        .insert({
-          user_id: currentUser.id,
-          title: title,
-          content: content
-        }));
+      ({ error } = await supabase.from("notes").insert({
+        user_id: currentUser.id,
+        title,
+        content
+      }));
     }
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+    if (error) return alert(error.message);
 
     closeModal("noteModal");
     resetNoteModal();
@@ -833,51 +920,35 @@ document.addEventListener("DOMContentLoaded", function () {
     const details = taskDetailsInput.value.trim();
     const courseId = taskCourseInput.value || null;
     const date = taskDateInput.value;
-    const priority = taskPriorityInput.value;
-    const status = taskStatusInput.value;
+    const priority = taskPriorityInput.value || "High";
+    const status = taskStatusInput.value || "To Do";
 
-    if (!currentUser) {
-      alert("Please sign in first.");
-      return;
-    }
-
-    if (!title || !date) {
-      alert("Please enter both task title and due date.");
-      return;
-    }
+    if (!currentUser) return alert("Please sign in first.");
+    if (!title || !date) return alert("Please enter both task title and due date.");
 
     let error;
-
     if (editingTaskId) {
-      ({ error } = await supabase
-        .from("tasks")
-        .update({
-          title: title,
-          details: details,
-          course_id: courseId,
-          due_date: date,
-          priority: priority,
-          status: status
-        })
-        .eq("id", editingTaskId));
+      ({ error } = await supabase.from("tasks").update({
+        title,
+        details,
+        course_id: courseId,
+        due_date: date,
+        priority,
+        status
+      }).eq("id", editingTaskId));
     } else {
-      ({ error } = await supabase
-        .from("tasks")
-        .insert({
-          user_id: currentUser.id,
-          title: title,
-          details: details,
-          course_id: courseId,
-          due_date: date,
-          priority: priority,
-          status: status
-        }));
+      ({ error } = await supabase.from("tasks").insert({
+        user_id: currentUser.id,
+        title,
+        details,
+        course_id: courseId,
+        due_date: date,
+        priority,
+        status
+      }));
     }
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+    if (error) return alert(error.message);
 
     closeModal("taskModal");
     resetTaskModal();
@@ -893,56 +964,40 @@ document.addEventListener("DOMContentLoaded", function () {
     const seatNumber = examSeatNumberInput.value.trim();
     const grade = examGradeInput.value.trim();
     const mark = examMarkInput.value.trim();
-    const notes = examNotesInput.value.trim();
+    const notesValue = examNotesInput.value.trim();
 
-    if (!currentUser) {
-      alert("Please sign in first.");
-      return;
-    }
-
-    if (!title || !date) {
-      alert("Please enter both exam title and exam date.");
-      return;
-    }
+    if (!currentUser) return alert("Please sign in first.");
+    if (!title || !date) return alert("Please enter both exam title and exam date.");
 
     let error;
-
     if (editingExamId) {
-      ({ error } = await supabase
-        .from("exams")
-        .update({
-          title: title,
-          course: course,
-          exam_date: date,
-          exam_time: time,
-          place: place,
-          seat_number: seatNumber,
-          grade: grade,
-          mark: mark === "" ? null : mark,
-          notes: notes
-        })
-        .eq("id", editingExamId));
+      ({ error } = await supabase.from("exams").update({
+        title,
+        course,
+        exam_date: date,
+        exam_time: time,
+        place,
+        seat_number: seatNumber,
+        grade,
+        mark: mark === "" ? null : mark,
+        notes: notesValue
+      }).eq("id", editingExamId));
     } else {
-      ({ error } = await supabase
-        .from("exams")
-        .insert({
-          user_id: currentUser.id,
-          title: title,
-          course: course,
-          exam_date: date,
-          exam_time: time,
-          place: place,
-          seat_number: seatNumber,
-          grade: grade,
-          mark: mark === "" ? null : mark,
-          notes: notes
-        }));
+      ({ error } = await supabase.from("exams").insert({
+        user_id: currentUser.id,
+        title,
+        course,
+        exam_date: date,
+        exam_time: time,
+        place,
+        seat_number: seatNumber,
+        grade,
+        mark: mark === "" ? null : mark,
+        notes: notesValue
+      }));
     }
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+    if (error) return alert(error.message);
 
     closeModal("examModal");
     resetExamModal();
@@ -951,80 +1006,55 @@ document.addEventListener("DOMContentLoaded", function () {
 
   async function deleteAcademicYear(id) {
     const { error } = await supabase.from("academic_years").delete().eq("id", id);
-    if (error) {
-      alert(error.message);
-      return;
-    }
+    if (error) return alert(error.message);
     await loadAcademicYears();
     await loadSemesters();
     await loadCourses();
+    await loadCourseSessions();
   }
 
   async function deleteSemester(id) {
     const { error } = await supabase.from("semesters").delete().eq("id", id);
-    if (error) {
-      alert(error.message);
-      return;
-    }
+    if (error) return alert(error.message);
     await loadSemesters();
     await loadCourses();
+    await loadCourseSessions();
   }
 
   async function deleteCourse(id) {
     const { error } = await supabase.from("courses").delete().eq("id", id);
-    if (error) {
-      alert(error.message);
-      return;
-    }
+    if (error) return alert(error.message);
     await loadCourses();
+    await loadCourseSessions();
     await loadTasks();
   }
 
   async function deleteNote(id) {
     const { error } = await supabase.from("notes").delete().eq("id", id);
-    if (error) {
-      alert(error.message);
-      return;
-    }
+    if (error) return alert(error.message);
     await loadNotes();
   }
 
   async function deleteTaskFromSupabase(id) {
     const { error } = await supabase.from("tasks").delete().eq("id", id);
-    if (error) {
-      alert(error.message);
-      return;
-    }
+    if (error) return alert(error.message);
     await loadTasks();
   }
 
   async function deleteExamFromSupabase(id) {
     const { error } = await supabase.from("exams").delete().eq("id", id);
-    if (error) {
-      alert(error.message);
-      return;
-    }
+    if (error) return alert(error.message);
     await loadExams();
   }
 
   async function updateTaskStatus(id, status) {
-    const { error } = await supabase
-      .from("tasks")
-      .update({ status: status })
-      .eq("id", id);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
+    const { error } = await supabase.from("tasks").update({ status }).eq("id", id);
+    if (error) return alert(error.message);
     await loadTasks();
   }
 
   function editAcademicYear(id) {
-    const item = academicYears.find(function (year) {
-      return year.id === id;
-    });
+    const item = academicYears.find(function (year) { return year.id === id; });
     if (!item) return;
     academicYearNameInput.value = item.name || "";
     editingAcademicYearId = id;
@@ -1033,9 +1063,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function editSemester(id) {
-    const item = semesters.find(function (semester) {
-      return semester.id === id;
-    });
+    const item = semesters.find(function (semester) { return semester.id === id; });
     if (!item) return;
     refreshAcademicYearOptions();
     semesterAcademicYearInput.value = item.academicYearId || "";
@@ -1048,25 +1076,38 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function editCourse(id) {
-    const item = courses.find(function (course) {
-      return course.id === id;
-    });
+    const item = courses.find(function (course) { return course.id === id; });
     if (!item) return;
+
+    const existingSessions = courseSessions.filter(function (session) {
+      return session.courseId === id;
+    });
+
     refreshSemesterOptions();
     courseNameInput.value = item.name || "";
     courseCodeInput.value = item.code || "";
     courseInstructorInput.value = item.instructor || "";
-    courseColorInput.value = item.color || "#2563eb";
+    courseColorInput.value = item.color || "#4f5fd7";
     courseSemesterInput.value = item.semesterId || "";
     editingCourseId = id;
+    pendingSessions = existingSessions.map(function (session) {
+      return {
+        sessionType: session.sessionType,
+        repeatType: session.repeatType,
+        dayOfWeek: session.dayOfWeek,
+        specificDate: session.specificDate,
+        startTime: session.startTime,
+        endTime: session.endTime,
+        location: session.location
+      };
+    });
+    renderPendingSessions();
     saveCourseBtn.textContent = "Update Course";
     openModal("courseModal");
   }
 
   function editNote(id) {
-    const item = notes.find(function (note) {
-      return note.id === id;
-    });
+    const item = notes.find(function (note) { return note.id === id; });
     if (!item) return;
     noteTitleInput.value = item.title || "";
     noteContentInput.value = item.content || "";
@@ -1076,9 +1117,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function editTask(id) {
-    const task = tasks.find(function (item) {
-      return String(item.id) === String(id);
-    });
+    const task = tasks.find(function (item) { return String(item.id) === String(id); });
     if (!task) return;
     refreshTaskCourseOptions();
     taskTitleInput.value = task.title || "";
@@ -1093,9 +1132,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function editExam(id) {
-    const exam = exams.find(function (item) {
-      return String(item.id) === String(id);
-    });
+    const exam = exams.find(function (item) { return String(item.id) === String(id); });
     if (!exam) return;
     examTitleInput.value = exam.title || "";
     examCourseInput.value = exam.course || "";
@@ -1109,14 +1146,6 @@ document.addEventListener("DOMContentLoaded", function () {
     editingExamId = id;
     saveExamBtn.textContent = "Update Exam";
     openModal("examModal");
-  }
-
-  function getCourseName(courseId) {
-    if (!courseId) return "No course";
-    const course = courses.find(function (item) {
-      return item.id === courseId;
-    });
-    return course ? course.name : "Unknown course";
   }
 
   function openTaskDetails(task) {
@@ -1146,7 +1175,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderCourses() {
-    if (!coursesList) return;
     coursesList.innerHTML = "";
 
     if (!currentUser) {
@@ -1164,6 +1192,24 @@ document.addEventListener("DOMContentLoaded", function () {
         return item.id === course.semesterId;
       });
 
+      const sessions = courseSessions.filter(function (session) {
+        return session.courseId === course.id;
+      });
+
+      const sessionsHtml = sessions.length
+        ? sessions.map(function (session) {
+            return `
+              <div class="detail-item" style="margin-top:10px;">
+                <strong>${session.sessionType}</strong>
+                <div class="meta">Repeat: ${session.repeatType === "weekly" ? "Weekly" : "Specific date"}</div>
+                <div class="meta">${session.repeatType === "weekly" ? "Day: " + (session.dayOfWeek || "Not set") : "Date: " + (session.specificDate || "Not set")}</div>
+                <div class="meta">Time: ${session.startTime || "?"} - ${session.endTime || "?"}</div>
+                <div class="meta">Location: ${session.location || "Not set"}</div>
+              </div>
+            `;
+          }).join("")
+        : '<div class="empty-state">No sessions yet.</div>';
+
       const card = document.createElement("div");
       card.className = "course-card";
       card.innerHTML = `
@@ -1173,7 +1219,8 @@ document.addEventListener("DOMContentLoaded", function () {
         </div>
         <p class="meta">Instructor: ${course.instructor || "Not set"}</p>
         <p class="meta">Semester: ${semester ? semester.name : "Not set"}</p>
-        <div class="card-actions">
+        ${sessionsHtml}
+        <div class="card-actions" style="margin-top:12px;">
           <button class="edit-btn" data-edit-course="${course.id}" type="button">Edit</button>
           <button class="delete-btn" data-delete-course="${course.id}" type="button">Delete</button>
         </div>
@@ -1183,7 +1230,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderNotes() {
-    if (!notesList) return;
     notesList.innerHTML = "";
 
     if (!currentUser) {
@@ -1212,7 +1258,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderAcademic() {
-    if (!academicYearsList) return;
     academicYearsList.innerHTML = "";
 
     if (!currentUser) {
@@ -1263,8 +1308,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderTasks() {
-    if (!plannerList) return;
-
     plannerList.innerHTML = "";
 
     if (!currentUser) {
@@ -1330,8 +1373,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderExams() {
-    if (!examsList) return;
-
     examsList.innerHTML = "";
 
     if (!currentUser) {
@@ -1374,9 +1415,107 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  function renderDashboardUpcomingTasks() {
-    if (!dashboardUpcomingTasks) return;
+  function getStartOfWeek(date) {
+    const result = new Date(date);
+    result.setHours(0, 0, 0, 0);
+    result.setDate(result.getDate() - result.getDay());
+    return result;
+  }
 
+  function getSessionsForDate(dateObj) {
+    const dateKey = formatDateKey(dateObj);
+    const dayName = dateObj.toLocaleDateString("en-US", { weekday: "long" });
+
+    return courseSessions
+      .filter(function (session) {
+        if (session.repeatType === "weekly") {
+          return session.dayOfWeek === dayName;
+        }
+        return session.specificDate === dateKey;
+      })
+      .map(function (session) {
+        const course = courses.find(function (item) {
+          return item.id === session.courseId;
+        });
+        return {
+          type: "course",
+          id: "course-session-" + session.id,
+          title: (course ? course.name : "Course") + " (" + session.sessionType + ")",
+          timeLabel: (session.startTime || "?") + " - " + (session.endTime || "?"),
+          color: course ? (course.color || "#4f5fd7") : "#4f5fd7",
+          location: session.location || "",
+          isPast: false
+        };
+      });
+  }
+
+  function getItemsForDate(dateKey) {
+    const dateObj = new Date(dateKey + "T00:00:00");
+    const courseItems = getSessionsForDate(dateObj);
+
+    const taskItems = tasks
+      .filter(function (task) {
+        return task.date === dateKey;
+      })
+      .map(function (task) {
+        return {
+          type: "task",
+          id: "task-" + task.id,
+          title: "Task: " + task.title,
+          timeLabel: task.status === "Done" ? "Done" : "All day",
+          color: "#dc2626",
+          location: "",
+          isPast: isPastDate(task.date) || task.status === "Done"
+        };
+      });
+
+    const examItems = exams
+      .filter(function (exam) {
+        return exam.date === dateKey;
+      })
+      .map(function (exam) {
+        return {
+          type: "custom",
+          id: "exam-" + exam.id,
+          title: "Exam: " + exam.title,
+          timeLabel: exam.time || "Time not set",
+          color: "#0f766e",
+          location: exam.place || "",
+          isPast: isPastExam(exam)
+        };
+      });
+
+    return courseItems.concat(taskItems, examItems);
+  }
+
+  function renderDashboardDaySchedule(dayKey, container) {
+    container.innerHTML = "";
+
+    if (!currentUser) {
+      container.innerHTML = '<div class="empty-state">Sign in to load schedule.</div>';
+      return;
+    }
+
+    const items = getItemsForDate(dayKey);
+
+    if (items.length === 0) {
+      container.innerHTML = '<div class="empty-state">No items scheduled.</div>';
+      return;
+    }
+
+    items.forEach(function (item) {
+      const row = document.createElement("div");
+      row.className = "detail-item";
+      if (item.isPast) row.classList.add("past-item");
+      row.innerHTML = `
+        <strong>${item.title}</strong>
+        <div class="meta">${item.timeLabel}${item.location ? " • " + item.location : ""}</div>
+      `;
+      container.appendChild(row);
+    });
+  }
+
+  function renderDashboardUpcomingTasks() {
     dashboardUpcomingTasks.innerHTML = "";
 
     if (!currentUser) {
@@ -1410,8 +1549,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderDashboardUpcomingExams() {
-    if (!dashboardUpcomingExams) return;
-
     dashboardUpcomingExams.innerHTML = "";
 
     if (!currentUser) {
@@ -1421,14 +1558,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const upcoming = exams
       .filter(function (exam) {
-        return exam.date && isWithinNextMonth(exam.date);
+        return exam.date && isWithinNext3Weeks(exam.date);
       })
       .sort(function (a, b) {
         return new Date(a.date) - new Date(b.date);
       });
 
     if (upcoming.length === 0) {
-      dashboardUpcomingExams.innerHTML = '<div class="empty-state">No exams in the next month.</div>';
+      dashboardUpcomingExams.innerHTML = '<div class="empty-state">No exams in the next 3 weeks.</div>';
       return;
     }
 
@@ -1446,137 +1583,13 @@ document.addEventListener("DOMContentLoaded", function () {
   function renderDashboard() {
     renderDashboardUpcomingTasks();
     renderDashboardUpcomingExams();
-  }
 
-  if (coursesList) {
-    coursesList.addEventListener("click", async function (e) {
-      const editId = e.target.getAttribute("data-edit-course");
-      const deleteId = e.target.getAttribute("data-delete-course");
-      if (editId) editCourse(editId);
-      if (deleteId) await deleteCourse(deleteId);
-    });
-  }
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(today.getDate() + 1);
 
-  if (notesList) {
-    notesList.addEventListener("click", async function (e) {
-      const editId = e.target.getAttribute("data-edit-note");
-      const deleteId = e.target.getAttribute("data-delete-note");
-      if (editId) editNote(editId);
-      if (deleteId) await deleteNote(deleteId);
-    });
-  }
-
-  if (academicYearsList) {
-    academicYearsList.addEventListener("click", async function (e) {
-      const editYearId = e.target.getAttribute("data-edit-academic-year");
-      const deleteYearId = e.target.getAttribute("data-delete-academic-year");
-      const editSemesterId = e.target.getAttribute("data-edit-semester");
-      const deleteSemesterId = e.target.getAttribute("data-delete-semester");
-
-      if (editYearId) editAcademicYear(editYearId);
-      if (deleteYearId) await deleteAcademicYear(deleteYearId);
-      if (editSemesterId) editSemester(editSemesterId);
-      if (deleteSemesterId) await deleteSemester(deleteSemesterId);
-    });
-  }
-
-  if (plannerList) {
-    plannerList.addEventListener("click", async function (e) {
-      const toggleId = e.target.getAttribute("data-toggle-task");
-      const editId = e.target.getAttribute("data-edit-task");
-      const deleteId = e.target.getAttribute("data-delete-task");
-      const viewId = e.target.getAttribute("data-view-task");
-      const taskStatusId = e.target.getAttribute("data-task-status");
-      const nextStatus = e.target.getAttribute("data-status-value");
-
-      if (toggleId !== null) {
-        const box = $("taskExpanded-" + toggleId);
-        if (box) {
-          box.classList.toggle("hidden");
-        }
-        return;
-      }
-
-      if (viewId !== null) {
-        const task = tasks.find(function (item) {
-          return String(item.id) === String(viewId);
-        });
-        if (task) openTaskDetails(task);
-      }
-
-      if (editId !== null) editTask(editId);
-      if (deleteId !== null) await deleteTaskFromSupabase(deleteId);
-      if (taskStatusId !== null && nextStatus) await updateTaskStatus(taskStatusId, nextStatus);
-    });
-  }
-
-  if (examsList) {
-    examsList.addEventListener("click", async function (e) {
-      const viewId = e.target.getAttribute("data-view-exam");
-      const editId = e.target.getAttribute("data-edit-exam");
-      const deleteId = e.target.getAttribute("data-delete-exam");
-
-      if (viewId !== null) {
-        const exam = exams.find(function (item) {
-          return String(item.id) === String(viewId);
-        });
-        if (exam) openExamDetails(exam);
-      }
-
-      if (editId !== null) editExam(editId);
-      if (deleteId !== null) await deleteExamFromSupabase(deleteId);
-    });
-  }
-
-  function pad(num) {
-    return String(num).padStart(2, "0");
-  }
-
-  function formatDateKey(date) {
-    return date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate());
-  }
-
-  function formatDateLabel(dateString) {
-    const date = new Date(dateString + "T00:00:00");
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric"
-    });
-  }
-
-  function getItemsForDate(dateKey) {
-    const taskItems = tasks
-      .filter(function (task) {
-        return task.date === dateKey;
-      })
-      .map(function (task) {
-        return {
-          type: "task",
-          id: "task-" + task.id,
-          title: "Task: " + task.title,
-          timeLabel: task.status === "Done" ? "Done" : "All day",
-          color: "#dc2626",
-          isPast: isPastDate(task.date) || task.status === "Done"
-        };
-      });
-
-    const examItems = exams
-      .filter(function (exam) {
-        return exam.date === dateKey;
-      })
-      .map(function (exam) {
-        return {
-          type: "custom",
-          id: "exam-" + exam.id,
-          title: "Exam: " + exam.title,
-          timeLabel: exam.time || "Time not set",
-          color: "#0f766e",
-          isPast: isPastExam(exam)
-        };
-      });
-
-    return taskItems.concat(examItems);
+    renderDashboardDaySchedule(formatDateKey(today), dashboardToday);
+    renderDashboardDaySchedule(formatDateKey(tomorrow), dashboardTomorrow);
   }
 
   function showDetailModal(title, items) {
@@ -1713,13 +1726,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  function getStartOfWeek(date) {
-    const result = new Date(date);
-    result.setHours(0, 0, 0, 0);
-    result.setDate(result.getDate() - result.getDay());
-    return result;
-  }
-
   function renderWeekView() {
     const start = getStartOfWeek(currentCalendarDate);
     const end = new Date(start);
@@ -1829,8 +1835,95 @@ document.addEventListener("DOMContentLoaded", function () {
         currentCalendarDate.getDate() + direction
       );
     }
-
     renderCalendar();
+  }
+
+  if (pendingSessionsList) {
+    pendingSessionsList.addEventListener("click", function (e) {
+      const removeIndex = e.target.getAttribute("data-remove-pending-session");
+      if (removeIndex !== null) {
+        pendingSessions.splice(Number(removeIndex), 1);
+        renderPendingSessions();
+      }
+    });
+  }
+
+  if (coursesList) {
+    coursesList.addEventListener("click", async function (e) {
+      const editId = e.target.getAttribute("data-edit-course");
+      const deleteId = e.target.getAttribute("data-delete-course");
+      if (editId) editCourse(editId);
+      if (deleteId) await deleteCourse(deleteId);
+    });
+  }
+
+  if (notesList) {
+    notesList.addEventListener("click", async function (e) {
+      const editId = e.target.getAttribute("data-edit-note");
+      const deleteId = e.target.getAttribute("data-delete-note");
+      if (editId) editNote(editId);
+      if (deleteId) await deleteNote(deleteId);
+    });
+  }
+
+  if (academicYearsList) {
+    academicYearsList.addEventListener("click", async function (e) {
+      const editYearId = e.target.getAttribute("data-edit-academic-year");
+      const deleteYearId = e.target.getAttribute("data-delete-academic-year");
+      const editSemesterId = e.target.getAttribute("data-edit-semester");
+      const deleteSemesterId = e.target.getAttribute("data-delete-semester");
+
+      if (editYearId) editAcademicYear(editYearId);
+      if (deleteYearId) await deleteAcademicYear(deleteYearId);
+      if (editSemesterId) editSemester(editSemesterId);
+      if (deleteSemesterId) await deleteSemester(deleteSemesterId);
+    });
+  }
+
+  if (plannerList) {
+    plannerList.addEventListener("click", async function (e) {
+      const toggleId = e.target.getAttribute("data-toggle-task");
+      const editId = e.target.getAttribute("data-edit-task");
+      const deleteId = e.target.getAttribute("data-delete-task");
+      const viewId = e.target.getAttribute("data-view-task");
+      const taskStatusId = e.target.getAttribute("data-task-status");
+      const nextStatus = e.target.getAttribute("data-status-value");
+
+      if (toggleId !== null) {
+        const box = $("taskExpanded-" + toggleId);
+        if (box) box.classList.toggle("hidden");
+        return;
+      }
+
+      if (viewId !== null) {
+        const task = tasks.find(function (item) {
+          return String(item.id) === String(viewId);
+        });
+        if (task) openTaskDetails(task);
+      }
+
+      if (editId !== null) editTask(editId);
+      if (deleteId !== null) await deleteTaskFromSupabase(deleteId);
+      if (taskStatusId !== null && nextStatus) await updateTaskStatus(taskStatusId, nextStatus);
+    });
+  }
+
+  if (examsList) {
+    examsList.addEventListener("click", async function (e) {
+      const viewId = e.target.getAttribute("data-view-exam");
+      const editId = e.target.getAttribute("data-edit-exam");
+      const deleteId = e.target.getAttribute("data-delete-exam");
+
+      if (viewId !== null) {
+        const exam = exams.find(function (item) {
+          return String(item.id) === String(viewId);
+        });
+        if (exam) openExamDetails(exam);
+      }
+
+      if (editId !== null) editExam(editId);
+      if (deleteId !== null) await deleteExamFromSupabase(deleteId);
+    });
   }
 
   if (menuToggleBtn) {
@@ -1847,6 +1940,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (saveAcademicYearBtn) saveAcademicYearBtn.addEventListener("click", saveAcademicYear);
   if (saveSemesterBtn) saveSemesterBtn.addEventListener("click", saveSemester);
+  if (addSessionBtn) addSessionBtn.addEventListener("click", addPendingSession);
   if (saveCourseBtn) saveCourseBtn.addEventListener("click", saveCourse);
   if (saveNoteBtn) saveNoteBtn.addEventListener("click", saveNote);
   if (addTaskBtn) addTaskBtn.addEventListener("click", saveTask);
@@ -1869,6 +1963,7 @@ document.addEventListener("DOMContentLoaded", function () {
     await loadAcademicYears();
     await loadSemesters();
     await loadCourses();
+    await loadCourseSessions();
     await loadNotes();
     await loadTasks();
     await loadExams();
@@ -1885,6 +1980,7 @@ document.addEventListener("DOMContentLoaded", function () {
     await loadAcademicYears();
     await loadSemesters();
     await loadCourses();
+    await loadCourseSessions();
     await loadNotes();
     await loadTasks();
     await loadExams();
@@ -1892,6 +1988,7 @@ document.addEventListener("DOMContentLoaded", function () {
     refreshAcademicYearOptions();
     refreshSemesterOptions();
     refreshTaskCourseOptions();
+    renderPendingSessions();
     renderDashboard();
     setCalendarView("month");
   }
