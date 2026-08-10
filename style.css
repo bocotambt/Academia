@@ -82,20 +82,23 @@ button {
 
 .brand-top-row {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .brand h1 {
   margin: 0;
   font-size: 26px;
+  color: white;
 }
 
-.brand p {
-  margin: 4px 0 0 0;
-  color: #cbd5e1;
-  font-size: 14px;
+.brand-user-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .brand-signed-in {
@@ -103,6 +106,10 @@ button {
   color: #cbd5e1;
   font-size: 12px;
   word-break: break-word;
+}
+
+.brand-signout-btn {
+  padding: 8px 12px;
 }
 
 .brand-mark {
@@ -173,13 +180,8 @@ button {
 }
 
 .topbar h2 {
-  margin: 0 0 6px 0;
-  font-size: 30px;
-}
-
-.topbar-subtitle {
   margin: 0;
-  color: var(--muted);
+  font-size: 30px;
 }
 
 .tab-content {
@@ -191,32 +193,6 @@ button {
   display: block;
 }
 
-.dashboard-summary {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.summary-card {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 20px;
-  box-shadow: var(--shadow);
-  min-width: 0;
-}
-
-.summary-card span {
-  color: var(--muted);
-  font-size: 14px;
-}
-
-.summary-card h3 {
-  margin: 10px 0 0 0;
-  font-size: 32px;
-}
-
 .dashboard-grid,
 .card-grid,
 .planner-grid {
@@ -225,18 +201,8 @@ button {
   gap: 18px;
 }
 
-.dashboard-grid-custom {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: start;
-}
-
-.tasks-panel {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-}
-
-.schedule-panel {
-  min-height: 100%;
+.dashboard-single-column {
+  grid-template-columns: 1fr;
 }
 
 .panel,
@@ -276,7 +242,6 @@ button {
 
 .section-head h3,
 .panel-head h3,
-.panel-head h4,
 .calendar-head h3 {
   margin: 0;
 }
@@ -311,27 +276,14 @@ button {
   color: white;
 }
 
-.primary-btn:hover,
-.view-btn:hover {
-  background: var(--primary-dark);
-}
-
 .secondary-btn {
   background: #e8f0ff;
   color: var(--primary-dark);
 }
 
-.secondary-btn:hover {
-  background: #dbe7ff;
-}
-
 .ghost-btn {
   background: #eef2f7;
   color: #334155;
-}
-
-.ghost-btn:hover {
-  background: #e2e8f0;
 }
 
 .edit-btn {
@@ -386,80 +338,11 @@ textarea {
   min-height: 320px;
 }
 
-input[type="color"] {
-  min-height: 52px;
-  padding: 6px;
-}
-
 .input-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 12px;
-}
-
-.four-cols {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.subsection-box {
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 14px;
-  background: var(--surface-2);
-}
-
-ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-li,
-.planner-item,
-.semester-box {
-  background: #eef4ff;
-  border: 1px solid #dbeafe;
-  border-radius: 14px;
-  padding: 14px;
-  margin-bottom: 12px;
-}
-
-.course-badge,
-.status-badge,
-.priority-badge {
-  display: inline-block;
-  color: white;
-  padding: 5px 10px;
-  border-radius: 999px;
-  font-size: 13px;
-  margin-right: 8px;
-  margin-bottom: 10px;
-  font-weight: 700;
-}
-
-.status-todo {
-  background: var(--warning);
-}
-
-.status-progress {
-  background: var(--primary);
-}
-
-.status-done {
-  background: var(--success);
-}
-
-.priority-high {
-  background: var(--danger);
-}
-
-.priority-medium {
-  background: #d97706;
-}
-
-.priority-low {
-  background: #0891b2;
 }
 
 .meta {
@@ -487,10 +370,6 @@ li,
   background: var(--past-bg);
 }
 
-.task-done-card .meta {
-  color: var(--past-text);
-}
-
 .past-item {
   background: var(--past-bg);
   border-color: #e2e8f0;
@@ -502,16 +381,6 @@ li,
 .past-item h3,
 .past-item p {
   color: var(--past-text) !important;
-}
-
-.dashboard-click-item {
-  cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.dashboard-click-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 26px rgba(37, 99, 235, 0.12);
 }
 
 .task-card-summary {
@@ -609,10 +478,6 @@ li,
   opacity: 0.92;
 }
 
-.calendar-item.course {
-  background: var(--primary);
-}
-
 .calendar-item.task {
   background: var(--calendar-task);
 }
@@ -671,10 +536,6 @@ li,
   overflow: hidden;
 }
 
-.large-modal {
-  width: min(900px, 100%);
-}
-
 .modal-head,
 .modal-footer {
   padding: 16px 18px;
@@ -719,13 +580,6 @@ li,
   min-width: 0;
 }
 
-.detail-label {
-  display: block;
-  color: var(--muted);
-  font-size: 13px;
-  margin-bottom: 4px;
-}
-
 .empty-state {
   background: white;
   border: 1px dashed var(--line);
@@ -759,21 +613,13 @@ li,
     padding-bottom: 12px;
   }
 
-  .dashboard-summary,
   .dashboard-grid,
-  .dashboard-grid-custom,
   .card-grid,
   .planner-grid {
     grid-template-columns: 1fr;
   }
 
-  .tasks-panel {
-    grid-column: auto;
-    grid-row: auto;
-  }
-
-  .input-row,
-  .four-cols {
+  .input-row {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -813,10 +659,6 @@ li,
     white-space: normal;
   }
 
-  .brand {
-    margin-bottom: 16px;
-  }
-
   .brand-mark {
     width: 40px;
     height: 40px;
@@ -827,8 +669,14 @@ li,
     font-size: 21px;
   }
 
-  .brand p {
-    font-size: 12px;
+  .brand-top-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .brand-user-area {
+    justify-content: space-between;
+    width: 100%;
   }
 
   .brand-signed-in {
@@ -848,22 +696,8 @@ li,
     line-height: 1.15;
   }
 
-  .topbar-subtitle,
   .meta {
     font-size: 13px;
-  }
-
-  .dashboard-summary {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .summary-card {
-    padding: 16px;
-  }
-
-  .summary-card h3 {
-    font-size: 24px;
   }
 
   .panel,
@@ -879,7 +713,6 @@ li,
   .modal-head,
   .modal-footer,
   .calendar-head,
-  .head-btns,
   .calendar-controls,
   .view-switch,
   .inline-status-controls,
@@ -894,8 +727,7 @@ li,
     text-align: center;
   }
 
-  .input-row,
-  .four-cols {
+  .input-row {
     grid-template-columns: 1fr;
   }
 
@@ -911,8 +743,9 @@ li,
     min-height: 44px;
   }
 
-  .icon-btn {
-    height: 44px;
+  .brand-signout-btn {
+    width: auto;
+    min-height: 36px;
   }
 
   input,
@@ -966,8 +799,7 @@ li,
     place-items: end center;
   }
 
-  .modal-card,
-  .large-modal {
+  .modal-card {
     width: 100%;
     max-height: 92vh;
     border-radius: 18px 18px 0 0;
