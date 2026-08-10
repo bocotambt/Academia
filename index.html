@@ -19,9 +19,14 @@
           </div>
         </div>
 
+        <button id="menuToggleBtn" class="menu-toggle-btn" type="button" aria-label="Open menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
         <div id="brandUserArea" class="brand-user-area hidden">
           <p id="brandSignedInText" class="brand-signed-in"></p>
-          <button id="signOutBtn" class="ghost-btn brand-signout-btn" type="button">Sign Out</button>
         </div>
       </div>
 
@@ -42,12 +47,6 @@
         </div>
       </div>
 
-      <button id="menuToggleBtn" class="menu-toggle-btn" type="button" aria-label="Open menu">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-
       <nav class="tab-nav" id="tabNav">
         <button class="tab-btn active" data-tab="dashboard" type="button">Dashboard</button>
         <button class="tab-btn" data-tab="courses" type="button">Courses</button>
@@ -57,6 +56,8 @@
         <button class="tab-btn" data-tab="academic" type="button">Academic Settings</button>
         <button class="tab-btn" data-tab="calendar" type="button">Calendar</button>
       </nav>
+
+      <button id="signOutBtn" class="ghost-btn brand-signout-btn hidden" type="button">Sign Out</button>
     </aside>
 
     <main class="main-content">
