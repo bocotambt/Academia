@@ -5,8 +5,9 @@
   --line: #d9e4f2;
   --text: #14213d;
   --muted: #64748b;
-  --primary: #2563eb;
-  --primary-dark: #1d4ed8;
+  --primary: #4f5fd7;
+  --primary-dark: #404fbe;
+  --primary-soft: #e3e8ff;
   --success: #16a34a;
   --danger: #dc2626;
   --warning: #ea580c;
@@ -17,6 +18,8 @@
   --radius: 18px;
   --past-text: #94a3b8;
   --past-bg: #f8fafc;
+  --sidebar-bg: #191c32;
+  --sidebar-text: #eef2ff;
 }
 
 * {
@@ -55,82 +58,97 @@ button {
 .app-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 300px 1fr;
 }
 
 .sidebar {
-  background: #0f172a;
+  background: var(--sidebar-bg);
   color: white;
-  padding: 24px 18px;
+  padding: 20px 16px;
   position: sticky;
   top: 0;
   height: 100vh;
   overflow-y: auto;
 }
 
+.sidebar-top {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
 .brand {
   display: flex;
   gap: 14px;
-  align-items: flex-start;
-  margin-bottom: 20px;
+  align-items: center;
 }
 
 .brand-text-wrap {
-  flex: 1;
   min-width: 0;
-}
-
-.brand-top-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
 }
 
 .brand h1 {
   margin: 0;
   font-size: 26px;
   color: white;
+  line-height: 1.1;
+}
+
+.brand-mark {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #6b7cff, #4f5fd7);
+  flex-shrink: 0;
 }
 
 .brand-user-area {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  min-width: 0;
 }
 
 .brand-signed-in {
   margin: 0;
-  color: #cbd5e1;
-  font-size: 12px;
+  color: #d8defd;
+  font-size: 13px;
+  line-height: 1.3;
   word-break: break-word;
+  flex: 1;
 }
 
 .brand-signout-btn {
   padding: 8px 12px;
+  border-radius: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.brand-mark {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  display: grid;
-  place-items: center;
-  font-size: 22px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  flex-shrink: 0;
+.auth-box {
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.06);
+}
+
+.auth-box input {
+  width: 100%;
+  margin-bottom: 0.75rem;
 }
 
 .menu-toggle-btn {
   display: none;
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.12);
-  margin-bottom: 14px;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  margin-bottom: 12px;
   padding: 0;
   align-items: center;
   justify-content: center;
@@ -167,7 +185,7 @@ button {
 
 .tab-btn.active {
   background: white;
-  color: #0f172a;
+  color: #1d2759;
 }
 
 .main-content {
@@ -176,7 +194,7 @@ button {
 }
 
 .topbar {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .topbar h2 {
@@ -201,8 +219,8 @@ button {
   gap: 18px;
 }
 
-.dashboard-single-column {
-  grid-template-columns: 1fr;
+.dashboard-two-col {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .panel,
@@ -243,6 +261,7 @@ button {
 
 .section-head h3,
 .panel-head h3,
+.panel-head h4,
 .calendar-head h3 {
   margin: 0;
 }
@@ -277,9 +296,18 @@ button {
   color: white;
 }
 
+.primary-btn:hover,
+.view-btn:hover {
+  background: var(--primary-dark);
+}
+
 .secondary-btn {
-  background: #e8f0ff;
+  background: var(--primary-soft);
   color: var(--primary-dark);
+}
+
+.secondary-btn:hover {
+  background: #d7deff;
 }
 
 .ghost-btn {
@@ -302,14 +330,12 @@ button {
   color: white;
 }
 
-.icon-btn {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  background: #eef2f7;
-  color: #334155;
-  font-size: 24px;
-  line-height: 1;
+.field-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 6px;
 }
 
 input,
@@ -346,9 +372,82 @@ input[type="color"] {
 
 .input-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 12px;
+}
+
+.two-cols {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.three-cols {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.four-cols {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.subsection-box {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px;
+  background: var(--surface-2);
+}
+
+.pending-session-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.pending-session-item {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.badge-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.course-badge,
+.status-badge,
+.priority-badge {
+  display: inline-block;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.status-todo {
+  background: var(--warning);
+}
+
+.status-progress {
+  background: var(--primary);
+}
+
+.status-done {
+  background: var(--success);
+}
+
+.priority-high {
+  background: var(--danger);
+}
+
+.priority-medium {
+  background: #d97706;
+}
+
+.priority-low {
+  background: #0891b2;
 }
 
 .meta {
@@ -404,48 +503,6 @@ input[type="color"] {
   margin-top: 10px;
 }
 
-.badge-row {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 10px;
-}
-
-.course-badge,
-.status-badge,
-.priority-badge {
-  display: inline-block;
-  color: white;
-  padding: 5px 10px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.status-todo {
-  background: var(--warning);
-}
-
-.status-progress {
-  background: var(--primary);
-}
-
-.status-done {
-  background: var(--success);
-}
-
-.priority-high {
-  background: var(--danger);
-}
-
-.priority-medium {
-  background: #d97706;
-}
-
-.priority-low {
-  background: #0891b2;
-}
-
 .calendar-board {
   background: white;
   border: 1px solid var(--line);
@@ -458,9 +515,9 @@ input[type="color"] {
 .calendar-weekdays,
 .calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(90px, 1fr));
+  grid-template-columns: repeat(7, minmax(110px, 1fr));
   gap: 8px;
-  min-width: 680px;
+  min-width: 780px;
 }
 
 .calendar-weekdays {
@@ -476,7 +533,7 @@ input[type="color"] {
 }
 
 .calendar-cell {
-  min-height: 120px;
+  min-height: 130px;
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: 16px;
@@ -580,12 +637,16 @@ input[type="color"] {
 }
 
 .modal-card {
-  width: min(680px, 100%);
+  width: min(760px, 100%);
   max-height: 92vh;
   background: white;
   border-radius: 22px;
   box-shadow: 0 30px 80px rgba(15, 23, 42, 0.22);
   overflow: hidden;
+}
+
+.large-modal {
+  width: min(980px, 100%);
 }
 
 .modal-head,
@@ -640,19 +701,6 @@ input[type="color"] {
   color: var(--muted);
 }
 
-.auth-box {
-  margin: 1rem 0 1.25rem;
-  padding: 1rem;
-  border: 1px solid #d6d9e0;
-  border-radius: 16px;
-  background: #ffffff;
-}
-
-.auth-box input {
-  width: 100%;
-  margin-bottom: 0.75rem;
-}
-
 @media (max-width: 1100px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -667,11 +715,13 @@ input[type="color"] {
 
   .dashboard-grid,
   .card-grid,
-  .planner-grid {
+  .planner-grid,
+  .dashboard-two-col {
     grid-template-columns: 1fr;
   }
 
-  .input-row {
+  .three-cols,
+  .four-cols {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -688,7 +738,47 @@ input[type="color"] {
 
   .sidebar {
     padding: 14px 12px;
-    height: auto;
+  }
+
+  .sidebar-top {
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .brand {
+    align-items: center;
+  }
+
+  .brand-mark {
+    width: 42px;
+    height: 42px;
+    font-size: 20px;
+    border-radius: 14px;
+  }
+
+  .brand h1 {
+    font-size: 20px;
+  }
+
+  .brand-user-area {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .brand-signed-in {
+    font-size: 11px;
+    max-width: calc(100% - 92px);
+  }
+
+  .brand-signout-btn {
+    padding: 6px 10px;
+    font-size: 13px;
+    min-height: auto;
+  }
+
+  .auth-box {
+    padding: 12px;
+    margin-bottom: 10px;
   }
 
   .menu-toggle-btn {
@@ -705,40 +795,6 @@ input[type="color"] {
     display: grid;
   }
 
-  .tab-btn {
-    width: 100%;
-    min-width: 0;
-    white-space: normal;
-  }
-
-  .brand-mark {
-    width: 40px;
-    height: 40px;
-    font-size: 18px;
-  }
-
-  .brand h1 {
-    font-size: 21px;
-  }
-
-  .brand-top-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .brand-user-area {
-    justify-content: space-between;
-    width: 100%;
-  }
-
-  .brand-signed-in {
-    font-size: 11px;
-  }
-
-  .auth-box {
-    padding: 12px;
-  }
-
   .main-content {
     padding: 12px;
   }
@@ -746,10 +802,6 @@ input[type="color"] {
   .topbar h2 {
     font-size: 22px;
     line-height: 1.15;
-  }
-
-  .meta {
-    font-size: 13px;
   }
 
   .panel,
@@ -763,7 +815,6 @@ input[type="color"] {
 
   .section-head,
   .panel-head,
-  .modal-head,
   .modal-footer,
   .calendar-head,
   .calendar-controls,
@@ -776,12 +827,9 @@ input[type="color"] {
     align-items: stretch;
   }
 
-  .calendar-month-label {
-    min-width: 0;
-    text-align: center;
-  }
-
-  .input-row {
+  .two-cols,
+  .three-cols,
+  .four-cols {
     grid-template-columns: 1fr;
   }
 
@@ -791,27 +839,9 @@ input[type="color"] {
   .edit-btn,
   .delete-btn,
   .view-btn,
-  .mini-btn,
-  .icon-btn {
+  .mini-btn {
     width: 100%;
     min-height: 44px;
-  }
-
-  .brand-signout-btn {
-    width: auto;
-    min-height: 36px;
-  }
-
-  input,
-  select,
-  textarea {
-    min-height: 46px;
-    font-size: 16px;
-    padding: 12px 14px;
-  }
-
-  #noteContent {
-    min-height: 380px;
   }
 
   .calendar-board {
@@ -820,32 +850,14 @@ input[type="color"] {
 
   .calendar-weekdays,
   .calendar-grid {
-    min-width: 640px;
+    min-width: 700px;
     gap: 4px;
-  }
-
-  .calendar-weekdays div {
-    font-size: 11px;
-    padding: 6px 0;
   }
 
   .calendar-cell {
-    min-height: 92px;
+    min-height: 96px;
     padding: 6px;
     gap: 4px;
-  }
-
-  .calendar-date {
-    font-size: 12px;
-  }
-
-  .calendar-item {
-    font-size: 10px;
-    padding: 5px 6px;
-  }
-
-  .calendar-item small {
-    font-size: 9px;
   }
 
   .modal {
@@ -853,7 +865,8 @@ input[type="color"] {
     place-items: end center;
   }
 
-  .modal-card {
+  .modal-card,
+  .large-modal {
     width: 100%;
     max-height: 92vh;
     border-radius: 18px 18px 0 0;
