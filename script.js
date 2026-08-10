@@ -97,7 +97,7 @@ document.addEventListener("DOMContentLoaded", function () {
       email: email,
       password: password,
       options: {
-        emailRedirectTo: "https://bocotambt.github.io/Academia/auth-confirm.html"
+        emailRedirectTo: "https://bocotambt.github.io/Academia/"
       }
     });
 
@@ -852,9 +852,9 @@ document.addEventListener("DOMContentLoaded", function () {
     if (itemId) openCalendarItem(itemId);
   });
 
-  supabase.auth.onAuthStateChange(async function (_event, session) {
+  supabase.auth.onAuthStateChange(function (_event, session) {
     setAuthUI(session ? session.user : null);
-    await loadTasks();
+    loadTasks();
   });
 
   async function init() {
