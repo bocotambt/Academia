@@ -41,6 +41,8 @@
       <nav class="tab-nav">
         <button class="tab-btn active" data-tab="dashboard" type="button">Dashboard</button>
         <button class="tab-btn" data-tab="planner" type="button">Tasks</button>
+        <button class="tab-btn" data-tab="courses" type="button">Courses</button>
+        <button class="tab-btn" data-tab="notes" type="button">Notes</button>
         <button class="tab-btn" data-tab="exams" type="button">Exams</button>
         <button class="tab-btn" data-tab="calendar" type="button">Calendar</button>
       </nav>
@@ -50,7 +52,7 @@
       <header class="topbar">
         <div>
           <h2 id="pageTitle">Dashboard</h2>
-          <p class="topbar-subtitle">Track your tasks, exams, and calendar in one place.</p>
+          <p class="topbar-subtitle">Track courses, tasks, notes, exams, and calendar items in one place.</p>
         </div>
       </header>
 
@@ -59,6 +61,14 @@
           <div class="summary-card">
             <span>Total Tasks</span>
             <h3 id="totalTasks">0</h3>
+          </div>
+          <div class="summary-card">
+            <span>Total Courses</span>
+            <h3 id="totalCourses">0</h3>
+          </div>
+          <div class="summary-card">
+            <span>Total Notes</span>
+            <h3 id="totalNotes">0</h3>
           </div>
           <div class="summary-card">
             <span>Total Exams</span>
@@ -83,10 +93,16 @@
 
           <div class="panel">
             <div class="panel-head">
-              <h3>All Tasks</h3>
-              <button class="secondary-btn open-modal-btn" data-open-modal="taskModal" type="button">Add Task</button>
+              <h3>Upcoming Exams</h3>
             </div>
-            <div id="dashboardAllTasks"></div>
+            <div id="dashboardExams"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Recent Notes</h3>
+            </div>
+            <div id="dashboardNotes"></div>
           </div>
         </div>
       </section>
@@ -97,6 +113,22 @@
           <button class="primary-btn open-modal-btn" data-open-modal="taskModal" type="button">Add Task</button>
         </div>
         <div id="plannerList" class="planner-grid"></div>
+      </section>
+
+      <section id="courses" class="tab-content">
+        <div class="section-head">
+          <h3>Courses</h3>
+          <button class="primary-btn open-modal-btn" data-open-modal="courseModal" type="button">Add Course</button>
+        </div>
+        <div id="coursesList" class="planner-grid"></div>
+      </section>
+
+      <section id="notes" class="tab-content">
+        <div class="section-head">
+          <h3>Notes</h3>
+          <button class="primary-btn open-modal-btn" data-open-modal="noteModal" type="button">Add Note</button>
+        </div>
+        <div id="notesList" class="planner-grid"></div>
       </section>
 
       <section id="exams" class="tab-content">
@@ -151,7 +183,7 @@
   <div class="modal hidden" id="taskModal">
     <div class="modal-card">
       <div class="modal-head">
-        <h3 id="taskModalTitle">Add Task</h3>
+        <h3>Add Task</h3>
         <button class="icon-btn close-modal-btn" data-close-modal="taskModal" type="button">&times;</button>
       </div>
       <div class="modal-body">
@@ -178,10 +210,47 @@
     </div>
   </div>
 
+  <div class="modal hidden" id="courseModal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3>Add Course</h3>
+        <button class="icon-btn close-modal-btn" data-close-modal="courseModal" type="button">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="courseTitle" placeholder="Course name">
+        <input type="text" id="courseCode" placeholder="Course code">
+        <input type="text" id="courseInstructor" placeholder="Instructor">
+        <textarea id="courseDetails" placeholder="Course details"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="ghost-btn close-modal-btn" data-close-modal="courseModal" type="button">Cancel</button>
+        <button id="saveCourseBtn" type="button" class="primary-btn">Save Course</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="noteModal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3>Add Note</h3>
+        <button class="icon-btn close-modal-btn" data-close-modal="noteModal" type="button">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="noteTitle" placeholder="Note title">
+        <input type="text" id="noteCourse" placeholder="Related course">
+        <textarea id="noteContent" placeholder="Write your note here"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="ghost-btn close-modal-btn" data-close-modal="noteModal" type="button">Cancel</button>
+        <button id="saveNoteBtn" type="button" class="primary-btn">Save Note</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal hidden" id="examModal">
     <div class="modal-card">
       <div class="modal-head">
-        <h3 id="examModalTitle">Add Exam</h3>
+        <h3>Add Exam</h3>
         <button class="icon-btn close-modal-btn" data-close-modal="examModal" type="button">&times;</button>
       </div>
       <div class="modal-body">
