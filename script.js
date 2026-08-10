@@ -246,7 +246,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function isPastExam(exam) {
     if (!exam.date) return false;
     const examTime = exam.time ? exam.time : "23:59";
-    const examDateTime = new Date(exam.date + "T" + exam.time + ":00");
+    const examDateTime = new Date(exam.date + "T" + examTime + ":00");
     return examDateTime < new Date();
   }
 
