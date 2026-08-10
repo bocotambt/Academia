@@ -853,7 +853,256 @@ li,
     font-size: 10px;
     line-height: 1.2;
   }
+@media (max-width: 900px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
 
+  .sidebar {
+    position: static;
+    height: auto;
+    padding: 16px;
+  }
+
+  .brand {
+    margin-bottom: 16px;
+  }
+
+  .main-content {
+    padding: 18px;
+  }
+
+  .dashboard-summary,
+  .dashboard-grid,
+  .dashboard-grid-custom,
+  .card-grid,
+  .planner-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tasks-panel {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .week-calendar-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .week-day-column,
+  .day-view-card {
+    min-height: auto;
+  }
+
+  .input-row,
+  .four-cols {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
+  body {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .sidebar {
+    padding: 14px;
+  }
+
+  .brand-mark {
+    width: 42px;
+    height: 42px;
+    font-size: 20px;
+  }
+
+  .brand h1 {
+    font-size: 22px;
+  }
+
+  .tab-nav {
+    display: flex;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 6px;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+
+  .tab-btn {
+    flex: 0 0 auto;
+    min-width: 136px;
+    min-height: 46px;
+    white-space: nowrap;
+    scroll-snap-align: start;
+    text-align: center;
+    padding: 12px 14px;
+  }
+
+  .main-content {
+    padding: 14px;
+  }
+
+  .topbar {
+    margin-bottom: 16px;
+  }
+
+  .topbar h2 {
+    font-size: 24px;
+    line-height: 1.2;
+  }
+
+  .topbar-subtitle {
+    font-size: 14px;
+  }
+
+  .summary-card {
+    padding: 16px;
+  }
+
+  .summary-card h3 {
+    font-size: 26px;
+  }
+
+  .panel,
+  .note-card,
+  .course-card,
+  .day-card,
+  .academic-card {
+    padding: 14px;
+  }
+
+  .section-head,
+  .panel-head,
+  .calendar-head,
+  .modal-head,
+  .modal-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .head-btns,
+  .calendar-controls,
+  .view-switch,
+  .inline-status-controls,
+  .card-actions,
+  .auth-btn-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .primary-btn,
+  .secondary-btn,
+  .ghost-btn,
+  .edit-btn,
+  .delete-btn,
+  .view-btn,
+  .mini-btn,
+  .icon-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .icon-btn {
+    height: 44px;
+    font-size: 22px;
+  }
+
+  input,
+  select,
+  textarea {
+    min-height: 46px;
+    padding: 12px 14px;
+    font-size: 16px;
+  }
+
+  textarea {
+    min-height: 110px;
+  }
+
+  .calendar-board {
+    padding: 10px;
+    overflow-x: auto;
+  }
+
+  .calendar-month-label {
+    min-width: 0;
+    text-align: center;
+  }
+
+  .calendar-weekdays,
+  .calendar-grid {
+    gap: 4px;
+  }
+
+  .calendar-weekdays div {
+    font-size: 11px;
+    padding: 6px 0;
+  }
+
+  .calendar-cell {
+    min-height: 84px;
+    padding: 6px;
+    border-radius: 12px;
+  }
+
+  .calendar-date {
+    font-size: 12px;
+  }
+
+  .calendar-item {
+    font-size: 10px;
+    padding: 6px 7px;
+    border-radius: 8px;
+    line-height: 1.2;
+  }
+
+  .calendar-item small {
+    font-size: 10px;
+  }
+
+  .week-day-column,
+  .day-view-card {
+    padding: 10px;
+  }
+
+  .modal {
+    padding: 10px;
+    align-items: end;
+  }
+
+  .modal-card,
+  .large-modal {
+    width: 100%;
+    max-height: 92vh;
+    border-radius: 18px 18px 0 0;
+  }
+
+  .modal-body {
+    max-height: 62vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 16px;
+  }
+
+  .modal-head,
+  .modal-footer {
+    padding: 14px 16px;
+  }
+
+  .detail-item {
+    padding: 10px 12px;
+  }
+
+  .empty-state {
+    padding: 16px;
+  }
+}
   .dashboard-summary {
     grid-template-columns: 1fr;
   }
