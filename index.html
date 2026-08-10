@@ -40,10 +40,11 @@
 
       <nav class="tab-nav">
         <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
-        <button class="tab-btn" data-tab="academic">Academic</button>
+        <button class="tab-btn" data-tab="academic">Academic Settings</button>
         <button class="tab-btn" data-tab="courses">Courses</button>
         <button class="tab-btn" data-tab="notes">Notes</button>
         <button class="tab-btn" data-tab="planner">Tasks</button>
+        <button class="tab-btn" data-tab="exams">Exams</button>
         <button class="tab-btn" data-tab="calendar">Calendar</button>
       </nav>
     </aside>
@@ -52,7 +53,7 @@
       <header class="topbar">
         <div>
           <h2 id="pageTitle">Dashboard</h2>
-          <p class="topbar-subtitle">Track classes, semesters, notes, tasks, and events in one place.</p>
+          <p class="topbar-subtitle">Track classes, semesters, notes, tasks, exams, and events in one place.</p>
         </div>
       </header>
 
@@ -66,10 +67,21 @@
             <span>Total Tasks</span>
             <h3 id="totalTasks">0</h3>
           </div>
+          <div class="summary-card">
+            <span>Total Exams</span>
+            <h3 id="totalExams">0</h3>
+          </div>
         </div>
 
-        <div class="dashboard-grid">
-          <div class="panel">
+        <div class="dashboard-grid dashboard-grid-custom">
+          <div class="panel schedule-panel">
+            <div class="panel-head">
+              <h3>Today’s Schedule</h3>
+            </div>
+            <div id="dashboardToday"></div>
+          </div>
+
+          <div class="panel tasks-panel">
             <div class="panel-head">
               <h3>All Tasks</h3>
               <button class="secondary-btn open-modal-btn" data-open-modal="taskModal">Add Task</button>
@@ -77,14 +89,7 @@
             <div id="dashboardAllTasks"></div>
           </div>
 
-          <div class="panel">
-            <div class="panel-head">
-              <h3>Today’s Schedule</h3>
-            </div>
-            <div id="dashboardToday"></div>
-          </div>
-
-          <div class="panel">
+          <div class="panel schedule-panel">
             <div class="panel-head">
               <h3>Tomorrow’s Schedule</h3>
             </div>
@@ -95,7 +100,7 @@
 
       <section id="academic" class="tab-content">
         <div class="section-head">
-          <h3>Academic Years & Semesters</h3>
+          <h3>Academic Settings</h3>
           <div class="head-btns">
             <button class="secondary-btn open-modal-btn" data-open-modal="semesterModal">Add Semester</button>
             <button class="primary-btn open-modal-btn" data-open-modal="academicYearModal">Add Academic Year</button>
@@ -126,6 +131,14 @@
           <button class="primary-btn open-modal-btn" data-open-modal="taskModal">Add Task</button>
         </div>
         <div id="plannerList" class="planner-grid"></div>
+      </section>
+
+      <section id="exams" class="tab-content">
+        <div class="section-head">
+          <h3>Exams</h3>
+          <button class="primary-btn open-modal-btn" data-open-modal="examModal">Add Exam</button>
+        </div>
+        <div id="examsList" class="planner-grid"></div>
       </section>
 
       <section id="calendar" class="tab-content">
@@ -319,6 +332,34 @@
       <div class="modal-footer">
         <button class="ghost-btn close-modal-btn" data-close-modal="taskModal" type="button">Cancel</button>
         <button id="addTaskBtn" type="button" class="primary-btn">Save Task</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="examModal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3 id="examModalTitle">Add Exam</h3>
+        <button class="icon-btn close-modal-btn" data-close-modal="examModal" type="button">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="examTitle" placeholder="Exam title">
+        <input type="text" id="examCourse" placeholder="Course / subject">
+        <div class="input-row">
+          <input type="date" id="examDate">
+          <input type="time" id="examTime">
+          <input type="text" id="examPlace" placeholder="Place">
+        </div>
+        <div class="input-row">
+          <input type="text" id="examSeatNumber" placeholder="Seat number">
+          <input type="text" id="examGrade" placeholder="Grade (optional)">
+          <input type="number" id="examMark" placeholder="Mark (optional)">
+        </div>
+        <textarea id="examNotes" placeholder="Revision notes / reminders"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="ghost-btn close-modal-btn" data-close-modal="examModal" type="button">Cancel</button>
+        <button id="saveExamBtn" type="button" class="primary-btn">Save Exam</button>
       </div>
     </div>
   </div>
