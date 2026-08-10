@@ -15,6 +15,9 @@ document.addEventListener("DOMContentLoaded", function () {
   let currentCalendarView = "month";
   let editingTaskId = null;
   let editingExamId = null;
+  let userPickedCalendarView = false;
+
+  const mobileQuery = window.matchMedia("(max-width: 640px)");
 
   const tabButtons = document.querySelectorAll(".tab-btn");
   const tabContents = document.querySelectorAll(".tab-content");
@@ -179,6 +182,16 @@ document.addEventListener("DOMContentLoaded", function () {
     return examDateTime < new Date();
   }
 
+  function getRecommendedCalendarView() {
+    return mobileQuery.matches ? "week" : "month";
+  }
+
+  function applyResponsiveCalendarDefault(force) {
+    if (force || !userPickedCalendarView) {
+      setCalendarView(getRecommendedCalendarView(), false);
+    }
+  }
+
   async function loadTasks() {
     if (!currentUser) {
       tasks = [];
@@ -221,6 +234,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!currentUser) {
       exams = [];
       renderExams();
+      renderCalendar();
       updateDashboard();
       return;
     }
@@ -233,6 +247,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (error) {
       exams = [];
       renderExams();
+      renderCalendar();
       updateDashboard();
       return;
     }
@@ -874,8 +889,12 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  function setCalendarView(view) {
+  function setCalendarView(view, rememberChoice) {
     currentCalendarView = view;
+
+    if (rememberChoice !== false) {
+      userPickedCalendarView = true;
+    }
 
     if (monthViewBtn) monthViewBtn.classList.remove("active-view-btn");
     if (weekViewBtn) weekViewBtn.classList.remove("active-view-btn");
@@ -1197,9 +1216,24 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  if (monthViewBtn) monthViewBtn.addEventListener("click", function () { setCalendarView("month"); });
-  if (weekViewBtn) weekViewBtn.addEventListener("click", function () { setCalendarView("week"); });
-  if (dayViewBtn) dayViewBtn.addEventListener("click", function () { setCalendarView("day"); });
+  if (monthViewBtn) {
+    monthViewBtn.addEventListener("click", function () {
+      setCalendarView("month", true);
+    });
+  }
+
+  if (weekViewBtn) {
+    weekViewBtn.addEventListener("click", function () {
+      setCalendarView("week", true);
+    });
+  }
+
+  if (dayViewBtn) {
+    dayViewBtn.addEventListener("click", function () {
+      setCalendarView("day", true);
+    });
+  }
+
   if (prevPeriodBtn) prevPeriodBtn.addEventListener("click", function () { moveCalendar(-1); });
   if (nextPeriodBtn) nextPeriodBtn.addEventListener("click", function () { moveCalendar(1); });
   if (addTaskBtn) addTaskBtn.addEventListener("click", saveTask);
@@ -1211,6 +1245,10 @@ document.addEventListener("DOMContentLoaded", function () {
   document.addEventListener("click", function (e) {
     const itemId = e.target.getAttribute("data-calendar-item") || e.target.closest("[data-calendar-item]")?.getAttribute("data-calendar-item");
     if (itemId) openCalendarItem(itemId);
+  });
+
+  mobileQuery.addEventListener("change", function () {
+    applyResponsiveCalendarDefault(false);
   });
 
   supabase.auth.onAuthStateChange(async function (_event, session) {
@@ -1226,8 +1264,8 @@ document.addEventListener("DOMContentLoaded", function () {
     renderTasks();
     renderExams();
     renderDashboard();
-    setCalendarView("month");
     updateDashboard();
+    applyResponsiveCalendarDefault(true);
     await loadTasks();
     await loadExams();
   }
