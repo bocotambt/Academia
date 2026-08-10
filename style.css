@@ -996,3 +996,27 @@ input[type="color"] {
     margin-top: auto;
   }
 }
+@media (max-width: 640px) {
+  .tab-nav {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .tab-nav.menu-open {
+    display: flex;
+  }
+
+  #signOutBtn,
+  .brand-signout-btn {
+    display: none;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .tab-nav.menu-open + #signOutBtn,
+  .tab-nav.menu-open + .brand-signout-btn {
+    display: block;
+  }
+}
