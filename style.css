@@ -938,3 +938,61 @@ input[type="color"] {
     display: grid;
   }
 }
+@media (max-width: 640px) {
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .sidebar-top {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "brand menu"
+      "user user";
+    align-items: start;
+    gap: 8px 10px;
+  }
+
+  .brand {
+    grid-area: brand;
+    min-width: 0;
+  }
+
+  .menu-toggle-btn {
+    grid-area: menu;
+    display: inline-flex;
+    justify-self: end;
+    align-self: start;
+    margin: 0;
+  }
+
+  .brand-user-area {
+    grid-area: user;
+    display: block;
+    width: 100%;
+    margin: 0;
+  }
+
+  .brand-signed-in {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.25;
+    word-break: break-word;
+  }
+
+  .tab-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: visible;
+    margin-top: 10px;
+  }
+
+  #signOutBtn,
+  .brand-signout-btn {
+    width: 100%;
+    margin-top: auto;
+  }
+}
