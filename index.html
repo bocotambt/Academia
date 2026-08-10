@@ -13,8 +13,11 @@
     <aside class="sidebar">
       <div class="brand">
         <div class="brand-mark">A</div>
-        <div>
-          <h1>Academia</h1>
+        <div class="brand-text-wrap">
+          <div class="brand-top-row">
+            <h1>Academia</h1>
+            <p id="brandSignedInText" class="brand-signed-in hidden"></p>
+          </div>
           <p>Your academic planner</p>
         </div>
       </div>
@@ -32,20 +35,25 @@
         </div>
 
         <div id="authSignedIn" class="hidden">
-          <p class="meta strongish">Signed in as</p>
-          <p id="currentUserEmail" class="meta"></p>
           <button id="signOutBtn" class="ghost-btn" type="button">Sign Out</button>
+          <p id="authMessageSignedIn" class="meta"></p>
         </div>
       </div>
 
-      <nav class="tab-nav">
-        <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
-        <button class="tab-btn" data-tab="academic">Academic Settings</button>
-        <button class="tab-btn" data-tab="courses">Courses</button>
-        <button class="tab-btn" data-tab="notes">Notes</button>
-        <button class="tab-btn" data-tab="planner">Tasks</button>
-        <button class="tab-btn" data-tab="exams">Exams</button>
-        <button class="tab-btn" data-tab="calendar">Calendar</button>
+      <button id="menuToggleBtn" class="menu-toggle-btn" type="button" aria-label="Open menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <nav class="tab-nav" id="tabNav">
+        <button class="tab-btn active" data-tab="dashboard" type="button">Dashboard</button>
+        <button class="tab-btn" data-tab="courses" type="button">Courses</button>
+        <button class="tab-btn" data-tab="planner" type="button">Tasks</button>
+        <button class="tab-btn" data-tab="notes" type="button">Notes</button>
+        <button class="tab-btn" data-tab="exams" type="button">Exams</button>
+        <button class="tab-btn" data-tab="academic" type="button">Academic Settings</button>
+        <button class="tab-btn" data-tab="calendar" type="button">Calendar</button>
       </nav>
     </aside>
 
@@ -84,7 +92,7 @@
           <div class="panel tasks-panel">
             <div class="panel-head">
               <h3>All Tasks</h3>
-              <button class="secondary-btn open-modal-btn" data-open-modal="taskModal">Add Task</button>
+              <button class="secondary-btn open-modal-btn" data-open-modal="taskModal" type="button">Add Task</button>
             </div>
             <div id="dashboardAllTasks"></div>
           </div>
@@ -98,47 +106,47 @@
         </div>
       </section>
 
-      <section id="academic" class="tab-content">
-        <div class="section-head">
-          <h3>Academic Settings</h3>
-          <div class="head-btns">
-            <button class="secondary-btn open-modal-btn" data-open-modal="semesterModal">Add Semester</button>
-            <button class="primary-btn open-modal-btn" data-open-modal="academicYearModal">Add Academic Year</button>
-          </div>
-        </div>
-        <div id="academicYearsList" class="card-grid"></div>
-      </section>
-
       <section id="courses" class="tab-content">
         <div class="section-head">
           <h3>Courses</h3>
-          <button class="primary-btn open-modal-btn" data-open-modal="courseModal">Add Course</button>
+          <button class="primary-btn open-modal-btn" data-open-modal="courseModal" type="button">Add Course</button>
         </div>
         <div id="coursesList" class="card-grid"></div>
-      </section>
-
-      <section id="notes" class="tab-content">
-        <div class="section-head">
-          <h3>Notes</h3>
-          <button class="primary-btn open-modal-btn" data-open-modal="noteModal">Add Note</button>
-        </div>
-        <div id="notesList" class="card-grid"></div>
       </section>
 
       <section id="planner" class="tab-content">
         <div class="section-head">
           <h3>Tasks</h3>
-          <button class="primary-btn open-modal-btn" data-open-modal="taskModal">Add Task</button>
+          <button class="primary-btn open-modal-btn" data-open-modal="taskModal" type="button">Add Task</button>
         </div>
         <div id="plannerList" class="planner-grid"></div>
+      </section>
+
+      <section id="notes" class="tab-content">
+        <div class="section-head">
+          <h3>Notes</h3>
+          <button class="primary-btn open-modal-btn" data-open-modal="noteModal" type="button">Add Note</button>
+        </div>
+        <div id="notesList" class="card-grid"></div>
       </section>
 
       <section id="exams" class="tab-content">
         <div class="section-head">
           <h3>Exams</h3>
-          <button class="primary-btn open-modal-btn" data-open-modal="examModal">Add Exam</button>
+          <button class="primary-btn open-modal-btn" data-open-modal="examModal" type="button">Add Exam</button>
         </div>
         <div id="examsList" class="planner-grid"></div>
+      </section>
+
+      <section id="academic" class="tab-content">
+        <div class="section-head">
+          <h3>Academic Settings</h3>
+          <div class="head-btns">
+            <button class="secondary-btn open-modal-btn" data-open-modal="semesterModal" type="button">Add Semester</button>
+            <button class="primary-btn open-modal-btn" data-open-modal="academicYearModal" type="button">Add Academic Year</button>
+          </div>
+        </div>
+        <div id="academicYearsList" class="card-grid"></div>
       </section>
 
       <section id="calendar" class="tab-content">
@@ -153,7 +161,7 @@
             <button id="prevPeriodBtn" class="secondary-btn" type="button">Prev</button>
             <div id="calendarMonthLabel" class="calendar-month-label">Month Year</div>
             <button id="nextPeriodBtn" class="secondary-btn" type="button">Next</button>
-            <button class="primary-btn open-modal-btn" data-open-modal="eventModal">Add Event</button>
+            <button class="primary-btn open-modal-btn" data-open-modal="eventModal" type="button">Add Event</button>
           </div>
         </div>
 
@@ -296,7 +304,7 @@
       </div>
       <div class="modal-body">
         <input type="text" id="noteTitle" placeholder="Note title">
-        <textarea id="noteContent" placeholder="Write your notes here..."></textarea>
+        <textarea id="noteContent" rows="12" placeholder="Write your notes here..."></textarea>
       </div>
       <div class="modal-footer">
         <button class="ghost-btn close-modal-btn" data-close-modal="noteModal" type="button">Cancel</button>
