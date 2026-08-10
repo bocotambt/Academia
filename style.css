@@ -689,187 +689,23 @@ li,
   .sidebar {
     position: static;
     height: auto;
-    padding-bottom: 12px;
+    padding: 18px 16px;
   }
 
-  .tab-nav {
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    overflow-x: auto;
-  }
-
-  .tab-btn {
-    min-width: 120px;
-  }
-
-  .dashboard-summary,
-  .dashboard-grid,
-  .dashboard-grid-custom,
-  .card-grid,
-  .planner-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .tasks-panel {
-    grid-column: auto;
-    grid-row: auto;
-  }
-
-  .input-row,
-  .four-cols {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .week-calendar-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .week-day-column {
-    min-height: auto;
-  }
-}
-
-@media (max-width: 640px) {
-  .main-content {
-    padding: 16px;
-  }
-
-  .topbar h2 {
-    font-size: 24px;
-  }
-
-  .input-row,
-  .four-cols {
-    grid-template-columns: 1fr;
-  }
-
-  .section-head,
-  .panel-head,
-  .modal-head,
-  .modal-footer,
-  .calendar-head {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .head-btns,
-  .calendar-controls,
-  .view-switch,
-  .inline-status-controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .calendar-month-label {
-    min-width: 0;
-  }
-
-  .primary-btn,
-  .secondary-btn,
-  .ghost-btn,
-  .edit-btn,
-  .delete-btn,
-  .view-btn,
-  .icon-btn,
-  .mini-btn {
-    width: 100%;
-  }
-
-  .icon-btn {
-    height: 46px;
-  }
-
-  .calendar-weekdays div {
-    font-size: 12px;
-    padding: 6px 0;
-  }
-
-  .calendar-grid,
-  .calendar-weekdays {
-    gap: 4px;
-  }
-
-  .calendar-cell {
-    min-height: 96px;
-    padding: 6px;
-  }
-
-  .calendar-date {
-    font-size: 12px;
-  }
-
-  .calendar-item {
-    font-size: 11px;
-    padding: 6px 8px;
-  }
-}
-@media (max-width: 640px) {
   .tab-nav {
     display: flex;
     overflow-x: auto;
     gap: 8px;
     padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
     scroll-snap-type: x proximity;
   }
 
   .tab-btn {
-    min-width: 140px;
-    min-height: 48px;
-    white-space: nowrap;
     flex: 0 0 auto;
+    min-width: 130px;
+    white-space: nowrap;
     scroll-snap-align: start;
-  }
-
-  .mini-btn,
-  .edit-btn,
-  .delete-btn,
-  .view-btn,
-  .primary-btn,
-  .secondary-btn,
-  .ghost-btn {
-    min-height: 44px;
-  }
-
-  .modal-card,
-  .large-modal {
-    width: 100%;
-    max-height: 92vh;
-    border-radius: 18px;
-  }
-
-  .modal-body {
-    max-height: 60vh;
-    overflow-y: auto;
-  }
-
-  .calendar-board {
-    padding: 10px;
-  }
-
-  .calendar-cell {
-    min-height: 82px;
-  }
-
-  .calendar-item {
-    font-size: 10px;
-    line-height: 1.2;
-  }
-@media (max-width: 900px) {
-  .app-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .sidebar {
-    position: static;
-    height: auto;
-    padding: 16px;
-  }
-
-  .brand {
-    margin-bottom: 16px;
-  }
-
-  .main-content {
-    padding: 18px;
   }
 
   .dashboard-summary,
@@ -894,9 +730,12 @@ li,
     min-height: auto;
   }
 
-  .input-row,
+  .input-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .four-cols {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -910,8 +749,16 @@ li,
     -webkit-text-size-adjust: 100%;
   }
 
+  .main-content {
+    padding: 14px;
+  }
+
   .sidebar {
     padding: 14px;
+  }
+
+  .brand {
+    margin-bottom: 16px;
   }
 
   .brand-mark {
@@ -924,28 +771,10 @@ li,
     font-size: 22px;
   }
 
-  .tab-nav {
-    display: flex;
-    overflow-x: auto;
-    gap: 8px;
-    padding-bottom: 6px;
-    scrollbar-width: thin;
-    -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x proximity;
-  }
-
-  .tab-btn {
-    flex: 0 0 auto;
-    min-width: 136px;
-    min-height: 46px;
-    white-space: nowrap;
-    scroll-snap-align: start;
-    text-align: center;
-    padding: 12px 14px;
-  }
-
-  .main-content {
-    padding: 14px;
+  .brand p,
+  .topbar-subtitle,
+  .meta {
+    font-size: 14px;
   }
 
   .topbar {
@@ -957,8 +786,8 @@ li,
     line-height: 1.2;
   }
 
-  .topbar-subtitle {
-    font-size: 14px;
+  .dashboard-summary {
+    grid-template-columns: 1fr;
   }
 
   .summary-card {
@@ -996,6 +825,26 @@ li,
     align-items: stretch;
   }
 
+  .tab-nav {
+    display: flex;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 6px;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+
+  .tab-btn {
+    flex: 0 0 auto;
+    min-width: 136px;
+    min-height: 46px;
+    white-space: nowrap;
+    text-align: center;
+    padding: 12px 14px;
+    scroll-snap-align: start;
+  }
+
   .primary-btn,
   .secondary-btn,
   .ghost-btn,
@@ -1025,14 +874,19 @@ li,
     min-height: 110px;
   }
 
-  .calendar-board {
-    padding: 10px;
-    overflow-x: auto;
+  .input-row,
+  .four-cols {
+    grid-template-columns: 1fr;
   }
 
   .calendar-month-label {
     min-width: 0;
     text-align: center;
+  }
+
+  .calendar-board {
+    padding: 10px;
+    overflow-x: auto;
   }
 
   .calendar-weekdays,
@@ -1069,11 +923,12 @@ li,
   .week-day-column,
   .day-view-card {
     padding: 10px;
+    min-height: auto;
   }
 
   .modal {
     padding: 10px;
-    align-items: end;
+    place-items: end center;
   }
 
   .modal-card,
@@ -1101,9 +956,5 @@ li,
 
   .empty-state {
     padding: 16px;
-  }
-}
-  .dashboard-summary {
-    grid-template-columns: 1fr;
   }
 }
