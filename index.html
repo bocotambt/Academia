@@ -11,20 +11,21 @@
 <body>
   <div class="app-shell">
     <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-mark">A</div>
-        <div class="brand-text-wrap">
-          <div class="brand-top-row">
+      <div class="sidebar-top">
+        <div class="brand">
+          <div class="brand-mark">A</div>
+          <div class="brand-text-wrap">
             <h1>Academia</h1>
-            <div id="brandUserArea" class="brand-user-area hidden">
-              <p id="brandSignedInText" class="brand-signed-in"></p>
-              <button id="signOutBtn" class="ghost-btn brand-signout-btn" type="button">Sign Out</button>
-            </div>
           </div>
+        </div>
+
+        <div id="brandUserArea" class="brand-user-area hidden">
+          <p id="brandSignedInText" class="brand-signed-in"></p>
+          <button id="signOutBtn" class="ghost-btn brand-signout-btn" type="button">Sign Out</button>
         </div>
       </div>
 
-      <div class="auth-box">
+      <div class="auth-box" id="authBox">
         <div id="authSignedOut">
           <p class="meta strongish">Sign in to sync across devices</p>
           <input type="email" id="authEmail" placeholder="Email">
@@ -66,13 +67,27 @@
       </header>
 
       <section id="dashboard" class="tab-content active">
-        <div class="dashboard-grid dashboard-single-column">
+        <div class="dashboard-grid dashboard-two-col">
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Today’s Schedule</h3>
+            </div>
+            <div id="dashboardToday"></div>
+          </div>
+
           <div class="panel">
             <div class="panel-head">
               <h3>Upcoming Tasks</h3>
               <button class="secondary-btn open-modal-btn" data-open-modal="taskModal" type="button">Add Task</button>
             </div>
             <div id="dashboardUpcomingTasks"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Tomorrow’s Schedule</h3>
+            </div>
+            <div id="dashboardTomorrow"></div>
           </div>
 
           <div class="panel">
@@ -173,9 +188,9 @@
     <div class="modal-card">
       <div class="modal-head">
         <h3 id="academicYearModalTitle">Add Academic Year</h3>
-        <button class="icon-btn close-modal-btn" data-close-modal="academicYearModal" type="button">&times;</button>
       </div>
       <div class="modal-body">
+        <label class="field-label" for="academicYearName">Academic year name</label>
         <input type="text" id="academicYearName" placeholder="Example: 2026 - 2027">
       </div>
       <div class="modal-footer">
@@ -189,14 +204,23 @@
     <div class="modal-card">
       <div class="modal-head">
         <h3 id="semesterModalTitle">Add Semester</h3>
-        <button class="icon-btn close-modal-btn" data-close-modal="semesterModal" type="button">&times;</button>
       </div>
       <div class="modal-body">
+        <label class="field-label" for="semesterAcademicYear">Academic year</label>
         <select id="semesterAcademicYear"></select>
+
+        <label class="field-label" for="semesterName">Semester name</label>
         <input type="text" id="semesterName" placeholder="Example: Fall Semester">
+
         <div class="input-row">
-          <input type="date" id="semesterStartDate">
-          <input type="date" id="semesterEndDate">
+          <div>
+            <label class="field-label" for="semesterStartDate">Start date</label>
+            <input type="date" id="semesterStartDate">
+          </div>
+          <div>
+            <label class="field-label" for="semesterEndDate">End date</label>
+            <input type="date" id="semesterEndDate">
+          </div>
         </div>
       </div>
       <div class="modal-footer">
@@ -207,19 +231,98 @@
   </div>
 
   <div class="modal hidden" id="courseModal">
-    <div class="modal-card">
+    <div class="modal-card large-modal">
       <div class="modal-head">
         <h3 id="courseModalTitle">Add Course</h3>
-        <button class="icon-btn close-modal-btn" data-close-modal="courseModal" type="button">&times;</button>
       </div>
       <div class="modal-body">
+        <label class="field-label" for="courseName">Course name</label>
         <input type="text" id="courseName" placeholder="Course name">
-        <div class="input-row">
-          <input type="text" id="courseCode" placeholder="Course code">
-          <input type="text" id="courseInstructor" placeholder="Instructor">
-          <input type="color" id="courseColor" value="#2563eb">
+
+        <div class="input-row three-cols">
+          <div>
+            <label class="field-label" for="courseCode">Course code</label>
+            <input type="text" id="courseCode" placeholder="Example: ECON101">
+          </div>
+          <div>
+            <label class="field-label" for="courseInstructor">Instructor</label>
+            <input type="text" id="courseInstructor" placeholder="Instructor name">
+          </div>
+          <div>
+            <label class="field-label" for="courseColor">Course color</label>
+            <input type="color" id="courseColor" value="#2563eb">
+          </div>
         </div>
+
+        <label class="field-label" for="courseSemester">Semester</label>
         <select id="courseSemester"></select>
+
+        <div class="subsection-box">
+          <div class="panel-head">
+            <h4>Course Sessions</h4>
+          </div>
+
+          <div class="input-row three-cols">
+            <div>
+              <label class="field-label" for="sessionType">Session type</label>
+              <select id="sessionType">
+                <option value="" disabled selected>Select session type</option>
+                <option value="Lecture">Lecture</option>
+                <option value="Lab">Lab</option>
+                <option value="Tutorial">Tutorial</option>
+                <option value="Seminar">Seminar</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="field-label" for="sessionRepeat">Repeat rule</label>
+              <select id="sessionRepeat">
+                <option value="" disabled selected>Select repeat rule</option>
+                <option value="weekly">Repeat weekly</option>
+                <option value="specific">Repeat on specific date</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="field-label" for="sessionLocation">Location</label>
+              <input type="text" id="sessionLocation" placeholder="Example: Room B201">
+            </div>
+          </div>
+
+          <div class="input-row four-cols">
+            <div>
+              <label class="field-label" for="sessionDay">Weekly day</label>
+              <select id="sessionDay">
+                <option value="" selected>Select day</option>
+                <option value="Sunday">Sunday</option>
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+                <option value="Saturday">Saturday</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="field-label" for="sessionDate">Specific date</label>
+              <input type="date" id="sessionDate">
+            </div>
+
+            <div>
+              <label class="field-label" for="sessionStartTime">Start time</label>
+              <input type="time" id="sessionStartTime">
+            </div>
+
+            <div>
+              <label class="field-label" for="sessionEndTime">End time</label>
+              <input type="time" id="sessionEndTime">
+            </div>
+          </div>
+
+          <button id="addSessionBtn" type="button" class="secondary-btn">Add Session</button>
+          <div id="pendingSessionsList" class="pending-session-list"></div>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="ghost-btn close-modal-btn" data-close-modal="courseModal" type="button">Cancel</button>
@@ -232,10 +335,12 @@
     <div class="modal-card">
       <div class="modal-head">
         <h3 id="noteModalTitle">Add Note</h3>
-        <button class="icon-btn close-modal-btn" data-close-modal="noteModal" type="button">&times;</button>
       </div>
       <div class="modal-body">
+        <label class="field-label" for="noteTitle">Note title</label>
         <input type="text" id="noteTitle" placeholder="Note title">
+
+        <label class="field-label" for="noteContent">Note content</label>
         <textarea id="noteContent" rows="12" placeholder="Write your notes here..."></textarea>
       </div>
       <div class="modal-footer">
@@ -249,24 +354,40 @@
     <div class="modal-card">
       <div class="modal-head">
         <h3 id="taskModalTitle">Add Task</h3>
-        <button class="icon-btn close-modal-btn" data-close-modal="taskModal" type="button">&times;</button>
       </div>
       <div class="modal-body">
+        <label class="field-label" for="taskTitle">Task title</label>
         <input type="text" id="taskTitle" placeholder="Task title">
+
+        <label class="field-label" for="taskDetails">Task details</label>
         <textarea id="taskDetails" placeholder="Task details"></textarea>
+
+        <label class="field-label" for="taskCourse">Course</label>
         <select id="taskCourse"></select>
-        <div class="input-row">
-          <input type="date" id="taskDate">
-          <select id="taskPriority">
-            <option value="High">High Priority</option>
-            <option value="Medium">Medium Priority</option>
-            <option value="Low">Low Priority</option>
-          </select>
-          <select id="taskStatus">
-            <option value="To Do">To Do</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Done">Done</option>
-          </select>
+
+        <div class="input-row three-cols">
+          <div>
+            <label class="field-label" for="taskDate">Due date</label>
+            <input type="date" id="taskDate">
+          </div>
+          <div>
+            <label class="field-label" for="taskPriority">Priority</label>
+            <select id="taskPriority">
+              <option value="" disabled selected>Select priority</option>
+              <option value="High">High Priority</option>
+              <option value="Medium">Medium Priority</option>
+              <option value="Low">Low Priority</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" for="taskStatus">Status</label>
+            <select id="taskStatus">
+              <option value="" disabled selected>Select status</option>
+              <option value="To Do">To Do</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Done">Done</option>
+            </select>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
@@ -280,21 +401,44 @@
     <div class="modal-card">
       <div class="modal-head">
         <h3 id="examModalTitle">Add Exam</h3>
-        <button class="icon-btn close-modal-btn" data-close-modal="examModal" type="button">&times;</button>
       </div>
       <div class="modal-body">
+        <label class="field-label" for="examTitle">Exam title</label>
         <input type="text" id="examTitle" placeholder="Exam title">
+
+        <label class="field-label" for="examCourse">Course / subject</label>
         <input type="text" id="examCourse" placeholder="Course / subject">
-        <div class="input-row">
-          <input type="date" id="examDate">
-          <input type="time" id="examTime">
-          <input type="text" id="examPlace" placeholder="Place">
+
+        <div class="input-row three-cols">
+          <div>
+            <label class="field-label" for="examDate">Exam date</label>
+            <input type="date" id="examDate">
+          </div>
+          <div>
+            <label class="field-label" for="examTime">Exam time</label>
+            <input type="time" id="examTime">
+          </div>
+          <div>
+            <label class="field-label" for="examPlace">Place</label>
+            <input type="text" id="examPlace" placeholder="Place">
+          </div>
         </div>
-        <div class="input-row">
-          <input type="text" id="examSeatNumber" placeholder="Seat number">
-          <input type="text" id="examGrade" placeholder="Grade (optional)">
-          <input type="number" id="examMark" placeholder="Mark (optional)">
+
+        <div class="input-row two-cols">
+          <div>
+            <label class="field-label" for="examSeatNumber">Seat number</label>
+            <input type="text" id="examSeatNumber" placeholder="Seat number">
+          </div>
+          <div>
+            <label class="field-label" for="examGrade">Grade or letter</label>
+            <input type="text" id="examGrade" placeholder="Grade (optional)">
+          </div>
         </div>
+
+        <label class="field-label" for="examMark">Mark</label>
+        <input type="number" id="examMark" placeholder="Mark (optional)">
+
+        <label class="field-label" for="examNotes">Notes</label>
         <textarea id="examNotes" placeholder="Revision notes / reminders"></textarea>
       </div>
       <div class="modal-footer">
@@ -308,7 +452,6 @@
     <div class="modal-card">
       <div class="modal-head">
         <h3 id="detailTitle">Item Details</h3>
-        <button class="icon-btn close-modal-btn" data-close-modal="detailModal" type="button">&times;</button>
       </div>
       <div class="modal-body detail-stack" id="detailBody"></div>
       <div class="modal-footer">
