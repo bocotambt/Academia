@@ -18,6 +18,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const tabButtons = document.querySelectorAll(".tab-btn");
   const tabContents = document.querySelectorAll(".tab-content");
+  const tabNav = $("tabNav");
+  const menuToggleBtn = $("menuToggleBtn");
+  const brandSignedInText = $("brandSignedInText");
   const openModalButtons = document.querySelectorAll(".open-modal-btn");
   const closeModalButtons = document.querySelectorAll(".close-modal-btn");
 
@@ -27,7 +30,10 @@ document.addEventListener("DOMContentLoaded", function () {
   const totalExamsEl = $("totalExams");
 
   const plannerList = $("plannerList");
+  const coursesList = $("coursesList");
+  const notesList = $("notesList");
   const examsList = $("examsList");
+  const academicYearsList = $("academicYearsList");
   const dashboardAllTasks = $("dashboardAllTasks");
   const dashboardToday = $("dashboardToday");
   const dashboardTomorrow = $("dashboardTomorrow");
@@ -37,6 +43,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const authEmail = $("authEmail");
   const authPassword = $("authPassword");
   const authMessage = $("authMessage");
+  const authMessageSignedIn = $("authMessageSignedIn");
   const currentUserEmail = $("currentUserEmail");
   const signUpBtn = $("signUpBtn");
   const signInBtn = $("signInBtn");
@@ -78,22 +85,36 @@ document.addEventListener("DOMContentLoaded", function () {
   const detailBody = $("detailBody");
 
   function showAuthMessage(message, isError) {
-    if (!authMessage) return;
-    authMessage.textContent = message;
-    authMessage.style.color = isError ? "#b91c1c" : "#0f766e";
+    if (authMessage) {
+      authMessage.textContent = message;
+      authMessage.style.color = isError ? "#b91c1c" : "#0f766e";
+    }
+
+    if (authMessageSignedIn) {
+      authMessageSignedIn.textContent = message;
+      authMessageSignedIn.style.color = isError ? "#b91c1c" : "#0f766e";
+    }
   }
 
   function setAuthUI(user) {
     currentUser = user || null;
 
     if (currentUser) {
-      authSignedOut.classList.add("hidden");
-      authSignedIn.classList.remove("hidden");
-      currentUserEmail.textContent = currentUser.email || "";
+      if (authSignedOut) authSignedOut.classList.add("hidden");
+      if (authSignedIn) authSignedIn.classList.remove("hidden");
+      if (currentUserEmail) currentUserEmail.textContent = currentUser.email || "";
+      if (brandSignedInText) {
+        brandSignedInText.textContent = "Signed in as " + (currentUser.email || "");
+        brandSignedInText.classList.remove("hidden");
+      }
     } else {
-      authSignedOut.classList.remove("hidden");
-      authSignedIn.classList.add("hidden");
-      currentUserEmail.textContent = "";
+      if (authSignedOut) authSignedOut.classList.remove("hidden");
+      if (authSignedIn) authSignedIn.classList.add("hidden");
+      if (currentUserEmail) currentUserEmail.textContent = "";
+      if (brandSignedInText) {
+        brandSignedInText.textContent = "";
+        brandSignedInText.classList.add("hidden");
+      }
     }
   }
 
@@ -456,11 +477,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const titles = {
       dashboard: "Dashboard",
-      academic: "Academic Settings",
       courses: "Courses",
-      notes: "Notes",
       planner: "Tasks",
+      notes: "Notes",
       exams: "Exams",
+      academic: "Academic Settings",
       calendar: "Calendar"
     };
 
@@ -468,6 +489,10 @@ document.addEventListener("DOMContentLoaded", function () {
     if (tabId === "calendar") renderCalendar();
     if (tabId === "dashboard") renderDashboard();
     if (tabId === "exams") renderExams();
+
+    if (window.innerWidth <= 640 && tabNav) {
+      tabNav.classList.remove("menu-open");
+    }
   }
 
   tabButtons.forEach(function (button) {
@@ -646,6 +671,21 @@ document.addEventListener("DOMContentLoaded", function () {
     ]);
   }
 
+  function renderCourses() {
+    if (!coursesList) return;
+    coursesList.innerHTML = '<div class="empty-state">Courses are not connected in this version yet.</div>';
+  }
+
+  function renderNotes() {
+    if (!notesList) return;
+    notesList.innerHTML = '<div class="empty-state">Notes are not connected in this version yet.</div>';
+  }
+
+  function renderAcademic() {
+    if (!academicYearsList) return;
+    academicYearsList.innerHTML = '<div class="empty-state">Academic settings are not connected in this version yet.</div>';
+  }
+
   function renderTasks() {
     if (!plannerList) return;
 
@@ -681,22 +721,29 @@ document.addEventListener("DOMContentLoaded", function () {
         "status-done";
 
       card.innerHTML = `
-        <h3 class="task-title ${isDone ? "task-done-title" : ""}">${task.title}</h3>
-        <span class="priority-badge ${priorityClass}">${task.priority}</span>
-        <span class="status-badge ${statusClass}">${task.status}</span>
-        <p class="meta">Due: ${task.date}</p>
-        <p class="meta">${task.details ? String(task.details).replace(/\n/g, "<br>") : "No details added."}</p>
-
-        <div class="inline-status-controls">
-          <button class="mini-btn secondary-btn" data-task-status="${task.id}" data-status-value="To Do" type="button">To Do</button>
-          <button class="mini-btn secondary-btn" data-task-status="${task.id}" data-status-value="In Progress" type="button">In Progress</button>
-          <button class="mini-btn secondary-btn" data-task-status="${task.id}" data-status-value="Done" type="button">Done</button>
+        <div class="task-card-summary">
+          <h3 class="task-title ${isDone ? "task-done-title" : ""}">${task.title}</h3>
+          <span class="priority-badge ${priorityClass}">${task.priority}</span>
+          <span class="status-badge ${statusClass}">${task.status}</span>
+          <p class="meta">Due: ${task.date}</p>
         </div>
 
-        <div class="card-actions">
-          <button class="view-btn" data-view-task="${task.id}" type="button">View</button>
-          <button class="edit-btn" data-edit-task="${task.id}" type="button">Edit</button>
-          <button class="delete-btn" data-delete-task="${task.id}" type="button">Delete</button>
+        <button class="secondary-btn task-expand-btn" data-toggle-task="${task.id}" type="button">Open Task</button>
+
+        <div class="task-card-expanded hidden" id="taskExpanded-${task.id}">
+          <p class="meta">${task.details ? String(task.details).replace(/\n/g, "<br>") : "No details added."}</p>
+
+          <div class="inline-status-controls">
+            <button class="mini-btn secondary-btn" data-task-status="${task.id}" data-status-value="To Do" type="button">To Do</button>
+            <button class="mini-btn secondary-btn" data-task-status="${task.id}" data-status-value="In Progress" type="button">In Progress</button>
+            <button class="mini-btn secondary-btn" data-task-status="${task.id}" data-status-value="Done" type="button">Done</button>
+          </div>
+
+          <div class="card-actions">
+            <button class="view-btn" data-view-task="${task.id}" type="button">View</button>
+            <button class="edit-btn" data-edit-task="${task.id}" type="button">Edit</button>
+            <button class="delete-btn" data-delete-task="${task.id}" type="button">Delete</button>
+          </div>
         </div>
       `;
       plannerList.appendChild(card);
@@ -748,11 +795,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (plannerList) {
     plannerList.addEventListener("click", async function (e) {
+      const toggleId = e.target.getAttribute("data-toggle-task");
       const editId = e.target.getAttribute("data-edit-task");
       const deleteId = e.target.getAttribute("data-delete-task");
       const viewId = e.target.getAttribute("data-view-task");
       const taskStatusId = e.target.getAttribute("data-task-status");
       const nextStatus = e.target.getAttribute("data-status-value");
+
+      if (toggleId !== null) {
+        const box = $("taskExpanded-" + toggleId);
+        if (box) {
+          box.classList.toggle("hidden");
+        }
+        return;
+      }
 
       if (viewId !== null) {
         const task = tasks.find(function (item) {
@@ -886,14 +942,14 @@ document.addEventListener("DOMContentLoaded", function () {
     if (dayCalendarWrap) dayCalendarWrap.classList.add("hidden");
 
     if (view === "month") {
-      monthViewBtn.classList.add("active-view-btn");
-      monthCalendarWrap.classList.remove("hidden");
+      if (monthViewBtn) monthViewBtn.classList.add("active-view-btn");
+      if (monthCalendarWrap) monthCalendarWrap.classList.remove("hidden");
     } else if (view === "week") {
-      weekViewBtn.classList.add("active-view-btn");
-      weekCalendarWrap.classList.remove("hidden");
+      if (weekViewBtn) weekViewBtn.classList.add("active-view-btn");
+      if (weekCalendarWrap) weekCalendarWrap.classList.remove("hidden");
     } else {
-      dayViewBtn.classList.add("active-view-btn");
-      dayCalendarWrap.classList.remove("hidden");
+      if (dayViewBtn) dayViewBtn.classList.add("active-view-btn");
+      if (dayCalendarWrap) dayCalendarWrap.classList.remove("hidden");
     }
 
     renderCalendar();
@@ -1197,6 +1253,14 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  if (menuToggleBtn) {
+    menuToggleBtn.addEventListener("click", function () {
+      if (tabNav) {
+        tabNav.classList.toggle("menu-open");
+      }
+    });
+  }
+
   if (monthViewBtn) monthViewBtn.addEventListener("click", function () { setCalendarView("month"); });
   if (weekViewBtn) weekViewBtn.addEventListener("click", function () { setCalendarView("week"); });
   if (dayViewBtn) dayViewBtn.addEventListener("click", function () { setCalendarView("day"); });
@@ -1209,7 +1273,9 @@ document.addEventListener("DOMContentLoaded", function () {
   if (signOutBtn) signOutBtn.addEventListener("click", signOut);
 
   document.addEventListener("click", function (e) {
-    const itemId = e.target.getAttribute("data-calendar-item") || e.target.closest("[data-calendar-item]")?.getAttribute("data-calendar-item");
+    const direct = e.target.getAttribute("data-calendar-item");
+    const parent = e.target.closest("[data-calendar-item]");
+    const itemId = direct || (parent ? parent.getAttribute("data-calendar-item") : null);
     if (itemId) openCalendarItem(itemId);
   });
 
@@ -1223,6 +1289,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const user = await getCurrentUser();
     setAuthUI(user);
     fillCourseOptions();
+    renderCourses();
+    renderNotes();
+    renderAcademic();
     renderTasks();
     renderExams();
     renderDashboard();
