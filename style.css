@@ -802,3 +802,59 @@ li,
     padding: 6px 8px;
   }
 }
+@media (max-width: 640px) {
+  .tab-nav {
+    display: flex;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 6px;
+    scroll-snap-type: x proximity;
+  }
+
+  .tab-btn {
+    min-width: 140px;
+    min-height: 48px;
+    white-space: nowrap;
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+
+  .mini-btn,
+  .edit-btn,
+  .delete-btn,
+  .view-btn,
+  .primary-btn,
+  .secondary-btn,
+  .ghost-btn {
+    min-height: 44px;
+  }
+
+  .modal-card,
+  .large-modal {
+    width: 100%;
+    max-height: 92vh;
+    border-radius: 18px;
+  }
+
+  .modal-body {
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  .calendar-board {
+    padding: 10px;
+  }
+
+  .calendar-cell {
+    min-height: 82px;
+  }
+
+  .calendar-item {
+    font-size: 10px;
+    line-height: 1.2;
+  }
+
+  .dashboard-summary {
+    grid-template-columns: 1fr;
+  }
+}
