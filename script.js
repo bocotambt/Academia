@@ -13,7 +13,6 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   let currentUser = null;
-  let courses = [];
   let tasks = [];
   let exams = [];
   let currentCalendarDate = new Date();
@@ -30,7 +29,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const closeModalButtons = document.querySelectorAll(".close-modal-btn");
 
   const pageTitle = $("pageTitle");
-  const totalCoursesEl = $("totalCourses");
   const totalTasksEl = $("totalTasks");
   const totalExamsEl = $("totalExams");
 
@@ -52,7 +50,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const taskTitleInput = $("taskTitle");
   const taskDetailsInput = $("taskDetails");
-  const taskCourseInput = $("taskCourse");
   const taskDateInput = $("taskDate");
   const taskPriorityInput = $("taskPriority");
   const taskStatusInput = $("taskStatus");
@@ -215,7 +212,6 @@ document.addEventListener("DOMContentLoaded", function () {
   async function signOut() {
     if (isOnline()) {
       const { error } = await supabase.auth.signOut();
-
       if (error) {
         showAuthMessage(error.message, true);
         return;
@@ -250,7 +246,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function isPastExam(exam) {
     if (!exam.date) return false;
     const examTime = exam.time ? exam.time : "23:59";
-    const examDateTime = new Date(exam.date + "T" + examTime + ":00");
+    const examDateTime = new Date(exam.date + "T" + exam.time + ":00");
     return examDateTime < new Date();
   }
 
@@ -294,7 +290,6 @@ document.addEventListener("DOMContentLoaded", function () {
         id: item.id,
         title: item.title,
         details: item.details || "",
-        courseId: item.course_id || null,
         date: item.due_date,
         priority: item.priority,
         status: item.status
@@ -352,7 +347,7 @@ document.addEventListener("DOMContentLoaded", function () {
     updateDashboard();
   }
 
-  async function saveTaskToSupabase(taskData) {
+  async function saveTaskToStorageOrSupabase(taskData) {
     if (!currentUser || !isOnline()) {
       const offlineTasks = getOfflineTasks();
 
@@ -366,7 +361,6 @@ document.addEventListener("DOMContentLoaded", function () {
             ...offlineTasks[index],
             title: taskData.title,
             details: taskData.details,
-            courseId: taskData.courseId,
             date: taskData.date,
             priority: taskData.priority,
             status: taskData.status
@@ -377,7 +371,6 @@ document.addEventListener("DOMContentLoaded", function () {
           id: generateOfflineId("task"),
           title: taskData.title,
           details: taskData.details,
-          courseId: taskData.courseId,
           date: taskData.date,
           priority: taskData.priority,
           status: taskData.status
@@ -400,7 +393,6 @@ document.addEventListener("DOMContentLoaded", function () {
           ...offlineTasks[index],
           title: taskData.title,
           details: taskData.details,
-          courseId: taskData.courseId,
           date: taskData.date,
           priority: taskData.priority,
           status: taskData.status
@@ -417,7 +409,6 @@ document.addEventListener("DOMContentLoaded", function () {
         .update({
           title: taskData.title,
           details: taskData.details,
-          course_id: taskData.courseId,
           due_date: taskData.date,
           priority: taskData.priority,
           status: taskData.status
@@ -435,7 +426,6 @@ document.addEventListener("DOMContentLoaded", function () {
           user_id: currentUser.id,
           title: taskData.title,
           details: taskData.details,
-          course_id: taskData.courseId,
           due_date: taskData.date,
           priority: taskData.priority,
           status: taskData.status
@@ -450,7 +440,7 @@ document.addEventListener("DOMContentLoaded", function () {
     return true;
   }
 
-  async function saveExamToSupabase(examData) {
+  async function saveExamToStorageOrSupabase(examData) {
     if (!currentUser || !isOnline()) {
       const offlineExams = getOfflineExams();
 
@@ -563,7 +553,7 @@ document.addEventListener("DOMContentLoaded", function () {
     return true;
   }
 
-  async function deleteTaskFromSupabase(id) {
+  async function deleteTask(id) {
     if (!currentUser || !isOnline() || String(id).startsWith("task-")) {
       const offlineTasks = getOfflineTasks().filter(function (item) {
         return String(item.id) !== String(id);
@@ -577,20 +567,15 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    const { error } = await supabase
-      .from("tasks")
-      .delete()
-      .eq("id", id);
-
+    const { error } = await supabase.from("tasks").delete().eq("id", id);
     if (error) {
       alert(error.message);
       return;
     }
-
     await loadTasks();
   }
 
-  async function deleteExamFromSupabase(id) {
+  async function deleteExam(id) {
     if (!currentUser || !isOnline() || String(id).startsWith("exam-")) {
       const offlineExams = getOfflineExams().filter(function (item) {
         return String(item.id) !== String(id);
@@ -603,16 +588,11 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    const { error } = await supabase
-      .from("exams")
-      .delete()
-      .eq("id", id);
-
+    const { error } = await supabase.from("exams").delete().eq("id", id);
     if (error) {
       alert(error.message);
       return;
     }
-
     await loadExams();
   }
 
@@ -703,9 +683,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const titles = {
       dashboard: "Dashboard",
-      academic: "Academic Settings",
-      courses: "Courses",
-      notes: "Notes",
       planner: "Tasks",
       exams: "Exams",
       calendar: "Calendar"
@@ -724,26 +701,13 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   function updateDashboard() {
-    if (totalCoursesEl) totalCoursesEl.textContent = courses.length;
     if (totalTasksEl) totalTasksEl.textContent = tasks.length;
     if (totalExamsEl) totalExamsEl.textContent = exams.length;
-  }
-
-  function fillCourseOptions() {
-    if (!taskCourseInput) return;
-
-    taskCourseInput.innerHTML = "";
-
-    const optionNone = document.createElement("option");
-    optionNone.value = "";
-    optionNone.textContent = "(No course)";
-    taskCourseInput.appendChild(optionNone);
   }
 
   function resetTaskModal() {
     taskTitleInput.value = "";
     taskDetailsInput.value = "";
-    taskCourseInput.value = "";
     taskDateInput.value = "";
     taskPriorityInput.value = "High";
     taskStatusInput.value = "To Do";
@@ -768,7 +732,6 @@ document.addEventListener("DOMContentLoaded", function () {
   async function saveTask() {
     const title = taskTitleInput.value.trim();
     const details = taskDetailsInput.value.trim();
-    const courseId = taskCourseInput.value ? taskCourseInput.value : null;
     const date = taskDateInput.value;
     const priority = taskPriorityInput.value;
     const status = taskStatusInput.value;
@@ -778,10 +741,9 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    const ok = await saveTaskToSupabase({
+    const ok = await saveTaskToStorageOrSupabase({
       title: title,
       details: details,
-      courseId: courseId,
       date: date,
       priority: priority,
       status: status
@@ -817,7 +779,7 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    const ok = await saveExamToSupabase({
+    const ok = await saveExamToStorageOrSupabase({
       title,
       course,
       date,
@@ -851,7 +813,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     taskTitleInput.value = task.title || "";
     taskDetailsInput.value = task.details || "";
-    taskCourseInput.value = task.courseId || "";
     taskDateInput.value = task.date || "";
     taskPriorityInput.value = task.priority || "High";
     taskStatusInput.value = task.status || "To Do";
@@ -879,6 +840,19 @@ document.addEventListener("DOMContentLoaded", function () {
     editingExamId = id;
     saveExamBtn.textContent = "Update Exam";
     openModal("examModal");
+  }
+
+  function showDetailModal(title, items) {
+    detailTitle.textContent = title;
+    detailBody.innerHTML = items.map(function (pair) {
+      return `
+        <div class="detail-item">
+          <span class="detail-label">${pair[0]}</span>
+          <div>${pair[1]}</div>
+        </div>
+      `;
+    }).join("");
+    openModal("detailModal");
   }
 
   function openTaskDetails(task) {
@@ -1022,7 +996,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       if (editId !== null) editTask(editId);
-      if (deleteId !== null) await deleteTaskFromSupabase(deleteId);
+      if (deleteId !== null) await deleteTask(deleteId);
       if (taskStatusId !== null && nextStatus) await updateTaskStatus(taskStatusId, nextStatus);
     });
   }
@@ -1041,7 +1015,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       if (editId !== null) editExam(editId);
-      if (deleteId !== null) await deleteExamFromSupabase(deleteId);
+      if (deleteId !== null) await deleteExam(deleteId);
     });
   }
 
@@ -1100,19 +1074,6 @@ document.addEventListener("DOMContentLoaded", function () {
       });
 
     return taskItems.concat(examItems);
-  }
-
-  function showDetailModal(title, items) {
-    detailTitle.textContent = title;
-    detailBody.innerHTML = items.map(function (pair) {
-      return `
-        <div class="detail-item">
-          <span class="detail-label">${pair[0]}</span>
-          <div>${pair[1]}</div>
-        </div>
-      `;
-    }).join("");
-    openModal("detailModal");
   }
 
   function openCalendarItem(itemId) {
@@ -1514,16 +1475,15 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  supabase.auth.onAuthStateChange(async function (_event, session) {
+  supabase.auth.onAuthStateChange(function (_event, session) {
     setAuthUI(session ? session.user : null);
-    await loadTasks();
-    await loadExams();
+    loadTasks();
+    loadExams();
   });
 
   async function init() {
     const user = await getCurrentUser();
     setAuthUI(user);
-    fillCourseOptions();
     tasks = getOfflineTasks();
     exams = getOfflineExams();
     renderTasks();
