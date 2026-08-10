@@ -8,16 +8,22 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   const STORAGE_KEYS = {
-    tasks: "academia_offline_tasks",
-    exams: "academia_offline_exams"
+    tasks: "academia_tasks",
+    courses: "academia_courses",
+    notes: "academia_notes",
+    exams: "academia_exams"
   };
 
   let currentUser = null;
   let tasks = [];
+  let courses = [];
+  let notes = [];
   let exams = [];
   let currentCalendarDate = new Date();
   let currentCalendarView = "month";
   let editingTaskId = null;
+  let editingCourseId = null;
+  let editingNoteId = null;
   let editingExamId = null;
   let userPickedCalendarView = false;
 
@@ -29,14 +35,21 @@ document.addEventListener("DOMContentLoaded", function () {
   const closeModalButtons = document.querySelectorAll(".close-modal-btn");
 
   const pageTitle = $("pageTitle");
+
   const totalTasksEl = $("totalTasks");
+  const totalCoursesEl = $("totalCourses");
+  const totalNotesEl = $("totalNotes");
   const totalExamsEl = $("totalExams");
 
   const plannerList = $("plannerList");
+  const coursesList = $("coursesList");
+  const notesList = $("notesList");
   const examsList = $("examsList");
-  const dashboardAllTasks = $("dashboardAllTasks");
+
   const dashboardToday = $("dashboardToday");
   const dashboardTomorrow = $("dashboardTomorrow");
+  const dashboardExams = $("dashboardExams");
+  const dashboardNotes = $("dashboardNotes");
 
   const authSignedOut = $("authSignedOut");
   const authSignedIn = $("authSignedIn");
@@ -54,6 +67,17 @@ document.addEventListener("DOMContentLoaded", function () {
   const taskPriorityInput = $("taskPriority");
   const taskStatusInput = $("taskStatus");
   const addTaskBtn = $("addTaskBtn");
+
+  const courseTitleInput = $("courseTitle");
+  const courseCodeInput = $("courseCode");
+  const courseInstructorInput = $("courseInstructor");
+  const courseDetailsInput = $("courseDetails");
+  const saveCourseBtn = $("saveCourseBtn");
+
+  const noteTitleInput = $("noteTitle");
+  const noteCourseInput = $("noteCourse");
+  const noteContentInput = $("noteContent");
+  const saveNoteBtn = $("saveNoteBtn");
 
   const examTitleInput = $("examTitle");
   const examCourseInput = $("examCourse");
@@ -101,28 +125,19 @@ document.addEventListener("DOMContentLoaded", function () {
     localStorage.setItem(key, JSON.stringify(value));
   }
 
-  function getOfflineTasks() {
-    return getOfflineArray(STORAGE_KEYS.tasks);
+  function getCurrentStore(type) {
+    return getOfflineArray(STORAGE_KEYS[type]);
   }
 
-  function setOfflineTasks(value) {
-    setOfflineArray(STORAGE_KEYS.tasks, value);
+  function setCurrentStore(type, value) {
+    setOfflineArray(STORAGE_KEYS[type], value);
   }
 
-  function getOfflineExams() {
-    return getOfflineArray(STORAGE_KEYS.exams);
-  }
-
-  function setOfflineExams(value) {
-    setOfflineArray(STORAGE_KEYS.exams, value);
-  }
-
-  function generateOfflineId(prefix) {
+  function generateId(prefix) {
     return prefix + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
   }
 
   function showAuthMessage(message, isError) {
-    if (!authMessage) return;
     authMessage.textContent = message;
     authMessage.style.color = isError ? "#b91c1c" : "#0f766e";
   }
@@ -143,7 +158,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   async function signUp() {
     if (!isOnline()) {
-      showAuthMessage("You are offline. Please connect to the internet to sign up.", true);
+      showAuthMessage("You are offline. Connect to the internet to sign up.", true);
       return;
     }
 
@@ -155,11 +170,9 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    showAuthMessage("Creating account...", false);
-
     const { error } = await supabase.auth.signUp({
-      email: email,
-      password: password,
+      email,
+      password,
       options: {
         emailRedirectTo: "https://bocotambt.github.io/Academia/"
       }
@@ -170,19 +183,12 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    showAuthMessage("Sign-up submitted. Check your email and click the confirmation link.", false);
+    showAuthMessage("Sign-up submitted. Check your email if confirmation is still enabled.", false);
   }
 
   async function signIn() {
     if (!isOnline()) {
-      showAuthMessage("You are offline. Offline mode can still show local tasks and exams.", true);
-      tasks = getOfflineTasks();
-      exams = getOfflineExams();
-      renderTasks();
-      renderExams();
-      renderDashboard();
-      renderCalendar();
-      updateDashboard();
+      showAuthMessage("Offline mode active. You can still use saved browser data on this device.", true);
       return;
     }
 
@@ -194,12 +200,7 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    showAuthMessage("Signing in...", false);
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password
-    });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       showAuthMessage(error.message, true);
@@ -211,28 +212,33 @@ document.addEventListener("DOMContentLoaded", function () {
 
   async function signOut() {
     if (isOnline()) {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        showAuthMessage(error.message, true);
-        return;
-      }
+      await supabase.auth.signOut();
     }
 
     setAuthUI(null);
-    tasks = getOfflineTasks();
-    exams = getOfflineExams();
-    renderTasks();
-    renderExams();
-    renderDashboard();
-    renderCalendar();
-    updateDashboard();
-    showAuthMessage("Signed out. Local offline items are still available on this device.", false);
+    loadLocalData();
+    renderAll();
+    showAuthMessage("Signed out.", false);
   }
 
   async function getCurrentUser() {
     if (!isOnline()) return null;
     const { data } = await supabase.auth.getUser();
     return data.user || null;
+  }
+
+  function loadLocalData() {
+    tasks = getCurrentStore("tasks");
+    courses = getCurrentStore("courses");
+    notes = getCurrentStore("notes");
+    exams = getCurrentStore("exams");
+  }
+
+  function saveAllLocal() {
+    setCurrentStore("tasks", tasks);
+    setCurrentStore("courses", courses);
+    setCurrentStore("notes", notes);
+    setCurrentStore("exams", exams);
   }
 
   function isPastDate(dateString) {
@@ -260,372 +266,41 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  async function loadTasks() {
-    if (!currentUser || !isOnline()) {
-      tasks = getOfflineTasks();
-      renderTasks();
-      renderDashboard();
-      renderCalendar();
-      updateDashboard();
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from("tasks")
-      .select("*")
-      .order("due_date", { ascending: true });
-
-    if (error) {
-      tasks = getOfflineTasks();
-      renderTasks();
-      renderDashboard();
-      renderCalendar();
-      updateDashboard();
-      showAuthMessage("Could not load online tasks. Showing offline tasks instead.", true);
-      return;
-    }
-
-    tasks = (data || []).map(function (item) {
-      return {
-        id: item.id,
-        title: item.title,
-        details: item.details || "",
-        date: item.due_date,
-        priority: item.priority,
-        status: item.status
-      };
-    });
-
-    setOfflineTasks(tasks);
-    renderTasks();
-    renderDashboard();
-    renderCalendar();
-    updateDashboard();
+  function resetTaskModal() {
+    taskTitleInput.value = "";
+    taskDetailsInput.value = "";
+    taskDateInput.value = "";
+    taskPriorityInput.value = "High";
+    taskStatusInput.value = "To Do";
+    editingTaskId = null;
   }
 
-  async function loadExams() {
-    if (!currentUser || !isOnline()) {
-      exams = getOfflineExams();
-      renderExams();
-      renderCalendar();
-      updateDashboard();
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from("exams")
-      .select("*")
-      .order("exam_date", { ascending: true });
-
-    if (error) {
-      exams = getOfflineExams();
-      renderExams();
-      renderCalendar();
-      updateDashboard();
-      showAuthMessage("Could not load online exams. Showing offline exams instead.", true);
-      return;
-    }
-
-    exams = (data || []).map(function (item) {
-      return {
-        id: item.id,
-        title: item.title,
-        course: item.course || "",
-        date: item.exam_date,
-        time: item.exam_time || "",
-        place: item.place || "",
-        seatNumber: item.seat_number || "",
-        grade: item.grade || "",
-        mark: item.mark ?? "",
-        notes: item.notes || ""
-      };
-    });
-
-    setOfflineExams(exams);
-    renderExams();
-    renderCalendar();
-    updateDashboard();
+  function resetCourseModal() {
+    courseTitleInput.value = "";
+    courseCodeInput.value = "";
+    courseInstructorInput.value = "";
+    courseDetailsInput.value = "";
+    editingCourseId = null;
   }
 
-  async function saveTaskToStorageOrSupabase(taskData) {
-    if (!currentUser || !isOnline()) {
-      const offlineTasks = getOfflineTasks();
-
-      if (editingTaskId) {
-        const index = offlineTasks.findIndex(function (item) {
-          return String(item.id) === String(editingTaskId);
-        });
-
-        if (index !== -1) {
-          offlineTasks[index] = {
-            ...offlineTasks[index],
-            title: taskData.title,
-            details: taskData.details,
-            date: taskData.date,
-            priority: taskData.priority,
-            status: taskData.status
-          };
-        }
-      } else {
-        offlineTasks.push({
-          id: generateOfflineId("task"),
-          title: taskData.title,
-          details: taskData.details,
-          date: taskData.date,
-          priority: taskData.priority,
-          status: taskData.status
-        });
-      }
-
-      setOfflineTasks(offlineTasks);
-      tasks = offlineTasks;
-      return true;
-    }
-
-    if (editingTaskId && String(editingTaskId).startsWith("task-")) {
-      const offlineTasks = getOfflineTasks();
-      const index = offlineTasks.findIndex(function (item) {
-        return String(item.id) === String(editingTaskId);
-      });
-
-      if (index !== -1) {
-        offlineTasks[index] = {
-          ...offlineTasks[index],
-          title: taskData.title,
-          details: taskData.details,
-          date: taskData.date,
-          priority: taskData.priority,
-          status: taskData.status
-        };
-        setOfflineTasks(offlineTasks);
-        tasks = offlineTasks;
-        return true;
-      }
-    }
-
-    if (editingTaskId) {
-      const { error } = await supabase
-        .from("tasks")
-        .update({
-          title: taskData.title,
-          details: taskData.details,
-          due_date: taskData.date,
-          priority: taskData.priority,
-          status: taskData.status
-        })
-        .eq("id", editingTaskId);
-
-      if (error) {
-        alert(error.message);
-        return false;
-      }
-    } else {
-      const { error } = await supabase
-        .from("tasks")
-        .insert({
-          user_id: currentUser.id,
-          title: taskData.title,
-          details: taskData.details,
-          due_date: taskData.date,
-          priority: taskData.priority,
-          status: taskData.status
-        });
-
-      if (error) {
-        alert(error.message);
-        return false;
-      }
-    }
-
-    return true;
+  function resetNoteModal() {
+    noteTitleInput.value = "";
+    noteCourseInput.value = "";
+    noteContentInput.value = "";
+    editingNoteId = null;
   }
 
-  async function saveExamToStorageOrSupabase(examData) {
-    if (!currentUser || !isOnline()) {
-      const offlineExams = getOfflineExams();
-
-      if (editingExamId) {
-        const index = offlineExams.findIndex(function (item) {
-          return String(item.id) === String(editingExamId);
-        });
-
-        if (index !== -1) {
-          offlineExams[index] = {
-            ...offlineExams[index],
-            title: examData.title,
-            course: examData.course,
-            date: examData.date,
-            time: examData.time,
-            place: examData.place,
-            seatNumber: examData.seatNumber,
-            grade: examData.grade,
-            mark: examData.mark,
-            notes: examData.notes
-          };
-        }
-      } else {
-        offlineExams.push({
-          id: generateOfflineId("exam"),
-          title: examData.title,
-          course: examData.course,
-          date: examData.date,
-          time: examData.time,
-          place: examData.place,
-          seatNumber: examData.seatNumber,
-          grade: examData.grade,
-          mark: examData.mark,
-          notes: examData.notes
-        });
-      }
-
-      setOfflineExams(offlineExams);
-      exams = offlineExams;
-      return true;
-    }
-
-    if (editingExamId && String(editingExamId).startsWith("exam-")) {
-      const offlineExams = getOfflineExams();
-      const index = offlineExams.findIndex(function (item) {
-        return String(item.id) === String(editingExamId);
-      });
-
-      if (index !== -1) {
-        offlineExams[index] = {
-          ...offlineExams[index],
-          title: examData.title,
-          course: examData.course,
-          date: examData.date,
-          time: examData.time,
-          place: examData.place,
-          seatNumber: examData.seatNumber,
-          grade: examData.grade,
-          mark: examData.mark,
-          notes: examData.notes
-        };
-        setOfflineExams(offlineExams);
-        exams = offlineExams;
-        return true;
-      }
-    }
-
-    if (editingExamId) {
-      const { error } = await supabase
-        .from("exams")
-        .update({
-          title: examData.title,
-          course: examData.course,
-          exam_date: examData.date,
-          exam_time: examData.time,
-          place: examData.place,
-          seat_number: examData.seatNumber,
-          grade: examData.grade,
-          mark: examData.mark === "" ? null : examData.mark,
-          notes: examData.notes
-        })
-        .eq("id", editingExamId);
-
-      if (error) {
-        alert(error.message);
-        return false;
-      }
-    } else {
-      const { error } = await supabase
-        .from("exams")
-        .insert({
-          user_id: currentUser.id,
-          title: examData.title,
-          course: examData.course,
-          exam_date: examData.date,
-          exam_time: examData.time,
-          place: examData.place,
-          seat_number: examData.seatNumber,
-          grade: examData.grade,
-          mark: examData.mark === "" ? null : examData.mark,
-          notes: examData.notes
-        });
-
-      if (error) {
-        alert(error.message);
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  async function deleteTask(id) {
-    if (!currentUser || !isOnline() || String(id).startsWith("task-")) {
-      const offlineTasks = getOfflineTasks().filter(function (item) {
-        return String(item.id) !== String(id);
-      });
-      setOfflineTasks(offlineTasks);
-      tasks = offlineTasks;
-      renderTasks();
-      renderDashboard();
-      renderCalendar();
-      updateDashboard();
-      return;
-    }
-
-    const { error } = await supabase.from("tasks").delete().eq("id", id);
-    if (error) {
-      alert(error.message);
-      return;
-    }
-    await loadTasks();
-  }
-
-  async function deleteExam(id) {
-    if (!currentUser || !isOnline() || String(id).startsWith("exam-")) {
-      const offlineExams = getOfflineExams().filter(function (item) {
-        return String(item.id) !== String(id);
-      });
-      setOfflineExams(offlineExams);
-      exams = offlineExams;
-      renderExams();
-      renderCalendar();
-      updateDashboard();
-      return;
-    }
-
-    const { error } = await supabase.from("exams").delete().eq("id", id);
-    if (error) {
-      alert(error.message);
-      return;
-    }
-    await loadExams();
-  }
-
-  async function updateTaskStatus(id, status) {
-    if (!currentUser || !isOnline() || String(id).startsWith("task-")) {
-      const offlineTasks = getOfflineTasks();
-      const task = offlineTasks.find(function (item) {
-        return String(item.id) === String(id);
-      });
-
-      if (task) {
-        task.status = status;
-        setOfflineTasks(offlineTasks);
-        tasks = offlineTasks;
-        renderTasks();
-        renderDashboard();
-        renderCalendar();
-        updateDashboard();
-      }
-      return;
-    }
-
-    const { error } = await supabase
-      .from("tasks")
-      .update({ status: status })
-      .eq("id", id);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    await loadTasks();
+  function resetExamModal() {
+    examTitleInput.value = "";
+    examCourseInput.value = "";
+    examDateInput.value = "";
+    examTimeInput.value = "";
+    examPlaceInput.value = "";
+    examSeatNumberInput.value = "";
+    examGradeInput.value = "";
+    examMarkInput.value = "";
+    examNotesInput.value = "";
+    editingExamId = null;
   }
 
   function openModal(id) {
@@ -646,6 +321,8 @@ document.addEventListener("DOMContentLoaded", function () {
     btn.addEventListener("click", function () {
       const modalId = btn.dataset.openModal;
       if (modalId === "taskModal") resetTaskModal();
+      if (modalId === "courseModal") resetCourseModal();
+      if (modalId === "noteModal") resetNoteModal();
       if (modalId === "examModal") resetExamModal();
       openModal(modalId);
     });
@@ -684,14 +361,15 @@ document.addEventListener("DOMContentLoaded", function () {
     const titles = {
       dashboard: "Dashboard",
       planner: "Tasks",
+      courses: "Courses",
+      notes: "Notes",
       exams: "Exams",
       calendar: "Calendar"
     };
 
-    if (pageTitle) pageTitle.textContent = titles[tabId] || "Academia";
+    pageTitle.textContent = titles[tabId] || "Academia";
+
     if (tabId === "calendar") renderCalendar();
-    if (tabId === "dashboard") renderDashboard();
-    if (tabId === "exams") renderExams();
   }
 
   tabButtons.forEach(function (button) {
@@ -700,146 +378,11 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  function updateDashboard() {
-    if (totalTasksEl) totalTasksEl.textContent = tasks.length;
-    if (totalExamsEl) totalExamsEl.textContent = exams.length;
-  }
-
-  function resetTaskModal() {
-    taskTitleInput.value = "";
-    taskDetailsInput.value = "";
-    taskDateInput.value = "";
-    taskPriorityInput.value = "High";
-    taskStatusInput.value = "To Do";
-    editingTaskId = null;
-    addTaskBtn.textContent = "Save Task";
-  }
-
-  function resetExamModal() {
-    examTitleInput.value = "";
-    examCourseInput.value = "";
-    examDateInput.value = "";
-    examTimeInput.value = "";
-    examPlaceInput.value = "";
-    examSeatNumberInput.value = "";
-    examGradeInput.value = "";
-    examMarkInput.value = "";
-    examNotesInput.value = "";
-    editingExamId = null;
-    saveExamBtn.textContent = "Save Exam";
-  }
-
-  async function saveTask() {
-    const title = taskTitleInput.value.trim();
-    const details = taskDetailsInput.value.trim();
-    const date = taskDateInput.value;
-    const priority = taskPriorityInput.value;
-    const status = taskStatusInput.value;
-
-    if (!title || !date) {
-      alert("Please enter both task title and due date.");
-      return;
-    }
-
-    const ok = await saveTaskToStorageOrSupabase({
-      title: title,
-      details: details,
-      date: date,
-      priority: priority,
-      status: status
-    });
-
-    if (!ok) return;
-
-    closeModal("taskModal");
-    resetTaskModal();
-    renderTasks();
-    renderDashboard();
-    renderCalendar();
-    updateDashboard();
-
-    if (currentUser && isOnline()) {
-      await loadTasks();
-    }
-  }
-
-  async function saveExam() {
-    const title = examTitleInput.value.trim();
-    const course = examCourseInput.value.trim();
-    const date = examDateInput.value;
-    const time = examTimeInput.value;
-    const place = examPlaceInput.value.trim();
-    const seatNumber = examSeatNumberInput.value.trim();
-    const grade = examGradeInput.value.trim();
-    const mark = examMarkInput.value.trim();
-    const notes = examNotesInput.value.trim();
-
-    if (!title || !date) {
-      alert("Please enter both exam title and exam date.");
-      return;
-    }
-
-    const ok = await saveExamToStorageOrSupabase({
-      title,
-      course,
-      date,
-      time,
-      place,
-      seatNumber,
-      grade,
-      mark,
-      notes
-    });
-
-    if (!ok) return;
-
-    closeModal("examModal");
-    resetExamModal();
-    renderExams();
-    renderCalendar();
-    updateDashboard();
-
-    if (currentUser && isOnline()) {
-      await loadExams();
-    }
-  }
-
-  function editTask(id) {
-    const task = tasks.find(function (item) {
-      return String(item.id) === String(id);
-    });
-
-    if (!task) return;
-
-    taskTitleInput.value = task.title || "";
-    taskDetailsInput.value = task.details || "";
-    taskDateInput.value = task.date || "";
-    taskPriorityInput.value = task.priority || "High";
-    taskStatusInput.value = task.status || "To Do";
-    editingTaskId = id;
-    addTaskBtn.textContent = "Update Task";
-    openModal("taskModal");
-  }
-
-  function editExam(id) {
-    const exam = exams.find(function (item) {
-      return String(item.id) === String(id);
-    });
-
-    if (!exam) return;
-
-    examTitleInput.value = exam.title || "";
-    examCourseInput.value = exam.course || "";
-    examDateInput.value = exam.date || "";
-    examTimeInput.value = exam.time || "";
-    examPlaceInput.value = exam.place || "";
-    examSeatNumberInput.value = exam.seatNumber || "";
-    examGradeInput.value = exam.grade || "";
-    examMarkInput.value = exam.mark || "";
-    examNotesInput.value = exam.notes || "";
-    editingExamId = id;
-    saveExamBtn.textContent = "Update Exam";
-    openModal("examModal");
+  function updateCounts() {
+    totalTasksEl.textContent = tasks.length;
+    totalCoursesEl.textContent = courses.length;
+    totalNotesEl.textContent = notes.length;
+    totalExamsEl.textContent = exams.length;
   }
 
   function showDetailModal(title, items) {
@@ -855,40 +398,8 @@ document.addEventListener("DOMContentLoaded", function () {
     openModal("detailModal");
   }
 
-  function openTaskDetails(task) {
-    showDetailModal(task.title, [
-      ["Type", "Task"],
-      ["Title", task.title],
-      ["Due Date", task.date],
-      ["Priority", task.priority],
-      ["Status", task.status],
-      ["Details", task.details || "No details added."]
-    ]);
-  }
-
-  function openExamDetails(exam) {
-    showDetailModal(exam.title, [
-      ["Type", "Exam"],
-      ["Course", exam.course || "No course entered"],
-      ["Date", exam.date || "No date entered"],
-      ["Time", exam.time || "No time entered"],
-      ["Place", exam.place || "No place entered"],
-      ["Seat Number", exam.seatNumber || "No seat number entered"],
-      ["Grade", exam.grade || "Not entered"],
-      ["Mark", exam.mark !== "" && exam.mark !== null ? exam.mark : "Not entered"],
-      ["Notes", exam.notes || "No notes added."]
-    ]);
-  }
-
   function renderTasks() {
-    if (!plannerList) return;
-
     plannerList.innerHTML = "";
-
-    if (!currentUser && getOfflineTasks().length === 0) {
-      plannerList.innerHTML = '<div class="empty-state">Sign in for cloud sync, or add tasks offline on this device.</div>';
-      return;
-    }
 
     if (tasks.length === 0) {
       plannerList.innerHTML = '<div class="empty-state">No tasks added yet.</div>';
@@ -918,15 +429,8 @@ document.addEventListener("DOMContentLoaded", function () {
         <h3 class="task-title ${isDone ? "task-done-title" : ""}">${task.title}</h3>
         <span class="priority-badge ${priorityClass}">${task.priority}</span>
         <span class="status-badge ${statusClass}">${task.status}</span>
-        <p class="meta">Due: ${task.date}</p>
-        <p class="meta">${task.details ? String(task.details).replace(/\n/g, "<br>") : "No details added."}</p>
-
-        <div class="inline-status-controls">
-          <button class="mini-btn secondary-btn" data-task-status="${task.id}" data-status-value="To Do" type="button">To Do</button>
-          <button class="mini-btn secondary-btn" data-task-status="${task.id}" data-status-value="In Progress" type="button">In Progress</button>
-          <button class="mini-btn secondary-btn" data-task-status="${task.id}" data-status-value="Done" type="button">Done</button>
-        </div>
-
+        <p class="meta">Due: ${task.date || "Not set"}</p>
+        <p class="meta">${task.details || "No details added."}</p>
         <div class="card-actions">
           <button class="view-btn" data-view-task="${task.id}" type="button">View</button>
           <button class="edit-btn" data-edit-task="${task.id}" type="button">Edit</button>
@@ -937,15 +441,59 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  function renderExams() {
-    if (!examsList) return;
+  function renderCourses() {
+    coursesList.innerHTML = "";
 
-    examsList.innerHTML = "";
-
-    if (!currentUser && getOfflineExams().length === 0) {
-      examsList.innerHTML = '<div class="empty-state">Sign in for cloud sync, or add exams offline on this device.</div>';
+    if (courses.length === 0) {
+      coursesList.innerHTML = '<div class="empty-state">No courses added yet.</div>';
       return;
     }
+
+    courses.forEach(function (course) {
+      const card = document.createElement("div");
+      card.className = "day-card";
+      card.innerHTML = `
+        <h3 class="task-title">${course.title}</h3>
+        <span class="course-badge">${course.code || "Course"}</span>
+        <p class="meta">Instructor: ${course.instructor || "Not set"}</p>
+        <p class="meta">${course.details || "No details added."}</p>
+        <div class="card-actions">
+          <button class="view-btn" data-view-course="${course.id}" type="button">View</button>
+          <button class="edit-btn" data-edit-course="${course.id}" type="button">Edit</button>
+          <button class="delete-btn" data-delete-course="${course.id}" type="button">Delete</button>
+        </div>
+      `;
+      coursesList.appendChild(card);
+    });
+  }
+
+  function renderNotes() {
+    notesList.innerHTML = "";
+
+    if (notes.length === 0) {
+      notesList.innerHTML = '<div class="empty-state">No notes added yet.</div>';
+      return;
+    }
+
+    notes.forEach(function (note) {
+      const card = document.createElement("div");
+      card.className = "day-card";
+      card.innerHTML = `
+        <h3 class="task-title">${note.title}</h3>
+        <span class="note-badge">${note.course || "General Note"}</span>
+        <p class="meta">${note.content || "No content added."}</p>
+        <div class="card-actions">
+          <button class="view-btn" data-view-note="${note.id}" type="button">View</button>
+          <button class="edit-btn" data-edit-note="${note.id}" type="button">Edit</button>
+          <button class="delete-btn" data-delete-note="${note.id}" type="button">Delete</button>
+        </div>
+      `;
+      notesList.appendChild(card);
+    });
+  }
+
+  function renderExams() {
+    examsList.innerHTML = "";
 
     if (exams.length === 0) {
       examsList.innerHTML = '<div class="empty-state">No exams added yet.</div>';
@@ -968,8 +516,7 @@ document.addEventListener("DOMContentLoaded", function () {
         <p class="meta">Time: ${exam.time || "Not set"}</p>
         <p class="meta">Place: ${exam.place || "Not set"}</p>
         <p class="meta">Seat: ${exam.seatNumber || "Not set"}</p>
-        <p class="meta">${exam.notes ? String(exam.notes).replace(/\n/g, "<br>") : "No revision notes added."}</p>
-
+        <p class="meta">${exam.notes || "No revision notes added."}</p>
         <div class="card-actions">
           <button class="view-btn" data-view-exam="${exam.id}" type="button">View</button>
           <button class="edit-btn" data-edit-exam="${exam.id}" type="button">Edit</button>
@@ -977,45 +524,6 @@ document.addEventListener("DOMContentLoaded", function () {
         </div>
       `;
       examsList.appendChild(card);
-    });
-  }
-
-  if (plannerList) {
-    plannerList.addEventListener("click", async function (e) {
-      const editId = e.target.getAttribute("data-edit-task");
-      const deleteId = e.target.getAttribute("data-delete-task");
-      const viewId = e.target.getAttribute("data-view-task");
-      const taskStatusId = e.target.getAttribute("data-task-status");
-      const nextStatus = e.target.getAttribute("data-status-value");
-
-      if (viewId !== null) {
-        const task = tasks.find(function (item) {
-          return String(item.id) === String(viewId);
-        });
-        if (task) openTaskDetails(task);
-      }
-
-      if (editId !== null) editTask(editId);
-      if (deleteId !== null) await deleteTask(deleteId);
-      if (taskStatusId !== null && nextStatus) await updateTaskStatus(taskStatusId, nextStatus);
-    });
-  }
-
-  if (examsList) {
-    examsList.addEventListener("click", async function (e) {
-      const viewId = e.target.getAttribute("data-view-exam");
-      const editId = e.target.getAttribute("data-edit-exam");
-      const deleteId = e.target.getAttribute("data-delete-exam");
-
-      if (viewId !== null) {
-        const exam = exams.find(function (item) {
-          return String(item.id) === String(viewId);
-        });
-        if (exam) openExamDetails(exam);
-      }
-
-      if (editId !== null) editExam(editId);
-      if (deleteId !== null) await deleteExam(deleteId);
     });
   }
 
@@ -1044,13 +552,9 @@ document.addEventListener("DOMContentLoaded", function () {
       .map(function (task) {
         return {
           type: "task",
-          id: "task-" + task.id,
+          id: task.id,
           title: "Task: " + task.title,
-          date: task.date,
           timeLabel: task.status === "Done" ? "Done" : "All day",
-          location: "",
-          color: "#dc2626",
-          data: task,
           isPast: isPastDate(task.date) || task.status === "Done"
         };
       });
@@ -1061,79 +565,39 @@ document.addEventListener("DOMContentLoaded", function () {
       })
       .map(function (exam) {
         return {
-          type: "custom",
-          id: "exam-" + exam.id,
+          type: "exam",
+          id: exam.id,
           title: "Exam: " + exam.title,
-          date: exam.date,
           timeLabel: exam.time || "Time not set",
-          location: exam.place || "",
-          color: "#0f766e",
-          data: exam,
           isPast: isPastExam(exam)
         };
       });
 
-    return taskItems.concat(examItems);
-  }
-
-  function openCalendarItem(itemId) {
-    if (String(itemId).startsWith("task-")) {
-      const realId = itemId.replace("task-", "");
-      const task = tasks.find(function (item) {
-        return String(item.id) === String(realId) || String("task-" + item.id) === String(itemId);
+    const noteItems = notes
+      .filter(function (note) {
+        return note.date === dateKey;
+      })
+      .map(function (note) {
+        return {
+          type: "note",
+          id: note.id,
+          title: "Note: " + note.title,
+          timeLabel: "Note",
+          isPast: false
+        };
       });
-      if (task) openTaskDetails(task);
-      return;
-    }
 
-    if (String(itemId).startsWith("exam-")) {
-      const realId = itemId.replace("exam-", "");
-      const exam = exams.find(function (item) {
-        return String(item.id) === String(realId) || String("exam-" + item.id) === String(itemId);
-      });
-      if (exam) openExamDetails(exam);
-    }
-  }
-
-  function setCalendarView(view, rememberChoice) {
-    currentCalendarView = view;
-
-    if (rememberChoice !== false) {
-      userPickedCalendarView = true;
-    }
-
-    if (monthViewBtn) monthViewBtn.classList.remove("active-view-btn");
-    if (weekViewBtn) weekViewBtn.classList.remove("active-view-btn");
-    if (dayViewBtn) dayViewBtn.classList.remove("active-view-btn");
-
-    if (monthCalendarWrap) monthCalendarWrap.classList.add("hidden");
-    if (weekCalendarWrap) weekCalendarWrap.classList.add("hidden");
-    if (dayCalendarWrap) dayCalendarWrap.classList.add("hidden");
-
-    if (view === "month") {
-      monthViewBtn.classList.add("active-view-btn");
-      monthCalendarWrap.classList.remove("hidden");
-    } else if (view === "week") {
-      weekViewBtn.classList.add("active-view-btn");
-      weekCalendarWrap.classList.remove("hidden");
-    } else {
-      dayViewBtn.classList.add("active-view-btn");
-      dayCalendarWrap.classList.remove("hidden");
-    }
-
-    renderCalendar();
+    return taskItems.concat(examItems, noteItems);
   }
 
   function renderMonthView() {
     const year = currentCalendarDate.getFullYear();
     const month = currentCalendarDate.getMonth();
-    const monthLabel = currentCalendarDate.toLocaleString("en-US", {
+
+    calendarMonthLabel.textContent = currentCalendarDate.toLocaleString("en-US", {
       month: "long",
       year: "numeric"
     });
-
-    if (calendarMonthLabel) calendarMonthLabel.textContent = monthLabel;
-    if (!calendarGrid) return;
 
     calendarGrid.innerHTML = "";
 
@@ -1179,15 +643,13 @@ document.addEventListener("DOMContentLoaded", function () {
       if (cellKey === todayKey) cell.classList.add("today");
 
       const dayItems = getItemsForDate(cellKey);
-
       const itemsHtml = dayItems.map(function (item) {
         return `
           <button
             type="button"
             class="calendar-item ${item.type}"
-            data-calendar-item="${item.id}"
             title="${item.title}"
-            style="background:${item.color}; opacity:${item.isPast ? "0.55" : "1"};"
+            style="opacity:${item.isPast ? "0.55" : "1"};"
           >
             <span>${item.title}</span>
             <small>${item.timeLabel}</small>
@@ -1212,16 +674,12 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderWeekView() {
-    if (!weekCalendarGrid) return;
-
     const start = getStartOfWeek(currentCalendarDate);
     const end = new Date(start);
     end.setDate(start.getDate() + 6);
 
-    if (calendarMonthLabel) {
-      calendarMonthLabel.textContent =
-        formatDateLabel(formatDateKey(start)) + " - " + formatDateLabel(formatDateKey(end));
-    }
+    calendarMonthLabel.textContent =
+      formatDateLabel(formatDateKey(start)) + " - " + formatDateLabel(formatDateKey(end));
 
     weekCalendarGrid.innerHTML = "";
 
@@ -1238,13 +696,7 @@ document.addEventListener("DOMContentLoaded", function () {
         ? '<div class="empty-state">No items</div>'
         : items.map(function (item) {
             return `
-              <button
-                type="button"
-                class="calendar-item ${item.type}"
-                data-calendar-item="${item.id}"
-                title="${item.title}"
-                style="background:${item.color}; opacity:${item.isPast ? "0.55" : "1"};"
-              >
+              <button type="button" class="calendar-item ${item.type}" style="opacity:${item.isPast ? "0.55" : "1"};">
                 <span>${item.timeLabel} • ${item.title}</span>
               </button>
             `;
@@ -1262,8 +714,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderDayView() {
-    if (!dayCalendarGrid) return;
-
     const dateKey = formatDateKey(currentCalendarDate);
     const items = getItemsForDate(dateKey);
 
@@ -1274,19 +724,13 @@ document.addEventListener("DOMContentLoaded", function () {
       year: "numeric"
     });
 
-    if (calendarMonthLabel) calendarMonthLabel.textContent = label;
+    calendarMonthLabel.textContent = label;
 
     const itemsHtml = items.length === 0
       ? '<div class="empty-state">No items for this day.</div>'
       : items.map(function (item) {
           return `
-            <button
-              type="button"
-              class="calendar-item ${item.type}"
-              data-calendar-item="${item.id}"
-              title="${item.title}"
-              style="background:${item.color}; opacity:${item.isPast ? "0.55" : "1"};"
-            >
+            <button type="button" class="calendar-item ${item.type}" style="opacity:${item.isPast ? "0.55" : "1"};">
               <span>${item.timeLabel} • ${item.title}</span>
             </button>
           `;
@@ -1300,6 +744,35 @@ document.addEventListener("DOMContentLoaded", function () {
     `;
   }
 
+  function setCalendarView(view, rememberChoice) {
+    currentCalendarView = view;
+
+    if (rememberChoice !== false) {
+      userPickedCalendarView = true;
+    }
+
+    monthViewBtn.classList.remove("active-view-btn");
+    weekViewBtn.classList.remove("active-view-btn");
+    dayViewBtn.classList.remove("active-view-btn");
+
+    monthCalendarWrap.classList.add("hidden");
+    weekCalendarWrap.classList.add("hidden");
+    dayCalendarWrap.classList.add("hidden");
+
+    if (view === "month") {
+      monthViewBtn.classList.add("active-view-btn");
+      monthCalendarWrap.classList.remove("hidden");
+    } else if (view === "week") {
+      weekViewBtn.classList.add("active-view-btn");
+      weekCalendarWrap.classList.remove("hidden");
+    } else {
+      dayViewBtn.classList.add("active-view-btn");
+      dayCalendarWrap.classList.remove("hidden");
+    }
+
+    renderCalendar();
+  }
+
   function renderCalendar() {
     if (currentCalendarView === "month") renderMonthView();
     else if (currentCalendarView === "week") renderWeekView();
@@ -1308,201 +781,435 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function moveCalendar(direction) {
     if (currentCalendarView === "month") {
-      currentCalendarDate = new Date(
-        currentCalendarDate.getFullYear(),
-        currentCalendarDate.getMonth() + direction,
-        1
-      );
+      currentCalendarDate = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth() + direction, 1);
     } else if (currentCalendarView === "week") {
-      currentCalendarDate = new Date(
-        currentCalendarDate.getFullYear(),
-        currentCalendarDate.getMonth(),
-        currentCalendarDate.getDate() + (7 * direction)
-      );
+      currentCalendarDate = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), currentCalendarDate.getDate() + (7 * direction));
     } else {
-      currentCalendarDate = new Date(
-        currentCalendarDate.getFullYear(),
-        currentCalendarDate.getMonth(),
-        currentCalendarDate.getDate() + direction
-      );
+      currentCalendarDate = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), currentCalendarDate.getDate() + direction);
     }
 
     renderCalendar();
   }
 
-  function renderDashboardTasksList() {
-    if (!dashboardAllTasks) return;
-
-    dashboardAllTasks.innerHTML = "";
-
-    if (tasks.length === 0) {
-      dashboardAllTasks.innerHTML = '<div class="empty-state">No tasks yet.</div>';
-      return;
-    }
-
-    tasks.forEach(function (task) {
-      const item = document.createElement("div");
-      const isDone = task.status === "Done";
-      const isPast = isPastDate(task.date);
-
-      item.className = "detail-item dashboard-click-item";
-      if (isPast || isDone) item.classList.add("past-item");
-
-      item.setAttribute("data-dashboard-task", task.id);
-
-      item.innerHTML = `
-        <strong class="${isDone ? "task-done-title" : ""}">${task.title}</strong>
-        <div class="meta">Due ${task.date} • ${task.status} • ${task.priority}</div>
-      `;
-      dashboardAllTasks.appendChild(item);
-    });
-  }
-
-  function renderDashboardDaySchedule(dayKey, container) {
-    if (!container) return;
-
-    const items = getItemsForDate(dayKey);
-    container.innerHTML = "";
-
-    if (items.length === 0) {
-      container.innerHTML = '<div class="empty-state">No items scheduled.</div>';
-      return;
-    }
-
-    items.forEach(function (item) {
-      const row = document.createElement("div");
-      row.className = "detail-item dashboard-click-item";
-      if (item.isPast) row.classList.add("past-item");
-      row.setAttribute("data-calendar-item", item.id);
-      row.innerHTML = `
-        <strong>${item.title}</strong>
-        <div class="meta">${item.timeLabel}${item.location ? " • " + item.location : ""}</div>
-      `;
-      container.appendChild(row);
-    });
-  }
-
   function renderDashboard() {
-    renderDashboardTasksList();
-
-    const today = new Date();
+    const todayKey = formatDateKey(new Date());
     const tomorrow = new Date();
-    tomorrow.setDate(today.getDate() + 1);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowKey = formatDateKey(tomorrow);
 
-    renderDashboardDaySchedule(formatDateKey(today), dashboardToday);
-    renderDashboardDaySchedule(formatDateKey(tomorrow), dashboardTomorrow);
+    const todayItems = getItemsForDate(todayKey);
+    const tomorrowItems = getItemsForDate(tomorrowKey);
+    const upcomingExams = exams
+      .slice()
+      .sort(function (a, b) {
+        return (a.date || "").localeCompare(b.date || "");
+      })
+      .slice(0, 5);
+    const recentNotes = notes.slice(-5).reverse();
+
+    dashboardToday.innerHTML = todayItems.length
+      ? todayItems.map(function (item) {
+          return `<div class="detail-item"><strong>${item.title}</strong><div class="meta">${item.timeLabel}</div></div>`;
+        }).join("")
+      : '<div class="empty-state">No items for today.</div>';
+
+    dashboardTomorrow.innerHTML = tomorrowItems.length
+      ? tomorrowItems.map(function (item) {
+          return `<div class="detail-item"><strong>${item.title}</strong><div class="meta">${item.timeLabel}</div></div>`;
+        }).join("")
+      : '<div class="empty-state">No items for tomorrow.</div>';
+
+    dashboardExams.innerHTML = upcomingExams.length
+      ? upcomingExams.map(function (exam) {
+          return `<div class="detail-item"><strong>${exam.title}</strong><div class="meta">${exam.date || "No date"} ${exam.time ? "• " + exam.time : ""}</div></div>`;
+        }).join("")
+      : '<div class="empty-state">No exams added yet.</div>';
+
+    dashboardNotes.innerHTML = recentNotes.length
+      ? recentNotes.map(function (note) {
+          return `<div class="detail-item"><strong>${note.title}</strong><div class="meta">${note.course || "General Note"}</div></div>`;
+        }).join("")
+      : '<div class="empty-state">No notes added yet.</div>';
   }
 
-  if (dashboardAllTasks) {
-    dashboardAllTasks.addEventListener("click", function (e) {
-      const card = e.target.closest("[data-dashboard-task]");
-      if (!card) return;
+  function renderAll() {
+    updateCounts();
+    renderTasks();
+    renderCourses();
+    renderNotes();
+    renderExams();
+    renderDashboard();
+    renderCalendar();
+  }
 
-      const taskId = card.getAttribute("data-dashboard-task");
-      const task = tasks.find(function (item) {
-        return String(item.id) === String(taskId);
-      });
+  function saveTask() {
+    const title = taskTitleInput.value.trim();
+    const details = taskDetailsInput.value.trim();
+    const date = taskDateInput.value;
+    const priority = taskPriorityInput.value;
+    const status = taskStatusInput.value;
 
+    if (!title) {
+      alert("Enter a task title.");
+      return;
+    }
+
+    if (editingTaskId) {
+      const task = tasks.find(function (item) { return item.id === editingTaskId; });
       if (task) {
-        showTab("planner");
-        setTimeout(function () {
-          openTaskDetails(task);
-        }, 80);
+        task.title = title;
+        task.details = details;
+        task.date = date;
+        task.priority = priority;
+        task.status = status;
+      }
+    } else {
+      tasks.push({
+        id: generateId("task"),
+        title,
+        details,
+        date,
+        priority,
+        status
+      });
+    }
+
+    saveAllLocal();
+    renderAll();
+    closeModal("taskModal");
+    resetTaskModal();
+  }
+
+  function saveCourse() {
+    const title = courseTitleInput.value.trim();
+    const code = courseCodeInput.value.trim();
+    const instructor = courseInstructorInput.value.trim();
+    const details = courseDetailsInput.value.trim();
+
+    if (!title) {
+      alert("Enter a course name.");
+      return;
+    }
+
+    if (editingCourseId) {
+      const course = courses.find(function (item) { return item.id === editingCourseId; });
+      if (course) {
+        course.title = title;
+        course.code = code;
+        course.instructor = instructor;
+        course.details = details;
+      }
+    } else {
+      courses.push({
+        id: generateId("course"),
+        title,
+        code,
+        instructor,
+        details
+      });
+    }
+
+    saveAllLocal();
+    renderAll();
+    closeModal("courseModal");
+    resetCourseModal();
+  }
+
+  function saveNote() {
+    const title = noteTitleInput.value.trim();
+    const course = noteCourseInput.value.trim();
+    const content = noteContentInput.value.trim();
+
+    if (!title) {
+      alert("Enter a note title.");
+      return;
+    }
+
+    if (editingNoteId) {
+      const note = notes.find(function (item) { return item.id === editingNoteId; });
+      if (note) {
+        note.title = title;
+        note.course = course;
+        note.content = content;
+      }
+    } else {
+      notes.push({
+        id: generateId("note"),
+        title,
+        course,
+        content,
+        date: formatDateKey(new Date())
+      });
+    }
+
+    saveAllLocal();
+    renderAll();
+    closeModal("noteModal");
+    resetNoteModal();
+  }
+
+  function saveExam() {
+    const title = examTitleInput.value.trim();
+    const course = examCourseInput.value.trim();
+    const date = examDateInput.value;
+    const time = examTimeInput.value;
+    const place = examPlaceInput.value.trim();
+    const seatNumber = examSeatNumberInput.value.trim();
+    const grade = examGradeInput.value.trim();
+    const mark = examMarkInput.value.trim();
+    const notesValue = examNotesInput.value.trim();
+
+    if (!title) {
+      alert("Enter an exam title.");
+      return;
+    }
+
+    if (editingExamId) {
+      const exam = exams.find(function (item) { return item.id === editingExamId; });
+      if (exam) {
+        exam.title = title;
+        exam.course = course;
+        exam.date = date;
+        exam.time = time;
+        exam.place = place;
+        exam.seatNumber = seatNumber;
+        exam.grade = grade;
+        exam.mark = mark;
+        exam.notes = notesValue;
+      }
+    } else {
+      exams.push({
+        id: generateId("exam"),
+        title,
+        course,
+        date,
+        time,
+        place,
+        seatNumber,
+        grade,
+        mark,
+        notes: notesValue
+      });
+    }
+
+    saveAllLocal();
+    renderAll();
+    closeModal("examModal");
+    resetExamModal();
+  }
+
+  function attachListHandlers() {
+    plannerList.addEventListener("click", function (e) {
+      const viewId = e.target.getAttribute("data-view-task");
+      const editId = e.target.getAttribute("data-edit-task");
+      const deleteId = e.target.getAttribute("data-delete-task");
+
+      if (viewId) {
+        const item = tasks.find(function (x) { return x.id === viewId; });
+        if (item) {
+          showDetailModal(item.title, [
+            ["Type", "Task"],
+            ["Due Date", item.date || "Not set"],
+            ["Priority", item.priority || "Not set"],
+            ["Status", item.status || "Not set"],
+            ["Details", item.details || "No details added."]
+          ]);
+        }
+      }
+
+      if (editId) {
+        const item = tasks.find(function (x) { return x.id === editId; });
+        if (item) {
+          taskTitleInput.value = item.title || "";
+          taskDetailsInput.value = item.details || "";
+          taskDateInput.value = item.date || "";
+          taskPriorityInput.value = item.priority || "High";
+          taskStatusInput.value = item.status || "To Do";
+          editingTaskId = item.id;
+          openModal("taskModal");
+        }
+      }
+
+      if (deleteId) {
+        tasks = tasks.filter(function (x) { return x.id !== deleteId; });
+        saveAllLocal();
+        renderAll();
+      }
+    });
+
+    coursesList.addEventListener("click", function (e) {
+      const viewId = e.target.getAttribute("data-view-course");
+      const editId = e.target.getAttribute("data-edit-course");
+      const deleteId = e.target.getAttribute("data-delete-course");
+
+      if (viewId) {
+        const item = courses.find(function (x) { return x.id === viewId; });
+        if (item) {
+          showDetailModal(item.title, [
+            ["Type", "Course"],
+            ["Code", item.code || "Not set"],
+            ["Instructor", item.instructor || "Not set"],
+            ["Details", item.details || "No details added."]
+          ]);
+        }
+      }
+
+      if (editId) {
+        const item = courses.find(function (x) { return x.id === editId; });
+        if (item) {
+          courseTitleInput.value = item.title || "";
+          courseCodeInput.value = item.code || "";
+          courseInstructorInput.value = item.instructor || "";
+          courseDetailsInput.value = item.details || "";
+          editingCourseId = item.id;
+          openModal("courseModal");
+        }
+      }
+
+      if (deleteId) {
+        courses = courses.filter(function (x) { return x.id !== deleteId; });
+        saveAllLocal();
+        renderAll();
+      }
+    });
+
+    notesList.addEventListener("click", function (e) {
+      const viewId = e.target.getAttribute("data-view-note");
+      const editId = e.target.getAttribute("data-edit-note");
+      const deleteId = e.target.getAttribute("data-delete-note");
+
+      if (viewId) {
+        const item = notes.find(function (x) { return x.id === viewId; });
+        if (item) {
+          showDetailModal(item.title, [
+            ["Type", "Note"],
+            ["Course", item.course || "General Note"],
+            ["Content", item.content || "No content added."]
+          ]);
+        }
+      }
+
+      if (editId) {
+        const item = notes.find(function (x) { return x.id === editId; });
+        if (item) {
+          noteTitleInput.value = item.title || "";
+          noteCourseInput.value = item.course || "";
+          noteContentInput.value = item.content || "";
+          editingNoteId = item.id;
+          openModal("noteModal");
+        }
+      }
+
+      if (deleteId) {
+        notes = notes.filter(function (x) { return x.id !== deleteId; });
+        saveAllLocal();
+        renderAll();
+      }
+    });
+
+    examsList.addEventListener("click", function (e) {
+      const viewId = e.target.getAttribute("data-view-exam");
+      const editId = e.target.getAttribute("data-edit-exam");
+      const deleteId = e.target.getAttribute("data-delete-exam");
+
+      if (viewId) {
+        const item = exams.find(function (x) { return x.id === viewId; });
+        if (item) {
+          showDetailModal(item.title, [
+            ["Type", "Exam"],
+            ["Course", item.course || "Not set"],
+            ["Date", item.date || "Not set"],
+            ["Time", item.time || "Not set"],
+            ["Place", item.place || "Not set"],
+            ["Seat Number", item.seatNumber || "Not set"],
+            ["Grade", item.grade || "Not entered"],
+            ["Mark", item.mark || "Not entered"],
+            ["Notes", item.notes || "No notes added."]
+          ]);
+        }
+      }
+
+      if (editId) {
+        const item = exams.find(function (x) { return x.id === editId; });
+        if (item) {
+          examTitleInput.value = item.title || "";
+          examCourseInput.value = item.course || "";
+          examDateInput.value = item.date || "";
+          examTimeInput.value = item.time || "";
+          examPlaceInput.value = item.place || "";
+          examSeatNumberInput.value = item.seatNumber || "";
+          examGradeInput.value = item.grade || "";
+          examMarkInput.value = item.mark || "";
+          examNotesInput.value = item.notes || "";
+          editingExamId = item.id;
+          openModal("examModal");
+        }
+      }
+
+      if (deleteId) {
+        exams = exams.filter(function (x) { return x.id !== deleteId; });
+        saveAllLocal();
+        renderAll();
       }
     });
   }
 
-  if (monthViewBtn) {
-    monthViewBtn.addEventListener("click", function () {
-      setCalendarView("month", true);
-    });
-  }
-
-  if (weekViewBtn) {
-    weekViewBtn.addEventListener("click", function () {
-      setCalendarView("week", true);
-    });
-  }
-
-  if (dayViewBtn) {
-    dayViewBtn.addEventListener("click", function () {
-      setCalendarView("day", true);
-    });
-  }
-
-  if (prevPeriodBtn) prevPeriodBtn.addEventListener("click", function () { moveCalendar(-1); });
-  if (nextPeriodBtn) nextPeriodBtn.addEventListener("click", function () { moveCalendar(1); });
-  if (addTaskBtn) addTaskBtn.addEventListener("click", saveTask);
-  if (saveExamBtn) saveExamBtn.addEventListener("click", saveExam);
-  if (signUpBtn) signUpBtn.addEventListener("click", signUp);
-  if (signInBtn) signInBtn.addEventListener("click", signIn);
-  if (signOutBtn) signOutBtn.addEventListener("click", signOut);
-
-  document.addEventListener("click", function (e) {
-    const itemId = e.target.getAttribute("data-calendar-item") || e.target.closest("[data-calendar-item]")?.getAttribute("data-calendar-item");
-    if (itemId) openCalendarItem(itemId);
+  monthViewBtn.addEventListener("click", function () {
+    setCalendarView("month", true);
   });
+
+  weekViewBtn.addEventListener("click", function () {
+    setCalendarView("week", true);
+  });
+
+  dayViewBtn.addEventListener("click", function () {
+    setCalendarView("day", true);
+  });
+
+  prevPeriodBtn.addEventListener("click", function () {
+    moveCalendar(-1);
+  });
+
+  nextPeriodBtn.addEventListener("click", function () {
+    moveCalendar(1);
+  });
+
+  addTaskBtn.addEventListener("click", saveTask);
+  saveCourseBtn.addEventListener("click", saveCourse);
+  saveNoteBtn.addEventListener("click", saveNote);
+  saveExamBtn.addEventListener("click", saveExam);
+  signUpBtn.addEventListener("click", signUp);
+  signInBtn.addEventListener("click", signIn);
+  signOutBtn.addEventListener("click", signOut);
 
   mobileQuery.addEventListener("change", function () {
     applyResponsiveCalendarDefault(false);
   });
 
   window.addEventListener("offline", function () {
-    showAuthMessage("You are offline. The app is now using local device storage.", true);
-    tasks = getOfflineTasks();
-    exams = getOfflineExams();
-    renderTasks();
-    renderExams();
-    renderDashboard();
-    renderCalendar();
-    updateDashboard();
+    showAuthMessage("You are offline. Browser storage mode is active.", true);
+    loadLocalData();
+    renderAll();
   });
 
-  window.addEventListener("online", async function () {
+  window.addEventListener("online", function () {
     showAuthMessage("You are back online.", false);
-
-    if (currentUser) {
-      await loadTasks();
-      await loadExams();
-    } else {
-      tasks = getOfflineTasks();
-      exams = getOfflineExams();
-      renderTasks();
-      renderExams();
-      renderDashboard();
-      renderCalendar();
-      updateDashboard();
-    }
   });
 
   supabase.auth.onAuthStateChange(function (_event, session) {
     setAuthUI(session ? session.user : null);
-    loadTasks();
-    loadExams();
   });
 
   async function init() {
     const user = await getCurrentUser();
     setAuthUI(user);
-    tasks = getOfflineTasks();
-    exams = getOfflineExams();
-    renderTasks();
-    renderExams();
-    renderDashboard();
-    updateDashboard();
+    loadLocalData();
     applyResponsiveCalendarDefault(true);
+    renderAll();
+    attachListHandlers();
 
-    if (user && isOnline()) {
-      await loadTasks();
-      await loadExams();
-    } else {
-      renderCalendar();
-      showAuthMessage(
-        isOnline()
-          ? "Not signed in. You can still use offline mode on this device."
-          : "Offline mode is active on this device.",
-        false
-      );
+    if (!user) {
+      showAuthMessage("Not signed in. You can still use browser storage on this device.", false);
     }
   }
 
