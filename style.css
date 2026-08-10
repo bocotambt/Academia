@@ -23,8 +23,14 @@
   box-sizing: border-box;
 }
 
+html,
 body {
   margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+body {
   font-family: Arial, sans-serif;
   background: linear-gradient(180deg, #eef4ff 0%, #f8fbff 100%);
   color: var(--text);
@@ -42,6 +48,10 @@ button {
   border: none;
 }
 
+.hidden {
+  display: none !important;
+}
+
 .app-shell {
   min-height: 100vh;
   display: grid;
@@ -55,6 +65,7 @@ button {
   position: sticky;
   top: 0;
   height: 100vh;
+  overflow-y: auto;
 }
 
 .brand {
@@ -112,6 +123,7 @@ button {
 
 .main-content {
   padding: 28px;
+  min-width: 0;
 }
 
 .topbar {
@@ -130,6 +142,7 @@ button {
 
 .tab-content {
   display: none;
+  min-width: 0;
 }
 
 .tab-content.active {
@@ -149,6 +162,7 @@ button {
   border-radius: var(--radius);
   padding: 20px;
   box-shadow: var(--shadow);
+  min-width: 0;
 }
 
 .summary-card span {
@@ -193,6 +207,7 @@ button {
   border-radius: var(--radius);
   padding: 18px;
   box-shadow: var(--shadow);
+  min-width: 0;
 }
 
 .section-head,
@@ -208,7 +223,9 @@ button {
 .head-btns,
 .calendar-controls,
 .view-switch,
-.inline-status-controls {
+.inline-status-controls,
+.card-actions,
+.auth-btn-row {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -347,13 +364,6 @@ li,
   margin-bottom: 12px;
 }
 
-.card-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 14px;
-}
-
 .edit-btn,
 .delete-btn,
 .view-btn {
@@ -416,6 +426,7 @@ li,
   color: var(--muted);
   font-size: 14px;
   line-height: 1.5;
+  word-break: break-word;
 }
 
 .strongish {
@@ -424,6 +435,7 @@ li,
 
 .task-title {
   margin: 0 0 10px 0;
+  word-break: break-word;
 }
 
 .task-done-title {
@@ -468,13 +480,15 @@ li,
   border-radius: 20px;
   padding: 16px;
   box-shadow: var(--shadow);
+  overflow-x: auto;
 }
 
 .calendar-weekdays,
 .calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(7, minmax(90px, 1fr));
+  gap: 8px;
+  min-width: 680px;
 }
 
 .calendar-weekdays {
@@ -486,14 +500,15 @@ li,
   font-weight: 700;
   color: var(--muted);
   padding: 10px 0;
+  font-size: 12px;
 }
 
 .calendar-cell {
-  min-height: 130px;
+  min-height: 120px;
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: 16px;
-  padding: 10px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -510,31 +525,32 @@ li,
 
 .calendar-date {
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .calendar-items {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .calendar-item {
   border: none;
   border-radius: 10px;
-  padding: 8px 10px;
+  padding: 7px 8px;
   color: white;
   text-align: left;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.15rem;
+  gap: 2px;
+  width: 100%;
 }
 
 .calendar-item small {
-  font-size: 0.72rem;
+  font-size: 10px;
   opacity: 0.92;
 }
 
@@ -557,7 +573,8 @@ li,
 }
 
 .week-calendar-grid {
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(160px, 1fr));
+  min-width: 1120px;
 }
 
 .week-day-column,
@@ -566,7 +583,6 @@ li,
   border: 1px solid var(--line);
   border-radius: 16px;
   padding: 12px;
-  min-height: 360px;
 }
 
 .week-day-title,
@@ -587,16 +603,13 @@ li,
   background: rgba(15, 23, 42, 0.55);
   display: grid;
   place-items: center;
-  padding: 18px;
+  padding: 12px;
   z-index: 9999;
-}
-
-.hidden {
-  display: none !important;
 }
 
 .modal-card {
   width: min(680px, 100%);
+  max-height: 92vh;
   background: white;
   border-radius: 22px;
   box-shadow: 0 30px 80px rgba(15, 23, 42, 0.22);
@@ -609,7 +622,7 @@ li,
 
 .modal-head,
 .modal-footer {
-  padding: 18px 20px;
+  padding: 16px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -630,9 +643,12 @@ li,
 }
 
 .modal-body {
-  padding: 20px;
+  padding: 18px;
   display: grid;
   gap: 14px;
+  max-height: 62vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .detail-stack {
@@ -645,6 +661,7 @@ li,
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 12px 14px;
+  min-width: 0;
 }
 
 .detail-label {
@@ -658,7 +675,7 @@ li,
   background: white;
   border: 1px dashed var(--line);
   border-radius: 18px;
-  padding: 20px;
+  padding: 16px;
   color: var(--muted);
 }
 
@@ -675,12 +692,6 @@ li,
   margin-bottom: 0.75rem;
 }
 
-.auth-btn-row {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
 @media (max-width: 1100px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -689,16 +700,24 @@ li,
   .sidebar {
     position: static;
     height: auto;
+    overflow: visible;
     padding-bottom: 12px;
   }
 
   .tab-nav {
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    display: flex;
+    gap: 8px;
     overflow-x: auto;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
   }
 
   .tab-btn {
-    min-width: 120px;
+    flex: 0 0 auto;
+    min-width: 140px;
+    white-space: nowrap;
+    scroll-snap-align: start;
   }
 
   .dashboard-summary,
@@ -721,46 +740,99 @@ li,
 
   .week-calendar-grid {
     grid-template-columns: 1fr;
-  }
-
-  .week-day-column {
-    min-height: auto;
+    min-width: 0;
   }
 }
 
 @media (max-width: 640px) {
+  .app-shell {
+    display: block;
+  }
+
+  .sidebar {
+    padding: 14px 12px;
+  }
+
+  .brand {
+    margin-bottom: 16px;
+  }
+
+  .brand-mark {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+
+  .brand h1 {
+    font-size: 21px;
+  }
+
+  .brand p {
+    font-size: 12px;
+  }
+
+  .auth-box {
+    padding: 12px;
+  }
+
   .main-content {
-    padding: 16px;
+    padding: 12px;
   }
 
   .topbar h2 {
+    font-size: 22px;
+    line-height: 1.15;
+  }
+
+  .topbar-subtitle,
+  .meta {
+    font-size: 13px;
+  }
+
+  .dashboard-summary {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .summary-card {
+    padding: 16px;
+  }
+
+  .summary-card h3 {
     font-size: 24px;
   }
 
-  .input-row,
-  .four-cols {
-    grid-template-columns: 1fr;
+  .panel,
+  .note-card,
+  .course-card,
+  .day-card,
+  .academic-card {
+    padding: 14px;
   }
 
   .section-head,
   .panel-head,
   .modal-head,
   .modal-footer,
-  .calendar-head {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
+  .calendar-head,
   .head-btns,
   .calendar-controls,
   .view-switch,
-  .inline-status-controls {
+  .inline-status-controls,
+  .card-actions,
+  .auth-btn-row {
     flex-direction: column;
     align-items: stretch;
   }
 
   .calendar-month-label {
     min-width: 0;
+    text-align: center;
+  }
+
+  .input-row,
+  .four-cols {
+    grid-template-columns: 1fr;
   }
 
   .primary-btn,
@@ -769,28 +841,43 @@ li,
   .edit-btn,
   .delete-btn,
   .view-btn,
-  .icon-btn,
-  .mini-btn {
+  .mini-btn,
+  .icon-btn {
     width: 100%;
+    min-height: 44px;
   }
 
   .icon-btn {
-    height: 46px;
+    height: 44px;
   }
 
-  .calendar-weekdays div {
-    font-size: 12px;
-    padding: 6px 0;
+  input,
+  select,
+  textarea {
+    min-height: 46px;
+    font-size: 16px;
+    padding: 12px 14px;
   }
 
-  .calendar-grid,
-  .calendar-weekdays {
+  .calendar-board {
+    padding: 10px;
+  }
+
+  .calendar-weekdays,
+  .calendar-grid {
+    min-width: 640px;
     gap: 4px;
   }
 
+  .calendar-weekdays div {
+    font-size: 11px;
+    padding: 6px 0;
+  }
+
   .calendar-cell {
-    min-height: 96px;
+    min-height: 92px;
     padding: 6px;
+    gap: 4px;
   }
 
   .calendar-date {
@@ -798,7 +885,27 @@ li,
   }
 
   .calendar-item {
-    font-size: 11px;
-    padding: 6px 8px;
+    font-size: 10px;
+    padding: 5px 6px;
+  }
+
+  .calendar-item small {
+    font-size: 9px;
+  }
+
+  .modal {
+    padding: 10px;
+    place-items: end center;
+  }
+
+  .modal-card,
+  .large-modal {
+    width: 100%;
+    max-height: 92vh;
+    border-radius: 18px 18px 0 0;
+  }
+
+  .modal-body {
+    padding: 14px;
   }
 }
