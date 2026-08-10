@@ -8,13 +8,20 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   let currentUser = null;
+  let academicYears = [];
+  let semesters = [];
   let courses = [];
+  let notes = [];
   let tasks = [];
   let exams = [];
   let currentCalendarDate = new Date();
   let currentCalendarView = "month";
   let editingTaskId = null;
   let editingExamId = null;
+  let editingCourseId = null;
+  let editingNoteId = null;
+  let editingAcademicYearId = null;
+  let editingSemesterId = null;
 
   const tabButtons = document.querySelectorAll(".tab-btn");
   const tabContents = document.querySelectorAll(".tab-content");
@@ -44,6 +51,26 @@ document.addEventListener("DOMContentLoaded", function () {
   const signInBtn = $("signInBtn");
   const signOutBtn = $("signOutBtn");
 
+  const academicYearNameInput = $("academicYearName");
+  const saveAcademicYearBtn = $("saveAcademicYearBtn");
+
+  const semesterAcademicYearInput = $("semesterAcademicYear");
+  const semesterNameInput = $("semesterName");
+  const semesterStartDateInput = $("semesterStartDate");
+  const semesterEndDateInput = $("semesterEndDate");
+  const saveSemesterBtn = $("saveSemesterBtn");
+
+  const courseNameInput = $("courseName");
+  const courseCodeInput = $("courseCode");
+  const courseInstructorInput = $("courseInstructor");
+  const courseColorInput = $("courseColor");
+  const courseSemesterInput = $("courseSemester");
+  const saveCourseBtn = $("saveCourseBtn");
+
+  const noteTitleInput = $("noteTitle");
+  const noteContentInput = $("noteContent");
+  const saveNoteBtn = $("saveNoteBtn");
+
   const taskTitleInput = $("taskTitle");
   const taskDetailsInput = $("taskDetails");
   const taskCourseInput = $("taskCourse");
@@ -62,10 +89,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const examMarkInput = $("examMark");
   const examNotesInput = $("examNotes");
   const saveExamBtn = $("saveExamBtn");
-
-  const saveNoteBtn = $("saveNoteBtn");
-  const noteTitleInput = $("noteTitle");
-  const noteContentInput = $("noteContent");
 
   const monthViewBtn = $("monthViewBtn");
   const weekViewBtn = $("weekViewBtn");
@@ -200,227 +223,6 @@ document.addEventListener("DOMContentLoaded", function () {
     return itemDate >= today && itemDate <= nextMonth;
   }
 
-  async function loadTasks() {
-    if (!currentUser) {
-      tasks = [];
-      renderTasks();
-      renderDashboard();
-      renderCalendar();
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from("tasks")
-      .select("*")
-      .order("due_date", { ascending: true });
-
-    if (error) {
-      showAuthMessage(error.message, true);
-      tasks = [];
-      renderTasks();
-      renderDashboard();
-      renderCalendar();
-      return;
-    }
-
-    tasks = (data || []).map(function (item) {
-      return {
-        id: item.id,
-        title: item.title,
-        details: item.details || "",
-        courseId: item.course_id || null,
-        date: item.due_date,
-        priority: item.priority || "High",
-        status: item.status || "To Do"
-      };
-    });
-
-    renderTasks();
-    renderDashboard();
-    renderCalendar();
-  }
-
-  async function loadExams() {
-    if (!currentUser) {
-      exams = [];
-      renderExams();
-      renderDashboard();
-      renderCalendar();
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from("exams")
-      .select("*")
-      .order("exam_date", { ascending: true });
-
-    if (error) {
-      showAuthMessage(error.message, true);
-      exams = [];
-      renderExams();
-      renderDashboard();
-      renderCalendar();
-      return;
-    }
-
-    exams = (data || []).map(function (item) {
-      return {
-        id: item.id,
-        title: item.title,
-        course: item.course || "",
-        date: item.exam_date,
-        time: item.exam_time || "",
-        place: item.place || "",
-        seatNumber: item.seat_number || "",
-        grade: item.grade || "",
-        mark: item.mark ?? "",
-        notes: item.notes || ""
-      };
-    });
-
-    renderExams();
-    renderDashboard();
-    renderCalendar();
-  }
-
-  async function saveTaskToSupabase(taskData) {
-    if (!currentUser) {
-      alert("Please sign in first.");
-      return false;
-    }
-
-    if (editingTaskId) {
-      const { error } = await supabase
-        .from("tasks")
-        .update({
-          title: taskData.title,
-          details: taskData.details,
-          course_id: taskData.courseId,
-          due_date: taskData.date,
-          priority: taskData.priority,
-          status: taskData.status
-        })
-        .eq("id", editingTaskId);
-
-      if (error) {
-        alert(error.message);
-        return false;
-      }
-    } else {
-      const { error } = await supabase
-        .from("tasks")
-        .insert({
-          user_id: currentUser.id,
-          title: taskData.title,
-          details: taskData.details,
-          course_id: taskData.courseId,
-          due_date: taskData.date,
-          priority: taskData.priority,
-          status: taskData.status
-        });
-
-      if (error) {
-        alert(error.message);
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  async function saveExamToSupabase(examData) {
-    if (!currentUser) {
-      alert("Please sign in first.");
-      return false;
-    }
-
-    if (editingExamId) {
-      const { error } = await supabase
-        .from("exams")
-        .update({
-          title: examData.title,
-          course: examData.course,
-          exam_date: examData.date,
-          exam_time: examData.time,
-          place: examData.place,
-          seat_number: examData.seatNumber,
-          grade: examData.grade,
-          mark: examData.mark === "" ? null : examData.mark,
-          notes: examData.notes
-        })
-        .eq("id", editingExamId);
-
-      if (error) {
-        alert(error.message);
-        return false;
-      }
-    } else {
-      const { error } = await supabase
-        .from("exams")
-        .insert({
-          user_id: currentUser.id,
-          title: examData.title,
-          course: examData.course,
-          exam_date: examData.date,
-          exam_time: examData.time,
-          place: examData.place,
-          seat_number: examData.seatNumber,
-          grade: examData.grade,
-          mark: examData.mark === "" ? null : examData.mark,
-          notes: examData.notes
-        });
-
-      if (error) {
-        alert(error.message);
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  async function deleteTaskFromSupabase(id) {
-    if (!currentUser) return;
-
-    const { error } = await supabase.from("tasks").delete().eq("id", id);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    await loadTasks();
-  }
-
-  async function deleteExamFromSupabase(id) {
-    if (!currentUser) return;
-
-    const { error } = await supabase.from("exams").delete().eq("id", id);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    await loadExams();
-  }
-
-  async function updateTaskStatus(id, status) {
-    if (!currentUser) return;
-
-    const { error } = await supabase
-      .from("tasks")
-      .update({ status })
-      .eq("id", id);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    await loadTasks();
-  }
-
   function openModal(id) {
     const modal = $(id);
     if (!modal) return;
@@ -433,6 +235,38 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!modal) return;
     modal.classList.add("hidden");
     document.body.style.overflow = "";
+  }
+
+  function resetAcademicYearModal() {
+    academicYearNameInput.value = "";
+    editingAcademicYearId = null;
+    saveAcademicYearBtn.textContent = "Save Academic Year";
+  }
+
+  function resetSemesterModal() {
+    semesterAcademicYearInput.value = "";
+    semesterNameInput.value = "";
+    semesterStartDateInput.value = "";
+    semesterEndDateInput.value = "";
+    editingSemesterId = null;
+    saveSemesterBtn.textContent = "Save Semester";
+  }
+
+  function resetCourseModal() {
+    courseNameInput.value = "";
+    courseCodeInput.value = "";
+    courseInstructorInput.value = "";
+    courseColorInput.value = "#2563eb";
+    courseSemesterInput.value = "";
+    editingCourseId = null;
+    saveCourseBtn.textContent = "Save Course";
+  }
+
+  function resetNoteModal() {
+    noteTitleInput.value = "";
+    noteContentInput.value = "";
+    editingNoteId = null;
+    saveNoteBtn.textContent = "Save Note";
   }
 
   function resetTaskModal() {
@@ -460,17 +294,18 @@ document.addEventListener("DOMContentLoaded", function () {
     saveExamBtn.textContent = "Save Exam";
   }
 
-  function resetNoteModal() {
-    noteTitleInput.value = "";
-    noteContentInput.value = "";
-  }
-
   openModalButtons.forEach(function (btn) {
     btn.addEventListener("click", function () {
       const modalId = btn.dataset.openModal;
+      if (modalId === "academicYearModal") resetAcademicYearModal();
+      if (modalId === "semesterModal") resetSemesterModal();
+      if (modalId === "courseModal") resetCourseModal();
+      if (modalId === "noteModal") resetNoteModal();
       if (modalId === "taskModal") resetTaskModal();
       if (modalId === "examModal") resetExamModal();
-      if (modalId === "noteModal") resetNoteModal();
+      refreshAcademicYearOptions();
+      refreshSemesterOptions();
+      refreshTaskCourseOptions();
       openModal(modalId);
     });
   });
@@ -529,38 +364,520 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  function fillCourseOptions() {
+  function refreshAcademicYearOptions() {
+    if (!semesterAcademicYearInput) return;
+    semesterAcademicYearInput.innerHTML = "";
+
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.textContent = academicYears.length ? "Select academic year" : "No academic years yet";
+    semesterAcademicYearInput.appendChild(defaultOption);
+
+    academicYears.forEach(function (year) {
+      const option = document.createElement("option");
+      option.value = year.id;
+      option.textContent = year.name;
+      semesterAcademicYearInput.appendChild(option);
+    });
+  }
+
+  function refreshSemesterOptions() {
+    if (!courseSemesterInput) return;
+    courseSemesterInput.innerHTML = "";
+
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.textContent = semesters.length ? "Select semester (optional)" : "No semesters yet";
+    courseSemesterInput.appendChild(defaultOption);
+
+    semesters.forEach(function (semester) {
+      const year = academicYears.find(function (item) {
+        return item.id === semester.academicYearId;
+      });
+
+      const option = document.createElement("option");
+      option.value = semester.id;
+      option.textContent = year ? semester.name + " — " + year.name : semester.name;
+      courseSemesterInput.appendChild(option);
+    });
+  }
+
+  function refreshTaskCourseOptions() {
     if (!taskCourseInput) return;
     taskCourseInput.innerHTML = "";
+
     const optionNone = document.createElement("option");
     optionNone.value = "";
     optionNone.textContent = "(No course)";
     taskCourseInput.appendChild(optionNone);
+
+    courses.forEach(function (course) {
+      const option = document.createElement("option");
+      option.value = course.id;
+      option.textContent = course.name + (course.code ? " (" + course.code + ")" : "");
+      taskCourseInput.appendChild(option);
+    });
+  }
+
+  async function loadAcademicYears() {
+    if (!currentUser) {
+      academicYears = [];
+      renderAcademic();
+      refreshAcademicYearOptions();
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("academic_years")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      showAuthMessage(error.message, true);
+      academicYears = [];
+      renderAcademic();
+      refreshAcademicYearOptions();
+      return;
+    }
+
+    academicYears = (data || []).map(function (item) {
+      return {
+        id: item.id,
+        name: item.name
+      };
+    });
+
+    renderAcademic();
+    refreshAcademicYearOptions();
+  }
+
+  async function loadSemesters() {
+    if (!currentUser) {
+      semesters = [];
+      renderAcademic();
+      refreshSemesterOptions();
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("semesters")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      showAuthMessage(error.message, true);
+      semesters = [];
+      renderAcademic();
+      refreshSemesterOptions();
+      return;
+    }
+
+    semesters = (data || []).map(function (item) {
+      return {
+        id: item.id,
+        academicYearId: item.academic_year_id,
+        name: item.name,
+        startDate: item.start_date || "",
+        endDate: item.end_date || ""
+      };
+    });
+
+    renderAcademic();
+    refreshSemesterOptions();
+  }
+
+  async function loadCourses() {
+    if (!currentUser) {
+      courses = [];
+      renderCourses();
+      refreshTaskCourseOptions();
+      renderCalendar();
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("courses")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      showAuthMessage(error.message, true);
+      courses = [];
+      renderCourses();
+      refreshTaskCourseOptions();
+      renderCalendar();
+      return;
+    }
+
+    courses = (data || []).map(function (item) {
+      return {
+        id: item.id,
+        semesterId: item.semester_id || "",
+        name: item.name,
+        code: item.code || "",
+        instructor: item.instructor || "",
+        color: item.color || "#2563eb"
+      };
+    });
+
+    renderCourses();
+    refreshTaskCourseOptions();
+    renderTasks();
+    renderCalendar();
+  }
+
+  async function loadNotes() {
+    if (!currentUser) {
+      notes = [];
+      renderNotes();
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("notes")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      showAuthMessage(error.message, true);
+      notes = [];
+      renderNotes();
+      return;
+    }
+
+    notes = (data || []).map(function (item) {
+      return {
+        id: item.id,
+        title: item.title || "",
+        content: item.content || ""
+      };
+    });
+
+    renderNotes();
+  }
+
+  async function loadTasks() {
+    if (!currentUser) {
+      tasks = [];
+      renderTasks();
+      renderDashboard();
+      renderCalendar();
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("*")
+      .order("due_date", { ascending: true });
+
+    if (error) {
+      showAuthMessage(error.message, true);
+      tasks = [];
+      renderTasks();
+      renderDashboard();
+      renderCalendar();
+      return;
+    }
+
+    tasks = (data || []).map(function (item) {
+      return {
+        id: item.id,
+        title: item.title,
+        details: item.details || "",
+        courseId: item.course_id || "",
+        date: item.due_date,
+        priority: item.priority || "High",
+        status: item.status || "To Do"
+      };
+    });
+
+    renderTasks();
+    renderDashboard();
+    renderCalendar();
+  }
+
+  async function loadExams() {
+    if (!currentUser) {
+      exams = [];
+      renderExams();
+      renderDashboard();
+      renderCalendar();
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("exams")
+      .select("*")
+      .order("exam_date", { ascending: true });
+
+    if (error) {
+      showAuthMessage(error.message, true);
+      exams = [];
+      renderExams();
+      renderDashboard();
+      renderCalendar();
+      return;
+    }
+
+    exams = (data || []).map(function (item) {
+      return {
+        id: item.id,
+        title: item.title,
+        course: item.course || "",
+        date: item.exam_date,
+        time: item.exam_time || "",
+        place: item.place || "",
+        seatNumber: item.seat_number || "",
+        grade: item.grade || "",
+        mark: item.mark ?? "",
+        notes: item.notes || ""
+      };
+    });
+
+    renderExams();
+    renderDashboard();
+    renderCalendar();
+  }
+
+  async function saveAcademicYear() {
+    const name = academicYearNameInput.value.trim();
+
+    if (!currentUser) {
+      alert("Please sign in first.");
+      return;
+    }
+
+    if (!name) {
+      alert("Please enter an academic year name.");
+      return;
+    }
+
+    let error;
+
+    if (editingAcademicYearId) {
+      ({ error } = await supabase
+        .from("academic_years")
+        .update({ name: name })
+        .eq("id", editingAcademicYearId));
+    } else {
+      ({ error } = await supabase
+        .from("academic_years")
+        .insert({
+          user_id: currentUser.id,
+          name: name
+        }));
+    }
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    closeModal("academicYearModal");
+    resetAcademicYearModal();
+    await loadAcademicYears();
+    refreshAcademicYearOptions();
+  }
+
+  async function saveSemester() {
+    const academicYearId = semesterAcademicYearInput.value;
+    const name = semesterNameInput.value.trim();
+    const startDate = semesterStartDateInput.value || null;
+    const endDate = semesterEndDateInput.value || null;
+
+    if (!currentUser) {
+      alert("Please sign in first.");
+      return;
+    }
+
+    if (!academicYearId || !name) {
+      alert("Please select an academic year and enter a semester name.");
+      return;
+    }
+
+    let error;
+
+    if (editingSemesterId) {
+      ({ error } = await supabase
+        .from("semesters")
+        .update({
+          academic_year_id: academicYearId,
+          name: name,
+          start_date: startDate,
+          end_date: endDate
+        })
+        .eq("id", editingSemesterId));
+    } else {
+      ({ error } = await supabase
+        .from("semesters")
+        .insert({
+          user_id: currentUser.id,
+          academic_year_id: academicYearId,
+          name: name,
+          start_date: startDate,
+          end_date: endDate
+        }));
+    }
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    closeModal("semesterModal");
+    resetSemesterModal();
+    await loadSemesters();
+    refreshSemesterOptions();
+  }
+
+  async function saveCourse() {
+    const name = courseNameInput.value.trim();
+    const code = courseCodeInput.value.trim();
+    const instructor = courseInstructorInput.value.trim();
+    const color = courseColorInput.value || "#2563eb";
+    const semesterId = courseSemesterInput.value || null;
+
+    if (!currentUser) {
+      alert("Please sign in first.");
+      return;
+    }
+
+    if (!name) {
+      alert("Please enter a course name.");
+      return;
+    }
+
+    let error;
+
+    if (editingCourseId) {
+      ({ error } = await supabase
+        .from("courses")
+        .update({
+          semester_id: semesterId,
+          name: name,
+          code: code,
+          instructor: instructor,
+          color: color
+        })
+        .eq("id", editingCourseId));
+    } else {
+      ({ error } = await supabase
+        .from("courses")
+        .insert({
+          user_id: currentUser.id,
+          semester_id: semesterId,
+          name: name,
+          code: code,
+          instructor: instructor,
+          color: color
+        }));
+    }
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    closeModal("courseModal");
+    resetCourseModal();
+    await loadCourses();
+    refreshTaskCourseOptions();
+  }
+
+  async function saveNote() {
+    const title = noteTitleInput.value.trim();
+    const content = noteContentInput.value.trim();
+
+    if (!currentUser) {
+      alert("Please sign in first.");
+      return;
+    }
+
+    if (!title && !content) {
+      alert("Please enter a note title or note content.");
+      return;
+    }
+
+    let error;
+
+    if (editingNoteId) {
+      ({ error } = await supabase
+        .from("notes")
+        .update({
+          title: title,
+          content: content
+        })
+        .eq("id", editingNoteId));
+    } else {
+      ({ error } = await supabase
+        .from("notes")
+        .insert({
+          user_id: currentUser.id,
+          title: title,
+          content: content
+        }));
+    }
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    closeModal("noteModal");
+    resetNoteModal();
+    await loadNotes();
   }
 
   async function saveTask() {
     const title = taskTitleInput.value.trim();
     const details = taskDetailsInput.value.trim();
-    const courseId = taskCourseInput.value ? taskCourseInput.value : null;
+    const courseId = taskCourseInput.value || null;
     const date = taskDateInput.value;
     const priority = taskPriorityInput.value;
     const status = taskStatusInput.value;
+
+    if (!currentUser) {
+      alert("Please sign in first.");
+      return;
+    }
 
     if (!title || !date) {
       alert("Please enter both task title and due date.");
       return;
     }
 
-    const ok = await saveTaskToSupabase({
-      title,
-      details,
-      courseId,
-      date,
-      priority,
-      status
-    });
+    let error;
 
-    if (!ok) return;
+    if (editingTaskId) {
+      ({ error } = await supabase
+        .from("tasks")
+        .update({
+          title: title,
+          details: details,
+          course_id: courseId,
+          due_date: date,
+          priority: priority,
+          status: status
+        })
+        .eq("id", editingTaskId));
+    } else {
+      ({ error } = await supabase
+        .from("tasks")
+        .insert({
+          user_id: currentUser.id,
+          title: title,
+          details: details,
+          course_id: courseId,
+          due_date: date,
+          priority: priority,
+          status: status
+        }));
+    }
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
 
     closeModal("taskModal");
     resetTaskModal();
@@ -578,50 +895,192 @@ document.addEventListener("DOMContentLoaded", function () {
     const mark = examMarkInput.value.trim();
     const notes = examNotesInput.value.trim();
 
+    if (!currentUser) {
+      alert("Please sign in first.");
+      return;
+    }
+
     if (!title || !date) {
       alert("Please enter both exam title and exam date.");
       return;
     }
 
-    const ok = await saveExamToSupabase({
-      title,
-      course,
-      date,
-      time,
-      place,
-      seatNumber,
-      grade,
-      mark,
-      notes
-    });
+    let error;
 
-    if (!ok) return;
+    if (editingExamId) {
+      ({ error } = await supabase
+        .from("exams")
+        .update({
+          title: title,
+          course: course,
+          exam_date: date,
+          exam_time: time,
+          place: place,
+          seat_number: seatNumber,
+          grade: grade,
+          mark: mark === "" ? null : mark,
+          notes: notes
+        })
+        .eq("id", editingExamId));
+    } else {
+      ({ error } = await supabase
+        .from("exams")
+        .insert({
+          user_id: currentUser.id,
+          title: title,
+          course: course,
+          exam_date: date,
+          exam_time: time,
+          place: place,
+          seat_number: seatNumber,
+          grade: grade,
+          mark: mark === "" ? null : mark,
+          notes: notes
+        }));
+    }
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
 
     closeModal("examModal");
     resetExamModal();
     await loadExams();
   }
 
-  function saveNote() {
-    const title = noteTitleInput.value.trim();
-    const content = noteContentInput.value.trim();
+  async function deleteAcademicYear(id) {
+    const { error } = await supabase.from("academic_years").delete().eq("id", id);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    await loadAcademicYears();
+    await loadSemesters();
+    await loadCourses();
+  }
 
-    if (!title && !content) {
-      alert("Please enter a note title or note content.");
+  async function deleteSemester(id) {
+    const { error } = await supabase.from("semesters").delete().eq("id", id);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    await loadSemesters();
+    await loadCourses();
+  }
+
+  async function deleteCourse(id) {
+    const { error } = await supabase.from("courses").delete().eq("id", id);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    await loadCourses();
+    await loadTasks();
+  }
+
+  async function deleteNote(id) {
+    const { error } = await supabase.from("notes").delete().eq("id", id);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    await loadNotes();
+  }
+
+  async function deleteTaskFromSupabase(id) {
+    const { error } = await supabase.from("tasks").delete().eq("id", id);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    await loadTasks();
+  }
+
+  async function deleteExamFromSupabase(id) {
+    const { error } = await supabase.from("exams").delete().eq("id", id);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    await loadExams();
+  }
+
+  async function updateTaskStatus(id, status) {
+    const { error } = await supabase
+      .from("tasks")
+      .update({ status: status })
+      .eq("id", id);
+
+    if (error) {
+      alert(error.message);
       return;
     }
 
-    alert("Notes are not connected to Supabase yet. Tasks and Exams are working first.");
-    closeModal("noteModal");
+    await loadTasks();
+  }
+
+  function editAcademicYear(id) {
+    const item = academicYears.find(function (year) {
+      return year.id === id;
+    });
+    if (!item) return;
+    academicYearNameInput.value = item.name || "";
+    editingAcademicYearId = id;
+    saveAcademicYearBtn.textContent = "Update Academic Year";
+    openModal("academicYearModal");
+  }
+
+  function editSemester(id) {
+    const item = semesters.find(function (semester) {
+      return semester.id === id;
+    });
+    if (!item) return;
+    refreshAcademicYearOptions();
+    semesterAcademicYearInput.value = item.academicYearId || "";
+    semesterNameInput.value = item.name || "";
+    semesterStartDateInput.value = item.startDate || "";
+    semesterEndDateInput.value = item.endDate || "";
+    editingSemesterId = id;
+    saveSemesterBtn.textContent = "Update Semester";
+    openModal("semesterModal");
+  }
+
+  function editCourse(id) {
+    const item = courses.find(function (course) {
+      return course.id === id;
+    });
+    if (!item) return;
+    refreshSemesterOptions();
+    courseNameInput.value = item.name || "";
+    courseCodeInput.value = item.code || "";
+    courseInstructorInput.value = item.instructor || "";
+    courseColorInput.value = item.color || "#2563eb";
+    courseSemesterInput.value = item.semesterId || "";
+    editingCourseId = id;
+    saveCourseBtn.textContent = "Update Course";
+    openModal("courseModal");
+  }
+
+  function editNote(id) {
+    const item = notes.find(function (note) {
+      return note.id === id;
+    });
+    if (!item) return;
+    noteTitleInput.value = item.title || "";
+    noteContentInput.value = item.content || "";
+    editingNoteId = id;
+    saveNoteBtn.textContent = "Update Note";
+    openModal("noteModal");
   }
 
   function editTask(id) {
     const task = tasks.find(function (item) {
       return String(item.id) === String(id);
     });
-
     if (!task) return;
-
+    refreshTaskCourseOptions();
     taskTitleInput.value = task.title || "";
     taskDetailsInput.value = task.details || "";
     taskCourseInput.value = task.courseId || "";
@@ -637,9 +1096,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const exam = exams.find(function (item) {
       return String(item.id) === String(id);
     });
-
     if (!exam) return;
-
     examTitleInput.value = exam.title || "";
     examCourseInput.value = exam.course || "";
     examDateInput.value = exam.date || "";
@@ -654,10 +1111,19 @@ document.addEventListener("DOMContentLoaded", function () {
     openModal("examModal");
   }
 
+  function getCourseName(courseId) {
+    if (!courseId) return "No course";
+    const course = courses.find(function (item) {
+      return item.id === courseId;
+    });
+    return course ? course.name : "Unknown course";
+  }
+
   function openTaskDetails(task) {
     showDetailModal(task.title, [
       ["Type", "Task"],
       ["Title", task.title],
+      ["Course", getCourseName(task.courseId)],
       ["Due Date", task.date],
       ["Priority", task.priority],
       ["Status", task.status],
@@ -681,17 +1147,119 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function renderCourses() {
     if (!coursesList) return;
-    coursesList.innerHTML = '<div class="empty-state">Courses will be connected after Tasks and Exams are stable.</div>';
+    coursesList.innerHTML = "";
+
+    if (!currentUser) {
+      coursesList.innerHTML = '<div class="empty-state">Please sign in to view courses.</div>';
+      return;
+    }
+
+    if (courses.length === 0) {
+      coursesList.innerHTML = '<div class="empty-state">No courses added yet.</div>';
+      return;
+    }
+
+    courses.forEach(function (course) {
+      const semester = semesters.find(function (item) {
+        return item.id === course.semesterId;
+      });
+
+      const card = document.createElement("div");
+      card.className = "course-card";
+      card.innerHTML = `
+        <h3 class="task-title">${course.name}</h3>
+        <div class="badge-row">
+          ${course.code ? `<span class="course-badge" style="background:${course.color};">${course.code}</span>` : ""}
+        </div>
+        <p class="meta">Instructor: ${course.instructor || "Not set"}</p>
+        <p class="meta">Semester: ${semester ? semester.name : "Not set"}</p>
+        <div class="card-actions">
+          <button class="edit-btn" data-edit-course="${course.id}" type="button">Edit</button>
+          <button class="delete-btn" data-delete-course="${course.id}" type="button">Delete</button>
+        </div>
+      `;
+      coursesList.appendChild(card);
+    });
   }
 
   function renderNotes() {
     if (!notesList) return;
-    notesList.innerHTML = '<div class="empty-state">Notes editor is openable, but note saving is not connected yet.</div>';
+    notesList.innerHTML = "";
+
+    if (!currentUser) {
+      notesList.innerHTML = '<div class="empty-state">Please sign in to view notes.</div>';
+      return;
+    }
+
+    if (notes.length === 0) {
+      notesList.innerHTML = '<div class="empty-state">No notes added yet.</div>';
+      return;
+    }
+
+    notes.forEach(function (note) {
+      const card = document.createElement("div");
+      card.className = "note-card";
+      card.innerHTML = `
+        <h3 class="task-title">${note.title || "Untitled Note"}</h3>
+        <p class="meta">${(note.content || "").replace(/\n/g, "<br>") || "No content added."}</p>
+        <div class="card-actions">
+          <button class="edit-btn" data-edit-note="${note.id}" type="button">Edit</button>
+          <button class="delete-btn" data-delete-note="${note.id}" type="button">Delete</button>
+        </div>
+      `;
+      notesList.appendChild(card);
+    });
   }
 
   function renderAcademic() {
     if (!academicYearsList) return;
-    academicYearsList.innerHTML = '<div class="empty-state">Academic Settings will be connected after Tasks and Exams are stable.</div>';
+    academicYearsList.innerHTML = "";
+
+    if (!currentUser) {
+      academicYearsList.innerHTML = '<div class="empty-state">Please sign in to view academic settings.</div>';
+      return;
+    }
+
+    if (academicYears.length === 0) {
+      academicYearsList.innerHTML = '<div class="empty-state">No academic years added yet.</div>';
+      return;
+    }
+
+    academicYears.forEach(function (year) {
+      const yearBox = document.createElement("div");
+      yearBox.className = "academic-card";
+
+      const matchingSemesters = semesters.filter(function (semester) {
+        return semester.academicYearId === year.id;
+      });
+
+      const semestersHtml = matchingSemesters.length
+        ? matchingSemesters.map(function (semester) {
+            return `
+              <div class="semester-box">
+                <h4 class="task-title">${semester.name}</h4>
+                <p class="meta">Start: ${semester.startDate || "Not set"}</p>
+                <p class="meta">End: ${semester.endDate || "Not set"}</p>
+                <div class="card-actions">
+                  <button class="edit-btn" data-edit-semester="${semester.id}" type="button">Edit</button>
+                  <button class="delete-btn" data-delete-semester="${semester.id}" type="button">Delete</button>
+                </div>
+              </div>
+            `;
+          }).join("")
+        : '<div class="empty-state">No semesters yet.</div>';
+
+      yearBox.innerHTML = `
+        <h3 class="task-title">${year.name}</h3>
+        <div class="card-actions" style="margin-bottom:12px;">
+          <button class="edit-btn" data-edit-academic-year="${year.id}" type="button">Edit</button>
+          <button class="delete-btn" data-delete-academic-year="${year.id}" type="button">Delete</button>
+        </div>
+        ${semestersHtml}
+      `;
+
+      academicYearsList.appendChild(yearBox);
+    });
   }
 
   function renderTasks() {
@@ -731,8 +1299,11 @@ document.addEventListener("DOMContentLoaded", function () {
       card.innerHTML = `
         <div class="task-card-summary">
           <h3 class="task-title ${isDone ? "task-done-title" : ""}">${task.title}</h3>
-          <span class="priority-badge ${priorityClass}">${task.priority}</span>
-          <span class="status-badge ${statusClass}">${task.status}</span>
+          <div class="badge-row">
+            <span class="priority-badge ${priorityClass}">${task.priority}</span>
+            <span class="status-badge ${statusClass}">${task.status}</span>
+          </div>
+          <p class="meta">Course: ${getCourseName(task.courseId)}</p>
           <p class="meta">Due: ${task.date}</p>
         </div>
 
@@ -782,9 +1353,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
       card.innerHTML = `
         <h3 class="task-title">${exam.title}</h3>
-        <span class="status-badge status-progress">${exam.course || "Exam"}</span>
-        ${exam.grade ? `<span class="priority-badge priority-low">Grade: ${exam.grade}</span>` : ""}
-        ${exam.mark !== "" && exam.mark !== null ? `<span class="priority-badge priority-medium">Mark: ${exam.mark}</span>` : ""}
+        <div class="badge-row">
+          <span class="status-badge status-progress">${exam.course || "Exam"}</span>
+          ${exam.grade ? `<span class="priority-badge priority-low">Grade: ${exam.grade}</span>` : ""}
+          ${exam.mark !== "" && exam.mark !== null ? `<span class="priority-badge priority-medium">Mark: ${exam.mark}</span>` : ""}
+        </div>
         <p class="meta">Date: ${exam.date || "Not set"}</p>
         <p class="meta">Time: ${exam.time || "Not set"}</p>
         <p class="meta">Place: ${exam.place || "Not set"}</p>
@@ -829,6 +1402,7 @@ document.addEventListener("DOMContentLoaded", function () {
       item.className = "detail-item";
       item.innerHTML = `
         <strong>${task.title}</strong>
+        <div class="meta">Course: ${getCourseName(task.courseId)}</div>
         <div class="meta">Due ${task.date} • ${task.status} • ${task.priority}</div>
       `;
       dashboardUpcomingTasks.appendChild(item);
@@ -872,6 +1446,38 @@ document.addEventListener("DOMContentLoaded", function () {
   function renderDashboard() {
     renderDashboardUpcomingTasks();
     renderDashboardUpcomingExams();
+  }
+
+  if (coursesList) {
+    coursesList.addEventListener("click", async function (e) {
+      const editId = e.target.getAttribute("data-edit-course");
+      const deleteId = e.target.getAttribute("data-delete-course");
+      if (editId) editCourse(editId);
+      if (deleteId) await deleteCourse(deleteId);
+    });
+  }
+
+  if (notesList) {
+    notesList.addEventListener("click", async function (e) {
+      const editId = e.target.getAttribute("data-edit-note");
+      const deleteId = e.target.getAttribute("data-delete-note");
+      if (editId) editNote(editId);
+      if (deleteId) await deleteNote(deleteId);
+    });
+  }
+
+  if (academicYearsList) {
+    academicYearsList.addEventListener("click", async function (e) {
+      const editYearId = e.target.getAttribute("data-edit-academic-year");
+      const deleteYearId = e.target.getAttribute("data-delete-academic-year");
+      const editSemesterId = e.target.getAttribute("data-edit-semester");
+      const deleteSemesterId = e.target.getAttribute("data-delete-semester");
+
+      if (editYearId) editAcademicYear(editYearId);
+      if (deleteYearId) await deleteAcademicYear(deleteYearId);
+      if (editSemesterId) editSemester(editSemesterId);
+      if (deleteSemesterId) await deleteSemester(deleteSemesterId);
+    });
   }
 
   if (plannerList) {
@@ -949,11 +1555,8 @@ document.addEventListener("DOMContentLoaded", function () {
           type: "task",
           id: "task-" + task.id,
           title: "Task: " + task.title,
-          date: task.date,
           timeLabel: task.status === "Done" ? "Done" : "All day",
-          location: "",
           color: "#dc2626",
-          data: task,
           isPast: isPastDate(task.date) || task.status === "Done"
         };
       });
@@ -967,11 +1570,8 @@ document.addEventListener("DOMContentLoaded", function () {
           type: "custom",
           id: "exam-" + exam.id,
           title: "Exam: " + exam.title,
-          date: exam.date,
           timeLabel: exam.time || "Time not set",
-          location: exam.place || "",
           color: "#0f766e",
-          data: exam,
           isPast: isPastExam(exam)
         };
       });
@@ -1014,13 +1614,13 @@ document.addEventListener("DOMContentLoaded", function () {
   function setCalendarView(view) {
     currentCalendarView = view;
 
-    if (monthViewBtn) monthViewBtn.classList.remove("active-view-btn");
-    if (weekViewBtn) weekViewBtn.classList.remove("active-view-btn");
-    if (dayViewBtn) dayViewBtn.classList.remove("active-view-btn");
+    monthViewBtn.classList.remove("active-view-btn");
+    weekViewBtn.classList.remove("active-view-btn");
+    dayViewBtn.classList.remove("active-view-btn");
 
-    if (monthCalendarWrap) monthCalendarWrap.classList.add("hidden");
-    if (weekCalendarWrap) weekCalendarWrap.classList.add("hidden");
-    if (dayCalendarWrap) dayCalendarWrap.classList.add("hidden");
+    monthCalendarWrap.classList.add("hidden");
+    weekCalendarWrap.classList.add("hidden");
+    dayCalendarWrap.classList.add("hidden");
 
     if (view === "month") {
       monthViewBtn.classList.add("active-view-btn");
@@ -1039,13 +1639,10 @@ document.addEventListener("DOMContentLoaded", function () {
   function renderMonthView() {
     const year = currentCalendarDate.getFullYear();
     const month = currentCalendarDate.getMonth();
-    const monthLabel = currentCalendarDate.toLocaleString("en-US", {
+    calendarMonthLabel.textContent = currentCalendarDate.toLocaleString("en-US", {
       month: "long",
       year: "numeric"
     });
-
-    if (calendarMonthLabel) calendarMonthLabel.textContent = monthLabel;
-    if (!calendarGrid) return;
 
     calendarGrid.innerHTML = "";
 
@@ -1124,16 +1721,12 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderWeekView() {
-    if (!weekCalendarGrid) return;
-
     const start = getStartOfWeek(currentCalendarDate);
     const end = new Date(start);
     end.setDate(start.getDate() + 6);
 
-    if (calendarMonthLabel) {
-      calendarMonthLabel.textContent =
-        formatDateLabel(formatDateKey(start)) + " - " + formatDateLabel(formatDateKey(end));
-    }
+    calendarMonthLabel.textContent =
+      formatDateLabel(formatDateKey(start)) + " - " + formatDateLabel(formatDateKey(end));
 
     weekCalendarGrid.innerHTML = "";
 
@@ -1174,8 +1767,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderDayView() {
-    if (!dayCalendarGrid) return;
-
     const dateKey = formatDateKey(currentCalendarDate);
     const items = getItemsForDate(dateKey);
 
@@ -1186,7 +1777,7 @@ document.addEventListener("DOMContentLoaded", function () {
       year: "numeric"
     });
 
-    if (calendarMonthLabel) calendarMonthLabel.textContent = label;
+    calendarMonthLabel.textContent = label;
 
     const itemsHtml = items.length === 0
       ? '<div class="empty-state">No items for this day.</div>'
@@ -1244,9 +1835,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (menuToggleBtn) {
     menuToggleBtn.addEventListener("click", function () {
-      if (tabNav) {
-        tabNav.classList.toggle("menu-open");
-      }
+      if (tabNav) tabNav.classList.toggle("menu-open");
     });
   }
 
@@ -1255,9 +1844,14 @@ document.addEventListener("DOMContentLoaded", function () {
   if (dayViewBtn) dayViewBtn.addEventListener("click", function () { setCalendarView("day"); });
   if (prevPeriodBtn) prevPeriodBtn.addEventListener("click", function () { moveCalendar(-1); });
   if (nextPeriodBtn) nextPeriodBtn.addEventListener("click", function () { moveCalendar(1); });
+
+  if (saveAcademicYearBtn) saveAcademicYearBtn.addEventListener("click", saveAcademicYear);
+  if (saveSemesterBtn) saveSemesterBtn.addEventListener("click", saveSemester);
+  if (saveCourseBtn) saveCourseBtn.addEventListener("click", saveCourse);
+  if (saveNoteBtn) saveNoteBtn.addEventListener("click", saveNote);
   if (addTaskBtn) addTaskBtn.addEventListener("click", saveTask);
   if (saveExamBtn) saveExamBtn.addEventListener("click", saveExam);
-  if (saveNoteBtn) saveNoteBtn.addEventListener("click", saveNote);
+
   if (signUpBtn) signUpBtn.addEventListener("click", signUp);
   if (signInBtn) signInBtn.addEventListener("click", signIn);
   if (signOutBtn) signOutBtn.addEventListener("click", signOut);
@@ -1271,23 +1865,35 @@ document.addEventListener("DOMContentLoaded", function () {
 
   supabase.auth.onAuthStateChange(async function (_event, session) {
     setAuthUI(session ? session.user : null);
+
+    await loadAcademicYears();
+    await loadSemesters();
+    await loadCourses();
+    await loadNotes();
     await loadTasks();
     await loadExams();
+
+    refreshAcademicYearOptions();
+    refreshSemesterOptions();
+    refreshTaskCourseOptions();
   });
 
   async function init() {
     const user = await getCurrentUser();
     setAuthUI(user);
-    fillCourseOptions();
-    renderCourses();
-    renderNotes();
-    renderAcademic();
-    renderTasks();
-    renderExams();
-    renderDashboard();
-    setCalendarView("month");
+
+    await loadAcademicYears();
+    await loadSemesters();
+    await loadCourses();
+    await loadNotes();
     await loadTasks();
     await loadExams();
+
+    refreshAcademicYearOptions();
+    refreshSemesterOptions();
+    refreshTaskCourseOptions();
+    renderDashboard();
+    setCalendarView("month");
   }
 
   init();
