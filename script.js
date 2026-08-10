@@ -10,9 +10,11 @@ document.addEventListener("DOMContentLoaded", function () {
   let currentUser = null;
   let courses = [];
   let tasks = [];
+  let exams = [];
   let currentCalendarDate = new Date();
   let currentCalendarView = "month";
   let editingTaskId = null;
+  let editingExamId = null;
 
   const tabButtons = document.querySelectorAll(".tab-btn");
   const tabContents = document.querySelectorAll(".tab-content");
@@ -22,8 +24,10 @@ document.addEventListener("DOMContentLoaded", function () {
   const pageTitle = $("pageTitle");
   const totalCoursesEl = $("totalCourses");
   const totalTasksEl = $("totalTasks");
+  const totalExamsEl = $("totalExams");
 
   const plannerList = $("plannerList");
+  const examsList = $("examsList");
   const dashboardAllTasks = $("dashboardAllTasks");
   const dashboardToday = $("dashboardToday");
   const dashboardTomorrow = $("dashboardTomorrow");
@@ -45,6 +49,17 @@ document.addEventListener("DOMContentLoaded", function () {
   const taskPriorityInput = $("taskPriority");
   const taskStatusInput = $("taskStatus");
   const addTaskBtn = $("addTaskBtn");
+
+  const examTitleInput = $("examTitle");
+  const examCourseInput = $("examCourse");
+  const examDateInput = $("examDate");
+  const examTimeInput = $("examTime");
+  const examPlaceInput = $("examPlace");
+  const examSeatNumberInput = $("examSeatNumber");
+  const examGradeInput = $("examGrade");
+  const examMarkInput = $("examMark");
+  const examNotesInput = $("examNotes");
+  const saveExamBtn = $("saveExamBtn");
 
   const monthViewBtn = $("monthViewBtn");
   const weekViewBtn = $("weekViewBtn");
@@ -149,6 +164,21 @@ document.addEventListener("DOMContentLoaded", function () {
     return data.user || null;
   }
 
+  function isPastDate(dateString) {
+    if (!dateString) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const itemDate = new Date(dateString + "T00:00:00");
+    return itemDate < today;
+  }
+
+  function isPastExam(exam) {
+    if (!exam.date) return false;
+    const examTime = exam.time ? exam.time : "23:59";
+    const examDateTime = new Date(exam.date + "T" + examTime + ":00");
+    return examDateTime < new Date();
+  }
+
   async function loadTasks() {
     if (!currentUser) {
       tasks = [];
@@ -183,6 +213,46 @@ document.addEventListener("DOMContentLoaded", function () {
 
     renderTasks();
     renderDashboard();
+    renderCalendar();
+    updateDashboard();
+  }
+
+  async function loadExams() {
+    if (!currentUser) {
+      exams = [];
+      renderExams();
+      updateDashboard();
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("exams")
+      .select("*")
+      .order("exam_date", { ascending: true });
+
+    if (error) {
+      exams = [];
+      renderExams();
+      updateDashboard();
+      return;
+    }
+
+    exams = (data || []).map(function (item) {
+      return {
+        id: item.id,
+        title: item.title,
+        course: item.course || "",
+        date: item.exam_date,
+        time: item.exam_time || "",
+        place: item.place || "",
+        seatNumber: item.seat_number || "",
+        grade: item.grade || "",
+        mark: item.mark ?? "",
+        notes: item.notes || ""
+      };
+    });
+
+    renderExams();
     renderCalendar();
     updateDashboard();
   }
@@ -232,6 +302,57 @@ document.addEventListener("DOMContentLoaded", function () {
     return true;
   }
 
+  async function saveExamToSupabase(examData) {
+    if (!currentUser) {
+      alert("Please sign in first.");
+      return false;
+    }
+
+    if (editingExamId) {
+      const { error } = await supabase
+        .from("exams")
+        .update({
+          title: examData.title,
+          course: examData.course,
+          exam_date: examData.date,
+          exam_time: examData.time,
+          place: examData.place,
+          seat_number: examData.seatNumber,
+          grade: examData.grade,
+          mark: examData.mark === "" ? null : examData.mark,
+          notes: examData.notes
+        })
+        .eq("id", editingExamId);
+
+      if (error) {
+        alert(error.message);
+        return false;
+      }
+    } else {
+      const { error } = await supabase
+        .from("exams")
+        .insert({
+          user_id: currentUser.id,
+          title: examData.title,
+          course: examData.course,
+          exam_date: examData.date,
+          exam_time: examData.time,
+          place: examData.place,
+          seat_number: examData.seatNumber,
+          grade: examData.grade,
+          mark: examData.mark === "" ? null : examData.mark,
+          notes: examData.notes
+        });
+
+      if (error) {
+        alert(error.message);
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   async function deleteTaskFromSupabase(id) {
     if (!currentUser) return;
 
@@ -246,6 +367,22 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     await loadTasks();
+  }
+
+  async function deleteExamFromSupabase(id) {
+    if (!currentUser) return;
+
+    const { error } = await supabase
+      .from("exams")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    await loadExams();
   }
 
   async function updateTaskStatus(id, status) {
@@ -282,6 +419,7 @@ document.addEventListener("DOMContentLoaded", function () {
     btn.addEventListener("click", function () {
       const modalId = btn.dataset.openModal;
       if (modalId === "taskModal") resetTaskModal();
+      if (modalId === "examModal") resetExamModal();
       openModal(modalId);
     });
   });
@@ -318,16 +456,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const titles = {
       dashboard: "Dashboard",
-      academic: "Academic",
+      academic: "Academic Settings",
       courses: "Courses",
       notes: "Notes",
       planner: "Tasks",
+      exams: "Exams",
       calendar: "Calendar"
     };
 
     if (pageTitle) pageTitle.textContent = titles[tabId] || "Academia";
     if (tabId === "calendar") renderCalendar();
     if (tabId === "dashboard") renderDashboard();
+    if (tabId === "exams") renderExams();
   }
 
   tabButtons.forEach(function (button) {
@@ -339,6 +479,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function updateDashboard() {
     if (totalCoursesEl) totalCoursesEl.textContent = courses.length;
     if (totalTasksEl) totalTasksEl.textContent = tasks.length;
+    if (totalExamsEl) totalExamsEl.textContent = exams.length;
   }
 
   function fillCourseOptions() {
@@ -361,6 +502,20 @@ document.addEventListener("DOMContentLoaded", function () {
     taskStatusInput.value = "To Do";
     editingTaskId = null;
     addTaskBtn.textContent = "Save Task";
+  }
+
+  function resetExamModal() {
+    examTitleInput.value = "";
+    examCourseInput.value = "";
+    examDateInput.value = "";
+    examTimeInput.value = "";
+    examPlaceInput.value = "";
+    examSeatNumberInput.value = "";
+    examGradeInput.value = "";
+    examMarkInput.value = "";
+    examNotesInput.value = "";
+    editingExamId = null;
+    saveExamBtn.textContent = "Save Exam";
   }
 
   async function saveTask() {
@@ -392,6 +547,41 @@ document.addEventListener("DOMContentLoaded", function () {
     await loadTasks();
   }
 
+  async function saveExam() {
+    const title = examTitleInput.value.trim();
+    const course = examCourseInput.value.trim();
+    const date = examDateInput.value;
+    const time = examTimeInput.value;
+    const place = examPlaceInput.value.trim();
+    const seatNumber = examSeatNumberInput.value.trim();
+    const grade = examGradeInput.value.trim();
+    const mark = examMarkInput.value.trim();
+    const notes = examNotesInput.value.trim();
+
+    if (!title || !date) {
+      alert("Please enter both exam title and exam date.");
+      return;
+    }
+
+    const ok = await saveExamToSupabase({
+      title,
+      course,
+      date,
+      time,
+      place,
+      seatNumber,
+      grade,
+      mark,
+      notes
+    });
+
+    if (!ok) return;
+
+    closeModal("examModal");
+    resetExamModal();
+    await loadExams();
+  }
+
   function editTask(id) {
     const task = tasks.find(function (item) {
       return String(item.id) === String(id);
@@ -408,6 +598,52 @@ document.addEventListener("DOMContentLoaded", function () {
     editingTaskId = id;
     addTaskBtn.textContent = "Update Task";
     openModal("taskModal");
+  }
+
+  function editExam(id) {
+    const exam = exams.find(function (item) {
+      return String(item.id) === String(id);
+    });
+
+    if (!exam) return;
+
+    examTitleInput.value = exam.title || "";
+    examCourseInput.value = exam.course || "";
+    examDateInput.value = exam.date || "";
+    examTimeInput.value = exam.time || "";
+    examPlaceInput.value = exam.place || "";
+    examSeatNumberInput.value = exam.seatNumber || "";
+    examGradeInput.value = exam.grade || "";
+    examMarkInput.value = exam.mark || "";
+    examNotesInput.value = exam.notes || "";
+    editingExamId = id;
+    saveExamBtn.textContent = "Update Exam";
+    openModal("examModal");
+  }
+
+  function openTaskDetails(task) {
+    showDetailModal(task.title, [
+      ["Type", "Task"],
+      ["Title", task.title],
+      ["Due Date", task.date],
+      ["Priority", task.priority],
+      ["Status", task.status],
+      ["Details", task.details || "No details added."]
+    ]);
+  }
+
+  function openExamDetails(exam) {
+    showDetailModal(exam.title, [
+      ["Type", "Exam"],
+      ["Course", exam.course || "No course entered"],
+      ["Date", exam.date || "No date entered"],
+      ["Time", exam.time || "No time entered"],
+      ["Place", exam.place || "No place entered"],
+      ["Seat Number", exam.seatNumber || "No seat number entered"],
+      ["Grade", exam.grade || "Not entered"],
+      ["Mark", exam.mark !== "" && exam.mark !== null ? exam.mark : "Not entered"],
+      ["Notes", exam.notes || "No notes added."]
+    ]);
   }
 
   function renderTasks() {
@@ -427,7 +663,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     tasks.forEach(function (task) {
       const card = document.createElement("div");
+      const isDone = task.status === "Done";
+      const isPast = isPastDate(task.date);
+
       card.className = "day-card";
+      if (isDone) card.classList.add("task-done-card");
+      if (isPast) card.classList.add("past-item");
 
       const priorityClass =
         task.priority === "High" ? "priority-high" :
@@ -440,7 +681,7 @@ document.addEventListener("DOMContentLoaded", function () {
         "status-done";
 
       card.innerHTML = `
-        <h3>${task.title}</h3>
+        <h3 class="task-title ${isDone ? "task-done-title" : ""}">${task.title}</h3>
         <span class="priority-badge ${priorityClass}">${task.priority}</span>
         <span class="status-badge ${statusClass}">${task.status}</span>
         <p class="meta">Due: ${task.date}</p>
@@ -453,6 +694,7 @@ document.addEventListener("DOMContentLoaded", function () {
         </div>
 
         <div class="card-actions">
+          <button class="view-btn" data-view-task="${task.id}" type="button">View</button>
           <button class="edit-btn" data-edit-task="${task.id}" type="button">Edit</button>
           <button class="delete-btn" data-delete-task="${task.id}" type="button">Delete</button>
         </div>
@@ -461,16 +703,85 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  function renderExams() {
+    if (!examsList) return;
+
+    examsList.innerHTML = "";
+
+    if (!currentUser) {
+      examsList.innerHTML = '<div class="empty-state">Please sign in to view synced exams.</div>';
+      return;
+    }
+
+    if (exams.length === 0) {
+      examsList.innerHTML = '<div class="empty-state">No exams added yet.</div>';
+      return;
+    }
+
+    exams.forEach(function (exam) {
+      const card = document.createElement("div");
+      const isPast = isPastExam(exam);
+
+      card.className = "day-card";
+      if (isPast) card.classList.add("past-item");
+
+      card.innerHTML = `
+        <h3 class="task-title">${exam.title}</h3>
+        <span class="status-badge status-progress">${exam.course || "Exam"}</span>
+        ${exam.grade ? `<span class="priority-badge priority-low">Grade: ${exam.grade}</span>` : ""}
+        ${exam.mark !== "" && exam.mark !== null ? `<span class="priority-badge priority-medium">Mark: ${exam.mark}</span>` : ""}
+        <p class="meta">Date: ${exam.date || "Not set"}</p>
+        <p class="meta">Time: ${exam.time || "Not set"}</p>
+        <p class="meta">Place: ${exam.place || "Not set"}</p>
+        <p class="meta">Seat: ${exam.seatNumber || "Not set"}</p>
+        <p class="meta">${exam.notes ? String(exam.notes).replace(/\n/g, "<br>") : "No revision notes added."}</p>
+
+        <div class="card-actions">
+          <button class="view-btn" data-view-exam="${exam.id}" type="button">View</button>
+          <button class="edit-btn" data-edit-exam="${exam.id}" type="button">Edit</button>
+          <button class="delete-btn" data-delete-exam="${exam.id}" type="button">Delete</button>
+        </div>
+      `;
+      examsList.appendChild(card);
+    });
+  }
+
   if (plannerList) {
     plannerList.addEventListener("click", async function (e) {
       const editId = e.target.getAttribute("data-edit-task");
       const deleteId = e.target.getAttribute("data-delete-task");
+      const viewId = e.target.getAttribute("data-view-task");
       const taskStatusId = e.target.getAttribute("data-task-status");
       const nextStatus = e.target.getAttribute("data-status-value");
+
+      if (viewId !== null) {
+        const task = tasks.find(function (item) {
+          return String(item.id) === String(viewId);
+        });
+        if (task) openTaskDetails(task);
+      }
 
       if (editId !== null) editTask(editId);
       if (deleteId !== null) await deleteTaskFromSupabase(deleteId);
       if (taskStatusId !== null && nextStatus) await updateTaskStatus(taskStatusId, nextStatus);
+    });
+  }
+
+  if (examsList) {
+    examsList.addEventListener("click", async function (e) {
+      const viewId = e.target.getAttribute("data-view-exam");
+      const editId = e.target.getAttribute("data-edit-exam");
+      const deleteId = e.target.getAttribute("data-delete-exam");
+
+      if (viewId !== null) {
+        const exam = exams.find(function (item) {
+          return String(item.id) === String(viewId);
+        });
+        if (exam) openExamDetails(exam);
+      }
+
+      if (editId !== null) editExam(editId);
+      if (deleteId !== null) await deleteExamFromSupabase(deleteId);
     });
   }
 
@@ -492,7 +803,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function getItemsForDate(dateKey) {
-    return tasks
+    const taskItems = tasks
       .filter(function (task) {
         return task.date === dateKey;
       })
@@ -502,12 +813,33 @@ document.addEventListener("DOMContentLoaded", function () {
           id: "task-" + task.id,
           title: "Task: " + task.title,
           date: task.date,
-          timeLabel: "All day",
+          timeLabel: task.status === "Done" ? "Done" : "All day",
           location: "",
           color: "#dc2626",
-          data: task
+          data: task,
+          isPast: isPastDate(task.date) || task.status === "Done"
         };
       });
+
+    const examItems = exams
+      .filter(function (exam) {
+        return exam.date === dateKey;
+      })
+      .map(function (exam) {
+        return {
+          type: "custom",
+          id: "exam-" + exam.id,
+          title: "Exam: " + exam.title,
+          date: exam.date,
+          timeLabel: exam.time || "Time not set",
+          location: exam.place || "",
+          color: "#0f766e",
+          data: exam,
+          isPast: isPastExam(exam)
+        };
+      });
+
+    return taskItems.concat(examItems);
   }
 
   function showDetailModal(title, items) {
@@ -524,23 +856,22 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function openCalendarItem(itemId) {
-    if (!String(itemId).startsWith("task-")) return;
+    if (String(itemId).startsWith("task-")) {
+      const realId = itemId.replace("task-", "");
+      const task = tasks.find(function (item) {
+        return String(item.id) === String(realId);
+      });
+      if (task) openTaskDetails(task);
+      return;
+    }
 
-    const realId = itemId.replace("task-", "");
-    const task = tasks.find(function (item) {
-      return String(item.id) === String(realId);
-    });
-
-    if (!task) return;
-
-    showDetailModal(task.title, [
-      ["Type", "Task"],
-      ["Title", task.title],
-      ["Due Date", task.date],
-      ["Priority", task.priority],
-      ["Status", task.status],
-      ["Details", task.details || "No details added."]
-    ]);
+    if (String(itemId).startsWith("exam-")) {
+      const realId = itemId.replace("exam-", "");
+      const exam = exams.find(function (item) {
+        return String(item.id) === String(realId);
+      });
+      if (exam) openExamDetails(exam);
+    }
   }
 
   function setCalendarView(view) {
@@ -631,9 +962,10 @@ document.addEventListener("DOMContentLoaded", function () {
             class="calendar-item ${item.type}"
             data-calendar-item="${item.id}"
             title="${item.title}"
-            style="background:${item.color};"
+            style="background:${item.color}; opacity:${item.isPast ? "0.55" : "1"};"
           >
             <span>${item.title}</span>
+            <small>${item.timeLabel}</small>
           </button>
         `;
       }).join("");
@@ -686,7 +1018,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 class="calendar-item ${item.type}"
                 data-calendar-item="${item.id}"
                 title="${item.title}"
-                style="background:${item.color};"
+                style="background:${item.color}; opacity:${item.isPast ? "0.55" : "1"};"
               >
                 <span>${item.timeLabel} • ${item.title}</span>
               </button>
@@ -728,7 +1060,7 @@ document.addEventListener("DOMContentLoaded", function () {
               class="calendar-item ${item.type}"
               data-calendar-item="${item.id}"
               title="${item.title}"
-              style="background:${item.color};"
+              style="background:${item.color}; opacity:${item.isPast ? "0.55" : "1"};"
             >
               <span>${item.timeLabel} • ${item.title}</span>
             </button>
@@ -790,9 +1122,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
     tasks.forEach(function (task) {
       const item = document.createElement("div");
-      item.className = "detail-item";
+      const isDone = task.status === "Done";
+      const isPast = isPastDate(task.date);
+
+      item.className = "detail-item dashboard-click-item";
+      if (isPast || isDone) item.classList.add("past-item");
+
+      item.setAttribute("data-dashboard-task", task.id);
+
       item.innerHTML = `
-        <strong>${task.title}</strong>
+        <strong class="${isDone ? "task-done-title" : ""}">${task.title}</strong>
         <div class="meta">Due ${task.date} • ${task.status} • ${task.priority}</div>
       `;
       dashboardAllTasks.appendChild(item);
@@ -817,10 +1156,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     items.forEach(function (item) {
       const row = document.createElement("div");
-      row.className = "detail-item";
+      row.className = "detail-item dashboard-click-item";
+      if (item.isPast) row.classList.add("past-item");
+      row.setAttribute("data-calendar-item", item.id);
       row.innerHTML = `
         <strong>${item.title}</strong>
-        <div class="meta">${item.timeLabel}</div>
+        <div class="meta">${item.timeLabel}${item.location ? " • " + item.location : ""}</div>
       `;
       container.appendChild(row);
     });
@@ -837,12 +1178,32 @@ document.addEventListener("DOMContentLoaded", function () {
     renderDashboardDaySchedule(formatDateKey(tomorrow), dashboardTomorrow);
   }
 
+  if (dashboardAllTasks) {
+    dashboardAllTasks.addEventListener("click", function (e) {
+      const card = e.target.closest("[data-dashboard-task]");
+      if (!card) return;
+
+      const taskId = card.getAttribute("data-dashboard-task");
+      const task = tasks.find(function (item) {
+        return String(item.id) === String(taskId);
+      });
+
+      if (task) {
+        showTab("planner");
+        setTimeout(function () {
+          openTaskDetails(task);
+        }, 80);
+      }
+    });
+  }
+
   if (monthViewBtn) monthViewBtn.addEventListener("click", function () { setCalendarView("month"); });
   if (weekViewBtn) weekViewBtn.addEventListener("click", function () { setCalendarView("week"); });
   if (dayViewBtn) dayViewBtn.addEventListener("click", function () { setCalendarView("day"); });
   if (prevPeriodBtn) prevPeriodBtn.addEventListener("click", function () { moveCalendar(-1); });
   if (nextPeriodBtn) nextPeriodBtn.addEventListener("click", function () { moveCalendar(1); });
   if (addTaskBtn) addTaskBtn.addEventListener("click", saveTask);
+  if (saveExamBtn) saveExamBtn.addEventListener("click", saveExam);
   if (signUpBtn) signUpBtn.addEventListener("click", signUp);
   if (signInBtn) signInBtn.addEventListener("click", signIn);
   if (signOutBtn) signOutBtn.addEventListener("click", signOut);
@@ -852,9 +1213,10 @@ document.addEventListener("DOMContentLoaded", function () {
     if (itemId) openCalendarItem(itemId);
   });
 
-  supabase.auth.onAuthStateChange(function (_event, session) {
+  supabase.auth.onAuthStateChange(async function (_event, session) {
     setAuthUI(session ? session.user : null);
-    loadTasks();
+    await loadTasks();
+    await loadExams();
   });
 
   async function init() {
@@ -862,10 +1224,12 @@ document.addEventListener("DOMContentLoaded", function () {
     setAuthUI(user);
     fillCourseOptions();
     renderTasks();
+    renderExams();
     renderDashboard();
     setCalendarView("month");
     updateDashboard();
     await loadTasks();
+    await loadExams();
   }
 
   init();
