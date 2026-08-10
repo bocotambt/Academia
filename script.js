@@ -7,6 +7,11 @@ document.addEventListener("DOMContentLoaded", function () {
     return document.getElementById(id);
   }
 
+  const STORAGE_KEYS = {
+    tasks: "academia_offline_tasks",
+    exams: "academia_offline_exams"
+  };
+
   let currentUser = null;
   let courses = [];
   let tasks = [];
@@ -80,6 +85,45 @@ document.addEventListener("DOMContentLoaded", function () {
   const detailTitle = $("detailTitle");
   const detailBody = $("detailBody");
 
+  function isOnline() {
+    return navigator.onLine;
+  }
+
+  function getOfflineArray(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (_error) {
+      return [];
+    }
+  }
+
+  function setOfflineArray(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+
+  function getOfflineTasks() {
+    return getOfflineArray(STORAGE_KEYS.tasks);
+  }
+
+  function setOfflineTasks(value) {
+    setOfflineArray(STORAGE_KEYS.tasks, value);
+  }
+
+  function getOfflineExams() {
+    return getOfflineArray(STORAGE_KEYS.exams);
+  }
+
+  function setOfflineExams(value) {
+    setOfflineArray(STORAGE_KEYS.exams, value);
+  }
+
+  function generateOfflineId(prefix) {
+    return prefix + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+  }
+
   function showAuthMessage(message, isError) {
     if (!authMessage) return;
     authMessage.textContent = message;
@@ -101,6 +145,11 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   async function signUp() {
+    if (!isOnline()) {
+      showAuthMessage("You are offline. Please connect to the internet to sign up.", true);
+      return;
+    }
+
     const email = authEmail.value.trim();
     const password = authPassword.value.trim();
 
@@ -128,6 +177,18 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   async function signIn() {
+    if (!isOnline()) {
+      showAuthMessage("You are offline. Offline mode can still show local tasks and exams.", true);
+      tasks = getOfflineTasks();
+      exams = getOfflineExams();
+      renderTasks();
+      renderExams();
+      renderDashboard();
+      renderCalendar();
+      updateDashboard();
+      return;
+    }
+
     const email = authEmail.value.trim();
     const password = authPassword.value.trim();
 
@@ -152,17 +213,28 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   async function signOut() {
-    const { error } = await supabase.auth.signOut();
+    if (isOnline()) {
+      const { error } = await supabase.auth.signOut();
 
-    if (error) {
-      showAuthMessage(error.message, true);
-      return;
+      if (error) {
+        showAuthMessage(error.message, true);
+        return;
+      }
     }
 
-    showAuthMessage("Signed out.", false);
+    setAuthUI(null);
+    tasks = getOfflineTasks();
+    exams = getOfflineExams();
+    renderTasks();
+    renderExams();
+    renderDashboard();
+    renderCalendar();
+    updateDashboard();
+    showAuthMessage("Signed out. Local offline items are still available on this device.", false);
   }
 
   async function getCurrentUser() {
+    if (!isOnline()) return null;
     const { data } = await supabase.auth.getUser();
     return data.user || null;
   }
@@ -193,8 +265,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   async function loadTasks() {
-    if (!currentUser) {
-      tasks = [];
+    if (!currentUser || !isOnline()) {
+      tasks = getOfflineTasks();
       renderTasks();
       renderDashboard();
       renderCalendar();
@@ -208,7 +280,12 @@ document.addEventListener("DOMContentLoaded", function () {
       .order("due_date", { ascending: true });
 
     if (error) {
-      showAuthMessage(error.message, true);
+      tasks = getOfflineTasks();
+      renderTasks();
+      renderDashboard();
+      renderCalendar();
+      updateDashboard();
+      showAuthMessage("Could not load online tasks. Showing offline tasks instead.", true);
       return;
     }
 
@@ -224,6 +301,7 @@ document.addEventListener("DOMContentLoaded", function () {
       };
     });
 
+    setOfflineTasks(tasks);
     renderTasks();
     renderDashboard();
     renderCalendar();
@@ -231,8 +309,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   async function loadExams() {
-    if (!currentUser) {
-      exams = [];
+    if (!currentUser || !isOnline()) {
+      exams = getOfflineExams();
       renderExams();
       renderCalendar();
       updateDashboard();
@@ -245,10 +323,11 @@ document.addEventListener("DOMContentLoaded", function () {
       .order("exam_date", { ascending: true });
 
     if (error) {
-      exams = [];
+      exams = getOfflineExams();
       renderExams();
       renderCalendar();
       updateDashboard();
+      showAuthMessage("Could not load online exams. Showing offline exams instead.", true);
       return;
     }
 
@@ -267,15 +346,69 @@ document.addEventListener("DOMContentLoaded", function () {
       };
     });
 
+    setOfflineExams(exams);
     renderExams();
     renderCalendar();
     updateDashboard();
   }
 
   async function saveTaskToSupabase(taskData) {
-    if (!currentUser) {
-      alert("Please sign in first.");
-      return false;
+    if (!currentUser || !isOnline()) {
+      const offlineTasks = getOfflineTasks();
+
+      if (editingTaskId) {
+        const index = offlineTasks.findIndex(function (item) {
+          return String(item.id) === String(editingTaskId);
+        });
+
+        if (index !== -1) {
+          offlineTasks[index] = {
+            ...offlineTasks[index],
+            title: taskData.title,
+            details: taskData.details,
+            courseId: taskData.courseId,
+            date: taskData.date,
+            priority: taskData.priority,
+            status: taskData.status
+          };
+        }
+      } else {
+        offlineTasks.push({
+          id: generateOfflineId("task"),
+          title: taskData.title,
+          details: taskData.details,
+          courseId: taskData.courseId,
+          date: taskData.date,
+          priority: taskData.priority,
+          status: taskData.status
+        });
+      }
+
+      setOfflineTasks(offlineTasks);
+      tasks = offlineTasks;
+      return true;
+    }
+
+    if (editingTaskId && String(editingTaskId).startsWith("task-")) {
+      const offlineTasks = getOfflineTasks();
+      const index = offlineTasks.findIndex(function (item) {
+        return String(item.id) === String(editingTaskId);
+      });
+
+      if (index !== -1) {
+        offlineTasks[index] = {
+          ...offlineTasks[index],
+          title: taskData.title,
+          details: taskData.details,
+          courseId: taskData.courseId,
+          date: taskData.date,
+          priority: taskData.priority,
+          status: taskData.status
+        };
+        setOfflineTasks(offlineTasks);
+        tasks = offlineTasks;
+        return true;
+      }
     }
 
     if (editingTaskId) {
@@ -318,9 +451,71 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   async function saveExamToSupabase(examData) {
-    if (!currentUser) {
-      alert("Please sign in first.");
-      return false;
+    if (!currentUser || !isOnline()) {
+      const offlineExams = getOfflineExams();
+
+      if (editingExamId) {
+        const index = offlineExams.findIndex(function (item) {
+          return String(item.id) === String(editingExamId);
+        });
+
+        if (index !== -1) {
+          offlineExams[index] = {
+            ...offlineExams[index],
+            title: examData.title,
+            course: examData.course,
+            date: examData.date,
+            time: examData.time,
+            place: examData.place,
+            seatNumber: examData.seatNumber,
+            grade: examData.grade,
+            mark: examData.mark,
+            notes: examData.notes
+          };
+        }
+      } else {
+        offlineExams.push({
+          id: generateOfflineId("exam"),
+          title: examData.title,
+          course: examData.course,
+          date: examData.date,
+          time: examData.time,
+          place: examData.place,
+          seatNumber: examData.seatNumber,
+          grade: examData.grade,
+          mark: examData.mark,
+          notes: examData.notes
+        });
+      }
+
+      setOfflineExams(offlineExams);
+      exams = offlineExams;
+      return true;
+    }
+
+    if (editingExamId && String(editingExamId).startsWith("exam-")) {
+      const offlineExams = getOfflineExams();
+      const index = offlineExams.findIndex(function (item) {
+        return String(item.id) === String(editingExamId);
+      });
+
+      if (index !== -1) {
+        offlineExams[index] = {
+          ...offlineExams[index],
+          title: examData.title,
+          course: examData.course,
+          date: examData.date,
+          time: examData.time,
+          place: examData.place,
+          seatNumber: examData.seatNumber,
+          grade: examData.grade,
+          mark: examData.mark,
+          notes: examData.notes
+        };
+        setOfflineExams(offlineExams);
+        exams = offlineExams;
+        return true;
+      }
     }
 
     if (editingExamId) {
@@ -369,7 +564,18 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   async function deleteTaskFromSupabase(id) {
-    if (!currentUser) return;
+    if (!currentUser || !isOnline() || String(id).startsWith("task-")) {
+      const offlineTasks = getOfflineTasks().filter(function (item) {
+        return String(item.id) !== String(id);
+      });
+      setOfflineTasks(offlineTasks);
+      tasks = offlineTasks;
+      renderTasks();
+      renderDashboard();
+      renderCalendar();
+      updateDashboard();
+      return;
+    }
 
     const { error } = await supabase
       .from("tasks")
@@ -385,7 +591,17 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   async function deleteExamFromSupabase(id) {
-    if (!currentUser) return;
+    if (!currentUser || !isOnline() || String(id).startsWith("exam-")) {
+      const offlineExams = getOfflineExams().filter(function (item) {
+        return String(item.id) !== String(id);
+      });
+      setOfflineExams(offlineExams);
+      exams = offlineExams;
+      renderExams();
+      renderCalendar();
+      updateDashboard();
+      return;
+    }
 
     const { error } = await supabase
       .from("exams")
@@ -401,7 +617,23 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   async function updateTaskStatus(id, status) {
-    if (!currentUser) return;
+    if (!currentUser || !isOnline() || String(id).startsWith("task-")) {
+      const offlineTasks = getOfflineTasks();
+      const task = offlineTasks.find(function (item) {
+        return String(item.id) === String(id);
+      });
+
+      if (task) {
+        task.status = status;
+        setOfflineTasks(offlineTasks);
+        tasks = offlineTasks;
+        renderTasks();
+        renderDashboard();
+        renderCalendar();
+        updateDashboard();
+      }
+      return;
+    }
 
     const { error } = await supabase
       .from("tasks")
@@ -559,7 +791,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     closeModal("taskModal");
     resetTaskModal();
-    await loadTasks();
+    renderTasks();
+    renderDashboard();
+    renderCalendar();
+    updateDashboard();
+
+    if (currentUser && isOnline()) {
+      await loadTasks();
+    }
   }
 
   async function saveExam() {
@@ -594,7 +833,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     closeModal("examModal");
     resetExamModal();
-    await loadExams();
+    renderExams();
+    renderCalendar();
+    updateDashboard();
+
+    if (currentUser && isOnline()) {
+      await loadExams();
+    }
   }
 
   function editTask(id) {
@@ -666,8 +911,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     plannerList.innerHTML = "";
 
-    if (!currentUser) {
-      plannerList.innerHTML = '<div class="empty-state">Please sign in to view synced tasks.</div>';
+    if (!currentUser && getOfflineTasks().length === 0) {
+      plannerList.innerHTML = '<div class="empty-state">Sign in for cloud sync, or add tasks offline on this device.</div>';
       return;
     }
 
@@ -723,8 +968,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     examsList.innerHTML = "";
 
-    if (!currentUser) {
-      examsList.innerHTML = '<div class="empty-state">Please sign in to view synced exams.</div>';
+    if (!currentUser && getOfflineExams().length === 0) {
+      examsList.innerHTML = '<div class="empty-state">Sign in for cloud sync, or add exams offline on this device.</div>';
       return;
     }
 
@@ -874,7 +1119,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (String(itemId).startsWith("task-")) {
       const realId = itemId.replace("task-", "");
       const task = tasks.find(function (item) {
-        return String(item.id) === String(realId);
+        return String(item.id) === String(realId) || String("task-" + item.id) === String(itemId);
       });
       if (task) openTaskDetails(task);
       return;
@@ -883,7 +1128,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (String(itemId).startsWith("exam-")) {
       const realId = itemId.replace("exam-", "");
       const exam = exams.find(function (item) {
-        return String(item.id) === String(realId);
+        return String(item.id) === String(realId) || String("exam-" + item.id) === String(itemId);
       });
       if (exam) openExamDetails(exam);
     }
@@ -1129,11 +1374,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     dashboardAllTasks.innerHTML = "";
 
-    if (!currentUser) {
-      dashboardAllTasks.innerHTML = '<div class="empty-state">Sign in to load synced tasks.</div>';
-      return;
-    }
-
     if (tasks.length === 0) {
       dashboardAllTasks.innerHTML = '<div class="empty-state">No tasks yet.</div>';
       return;
@@ -1162,11 +1402,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const items = getItemsForDate(dayKey);
     container.innerHTML = "";
-
-    if (!currentUser) {
-      container.innerHTML = '<div class="empty-state">Sign in to sync schedule.</div>';
-      return;
-    }
 
     if (items.length === 0) {
       container.innerHTML = '<div class="empty-state">No items scheduled.</div>';
@@ -1251,6 +1486,34 @@ document.addEventListener("DOMContentLoaded", function () {
     applyResponsiveCalendarDefault(false);
   });
 
+  window.addEventListener("offline", function () {
+    showAuthMessage("You are offline. The app is now using local device storage.", true);
+    tasks = getOfflineTasks();
+    exams = getOfflineExams();
+    renderTasks();
+    renderExams();
+    renderDashboard();
+    renderCalendar();
+    updateDashboard();
+  });
+
+  window.addEventListener("online", async function () {
+    showAuthMessage("You are back online.", false);
+
+    if (currentUser) {
+      await loadTasks();
+      await loadExams();
+    } else {
+      tasks = getOfflineTasks();
+      exams = getOfflineExams();
+      renderTasks();
+      renderExams();
+      renderDashboard();
+      renderCalendar();
+      updateDashboard();
+    }
+  });
+
   supabase.auth.onAuthStateChange(async function (_event, session) {
     setAuthUI(session ? session.user : null);
     await loadTasks();
@@ -1261,13 +1524,26 @@ document.addEventListener("DOMContentLoaded", function () {
     const user = await getCurrentUser();
     setAuthUI(user);
     fillCourseOptions();
+    tasks = getOfflineTasks();
+    exams = getOfflineExams();
     renderTasks();
     renderExams();
     renderDashboard();
     updateDashboard();
     applyResponsiveCalendarDefault(true);
-    await loadTasks();
-    await loadExams();
+
+    if (user && isOnline()) {
+      await loadTasks();
+      await loadExams();
+    } else {
+      renderCalendar();
+      showAuthMessage(
+        isOnline()
+          ? "Not signed in. You can still use offline mode on this device."
+          : "Offline mode is active on this device.",
+        false
+      );
+    }
   }
 
   init();
