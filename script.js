@@ -7,27 +7,19 @@ document.addEventListener("DOMContentLoaded", function () {
     return document.getElementById(id);
   }
 
-  const STORAGE_KEYS = {
-    tasks: "academia_tasks",
-    courses: "academia_courses",
-    notes: "academia_notes",
-    exams: "academia_exams"
-  };
-
   let currentUser = null;
-  let tasks = [];
+  let academicYears = [];
+  let semesters = [];
   let courses = [];
   let notes = [];
-  let exams = [];
+  let tasks = [];
+  let customEvents = [];
+
+  let pendingSessions = [];
+  let editingTaskId = null;
+
   let currentCalendarDate = new Date();
   let currentCalendarView = "month";
-  let editingTaskId = null;
-  let editingCourseId = null;
-  let editingNoteId = null;
-  let editingExamId = null;
-  let userPickedCalendarView = false;
-
-  const mobileQuery = window.matchMedia("(max-width: 640px)");
 
   const tabButtons = document.querySelectorAll(".tab-btn");
   const tabContents = document.querySelectorAll(".tab-content");
@@ -35,21 +27,13 @@ document.addEventListener("DOMContentLoaded", function () {
   const closeModalButtons = document.querySelectorAll(".close-modal-btn");
 
   const pageTitle = $("pageTitle");
-
-  const totalTasksEl = $("totalTasks");
   const totalCoursesEl = $("totalCourses");
-  const totalNotesEl = $("totalNotes");
-  const totalExamsEl = $("totalExams");
+  const totalTasksEl = $("totalTasks");
 
   const plannerList = $("plannerList");
-  const coursesList = $("coursesList");
-  const notesList = $("notesList");
-  const examsList = $("examsList");
-
+  const dashboardAllTasks = $("dashboardAllTasks");
   const dashboardToday = $("dashboardToday");
   const dashboardTomorrow = $("dashboardTomorrow");
-  const dashboardExams = $("dashboardExams");
-  const dashboardNotes = $("dashboardNotes");
 
   const authSignedOut = $("authSignedOut");
   const authSignedIn = $("authSignedIn");
@@ -63,33 +47,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const taskTitleInput = $("taskTitle");
   const taskDetailsInput = $("taskDetails");
+  const taskCourseInput = $("taskCourse");
   const taskDateInput = $("taskDate");
   const taskPriorityInput = $("taskPriority");
   const taskStatusInput = $("taskStatus");
   const addTaskBtn = $("addTaskBtn");
 
-  const courseTitleInput = $("courseTitle");
-  const courseCodeInput = $("courseCode");
-  const courseInstructorInput = $("courseInstructor");
-  const courseDetailsInput = $("courseDetails");
-  const saveCourseBtn = $("saveCourseBtn");
-
-  const noteTitleInput = $("noteTitle");
-  const noteCourseInput = $("noteCourse");
-  const noteContentInput = $("noteContent");
-  const saveNoteBtn = $("saveNoteBtn");
-
-  const examTitleInput = $("examTitle");
-  const examCourseInput = $("examCourse");
-  const examDateInput = $("examDate");
-  const examTimeInput = $("examTime");
-  const examPlaceInput = $("examPlace");
-  const examSeatNumberInput = $("examSeatNumber");
-  const examGradeInput = $("examGrade");
-  const examMarkInput = $("examMark");
-  const examNotesInput = $("examNotes");
-  const saveExamBtn = $("saveExamBtn");
-
+  const eventLocationInput = $("eventLocation");
   const monthViewBtn = $("monthViewBtn");
   const weekViewBtn = $("weekViewBtn");
   const dayViewBtn = $("dayViewBtn");
@@ -106,38 +70,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const detailTitle = $("detailTitle");
   const detailBody = $("detailBody");
 
-  function isOnline() {
-    return navigator.onLine;
-  }
-
-  function getOfflineArray(key) {
-    try {
-      const raw = localStorage.getItem(key);
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (_error) {
-      return [];
-    }
-  }
-
-  function setOfflineArray(key, value) {
-    localStorage.setItem(key, JSON.stringify(value));
-  }
-
-  function getCurrentStore(type) {
-    return getOfflineArray(STORAGE_KEYS[type]);
-  }
-
-  function setCurrentStore(type, value) {
-    setOfflineArray(STORAGE_KEYS[type], value);
-  }
-
-  function generateId(prefix) {
-    return prefix + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
-  }
-
   function showAuthMessage(message, isError) {
+    if (!authMessage) return;
     authMessage.textContent = message;
     authMessage.style.color = isError ? "#b91c1c" : "#0f766e";
   }
@@ -157,11 +91,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   async function signUp() {
-    if (!isOnline()) {
-      showAuthMessage("You are offline. Connect to the internet to sign up.", true);
-      return;
-    }
-
     const email = authEmail.value.trim();
     const password = authPassword.value.trim();
 
@@ -170,12 +99,11 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
+    showAuthMessage("Creating account...", false);
+
     const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: "https://bocotambt.github.io/Academia/"
-      }
+      email: email,
+      password: password
     });
 
     if (error) {
@@ -183,15 +111,10 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    showAuthMessage("Sign-up submitted. Check your email if confirmation is still enabled.", false);
+    showAuthMessage("Sign-up submitted. Check your email if confirmation is required.", false);
   }
 
   async function signIn() {
-    if (!isOnline()) {
-      showAuthMessage("Offline mode active. You can still use saved browser data on this device.", true);
-      return;
-    }
-
     const email = authEmail.value.trim();
     const password = authPassword.value.trim();
 
@@ -200,7 +123,12 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    showAuthMessage("Signing in...", false);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password
+    });
 
     if (error) {
       showAuthMessage(error.message, true);
@@ -211,96 +139,134 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   async function signOut() {
-    if (isOnline()) {
-      await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      showAuthMessage(error.message, true);
+      return;
     }
 
-    setAuthUI(null);
-    loadLocalData();
-    renderAll();
     showAuthMessage("Signed out.", false);
   }
 
   async function getCurrentUser() {
-    if (!isOnline()) return null;
     const { data } = await supabase.auth.getUser();
     return data.user || null;
   }
 
-  function loadLocalData() {
-    tasks = getCurrentStore("tasks");
-    courses = getCurrentStore("courses");
-    notes = getCurrentStore("notes");
-    exams = getCurrentStore("exams");
-  }
-
-  function saveAllLocal() {
-    setCurrentStore("tasks", tasks);
-    setCurrentStore("courses", courses);
-    setCurrentStore("notes", notes);
-    setCurrentStore("exams", exams);
-  }
-
-  function isPastDate(dateString) {
-    if (!dateString) return false;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const itemDate = new Date(dateString + "T00:00:00");
-    return itemDate < today;
-  }
-
-  function isPastExam(exam) {
-    if (!exam.date) return false;
-    const examTime = exam.time ? exam.time : "23:59";
-    const examDateTime = new Date(exam.date + "T" + examTime + ":00");
-    return examDateTime < new Date();
-  }
-
-  function getRecommendedCalendarView() {
-    return mobileQuery.matches ? "week" : "month";
-  }
-
-  function applyResponsiveCalendarDefault(force) {
-    if (force || !userPickedCalendarView) {
-      setCalendarView(getRecommendedCalendarView(), false);
+  async function loadTasks() {
+    if (!currentUser) {
+      tasks = [];
+      renderTasks();
+      renderDashboard();
+      renderCalendar();
+      updateDashboard();
+      return;
     }
+
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("*")
+      .order("due_date", { ascending: true });
+
+    if (error) {
+      showAuthMessage(error.message, true);
+      return;
+    }
+
+    tasks = (data || []).map(function (item) {
+      return {
+        id: item.id,
+        title: item.title,
+        details: item.details || "",
+        courseId: item.course_id || null,
+        date: item.due_date,
+        priority: item.priority,
+        status: item.status
+      };
+    });
+
+    renderTasks();
+    renderDashboard();
+    renderCalendar();
+    updateDashboard();
   }
 
-  function resetTaskModal() {
-    taskTitleInput.value = "";
-    taskDetailsInput.value = "";
-    taskDateInput.value = "";
-    taskPriorityInput.value = "High";
-    taskStatusInput.value = "To Do";
-    editingTaskId = null;
+  async function saveTaskToSupabase(taskData) {
+    if (!currentUser) {
+      alert("Please sign in first.");
+      return false;
+    }
+
+    if (editingTaskId) {
+      const { error } = await supabase
+        .from("tasks")
+        .update({
+          title: taskData.title,
+          details: taskData.details,
+          course_id: taskData.courseId,
+          due_date: taskData.date,
+          priority: taskData.priority,
+          status: taskData.status
+        })
+        .eq("id", editingTaskId);
+
+      if (error) {
+        alert(error.message);
+        return false;
+      }
+    } else {
+      const { error } = await supabase
+        .from("tasks")
+        .insert({
+          user_id: currentUser.id,
+          title: taskData.title,
+          details: taskData.details,
+          course_id: taskData.courseId,
+          due_date: taskData.date,
+          priority: taskData.priority,
+          status: taskData.status
+        });
+
+      if (error) {
+        alert(error.message);
+        return false;
+      }
+    }
+
+    return true;
   }
 
-  function resetCourseModal() {
-    courseTitleInput.value = "";
-    courseCodeInput.value = "";
-    courseInstructorInput.value = "";
-    courseDetailsInput.value = "";
-    editingCourseId = null;
+  async function deleteTaskFromSupabase(id) {
+    if (!currentUser) return;
+
+    const { error } = await supabase
+      .from("tasks")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    await loadTasks();
   }
 
-  function resetNoteModal() {
-    noteTitleInput.value = "";
-    noteCourseInput.value = "";
-    noteContentInput.value = "";
-    editingNoteId = null;
-  }
+  async function updateTaskStatus(id, status) {
+    if (!currentUser) return;
 
-  function resetExamModal() {
-    examTitleInput.value = "";
-    examCourseInput.value = "";
-    examDateInput.value = "";
-    examTimeInput.value = "";
-    examPlaceInput.value = "";
-    examSeatNumberInput.value = "";
-    examGradeInput.value = "";
-    examMarkInput.value = "";
-    examNotesInput.value = "";
-    editingExamId = null;
+    const { error } = await supabase
+      .from("tasks")
+      .update({ status: status })
+      .eq("id", id);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    await loadTasks();
   }
 
   function openModal(id) {
@@ -321,9 +287,6 @@ document.addEventListener("DOMContentLoaded", function () {
     btn.addEventListener("click", function () {
       const modalId = btn.dataset.openModal;
       if (modalId === "taskModal") resetTaskModal();
-      if (modalId === "courseModal") resetCourseModal();
-      if (modalId === "noteModal") resetNoteModal();
-      if (modalId === "examModal") resetExamModal();
       openModal(modalId);
     });
   });
@@ -360,16 +323,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const titles = {
       dashboard: "Dashboard",
-      planner: "Tasks",
+      academic: "Academic",
       courses: "Courses",
       notes: "Notes",
-      exams: "Exams",
+      planner: "Tasks",
       calendar: "Calendar"
     };
 
-    pageTitle.textContent = titles[tabId] || "Academia";
-
+    if (pageTitle) pageTitle.textContent = titles[tabId] || "Academia";
     if (tabId === "calendar") renderCalendar();
+    if (tabId === "dashboard") renderDashboard();
   }
 
   tabButtons.forEach(function (button) {
@@ -378,28 +341,102 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  function updateCounts() {
-    totalTasksEl.textContent = tasks.length;
-    totalCoursesEl.textContent = courses.length;
-    totalNotesEl.textContent = notes.length;
-    totalExamsEl.textContent = exams.length;
+  function updateDashboard() {
+    if (totalCoursesEl) totalCoursesEl.textContent = courses.length;
+    if (totalTasksEl) totalTasksEl.textContent = tasks.length;
   }
 
-  function showDetailModal(title, items) {
-    detailTitle.textContent = title;
-    detailBody.innerHTML = items.map(function (pair) {
-      return `
-        <div class="detail-item">
-          <span class="detail-label">${pair[0]}</span>
-          <div>${pair[1]}</div>
-        </div>
-      `;
-    }).join("");
-    openModal("detailModal");
+  function fillCourseOptions() {
+    if (!taskCourseInput) return;
+
+    taskCourseInput.innerHTML = "";
+
+    const optionNone = document.createElement("option");
+    optionNone.value = "";
+    optionNone.textContent = "(No course)";
+    taskCourseInput.appendChild(optionNone);
+
+    courses.forEach(function (course) {
+      const option = document.createElement("option");
+      option.value = course.id;
+      option.textContent = course.code + " - " + course.name;
+      taskCourseInput.appendChild(option);
+    });
+  }
+
+  function resetTaskModal() {
+    taskTitleInput.value = "";
+    taskDetailsInput.value = "";
+    taskCourseInput.value = "";
+    taskDateInput.value = "";
+    taskPriorityInput.value = "High";
+    taskStatusInput.value = "To Do";
+    editingTaskId = null;
+    addTaskBtn.textContent = "Save Task";
+  }
+
+  async function saveTask() {
+    const title = taskTitleInput.value.trim();
+    const details = taskDetailsInput.value.trim();
+    const courseId = taskCourseInput.value ? taskCourseInput.value : null;
+    const date = taskDateInput.value;
+    const priority = taskPriorityInput.value;
+    const status = taskStatusInput.value;
+
+    if (!title || !date) {
+      alert("Please enter both task title and due date.");
+      return;
+    }
+
+    const ok = await saveTaskToSupabase({
+      title: title,
+      details: details,
+      courseId: courseId,
+      date: date,
+      priority: priority,
+      status: status
+    });
+
+    if (!ok) return;
+
+    closeModal("taskModal");
+    resetTaskModal();
+    await loadTasks();
+  }
+
+  function editTask(id) {
+    const task = tasks.find(function (item) {
+      return item.id === id;
+    });
+
+    if (!task) return;
+
+    taskTitleInput.value = task.title || "";
+    taskDetailsInput.value = task.details || "";
+    taskCourseInput.value = task.courseId || "";
+    taskDateInput.value = task.date || "";
+    taskPriorityInput.value = task.priority || "High";
+    taskStatusInput.value = task.status || "To Do";
+    editingTaskId = id;
+    addTaskBtn.textContent = "Update Task";
+    openModal("taskModal");
+  }
+
+  function getCourseById(id) {
+    return courses.find(function (course) {
+      return String(course.id) === String(id);
+    });
   }
 
   function renderTasks() {
+    if (!plannerList) return;
+
     plannerList.innerHTML = "";
+
+    if (!currentUser) {
+      plannerList.innerHTML = '<div class="empty-state">Please sign in to view synced tasks.</div>';
+      return;
+    }
 
     if (tasks.length === 0) {
       plannerList.innerHTML = '<div class="empty-state">No tasks added yet.</div>';
@@ -408,12 +445,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     tasks.forEach(function (task) {
       const card = document.createElement("div");
-      const isDone = task.status === "Done";
-      const isPast = isPastDate(task.date);
-
       card.className = "day-card";
-      if (isDone) card.classList.add("task-done-card");
-      if (isPast) card.classList.add("past-item");
 
       const priorityClass =
         task.priority === "High" ? "priority-high" :
@@ -425,14 +457,26 @@ document.addEventListener("DOMContentLoaded", function () {
         task.status === "In Progress" ? "status-progress" :
         "status-done";
 
+      const course = task.courseId ? getCourseById(task.courseId) : null;
+      const courseBadge = course
+        ? `<span class="course-badge" style="background:${course.color};">${course.code}</span>`
+        : "";
+
       card.innerHTML = `
-        <h3 class="task-title ${isDone ? "task-done-title" : ""}">${task.title}</h3>
+        <h3>${task.title}</h3>
+        ${courseBadge}
         <span class="priority-badge ${priorityClass}">${task.priority}</span>
         <span class="status-badge ${statusClass}">${task.status}</span>
-        <p class="meta">Due: ${task.date || "Not set"}</p>
-        <p class="meta">${task.details || "No details added."}</p>
+        <p class="meta">Due: ${task.date}</p>
+        <p class="meta">${task.details ? String(task.details).replace(/\n/g, "<br>") : "No details added."}</p>
+
+        <div class="inline-status-controls">
+          <button class="mini-btn secondary-btn" data-task-status="${task.id}" data-status-value="To Do" type="button">To Do</button>
+          <button class="mini-btn secondary-btn" data-task-status="${task.id}" data-status-value="In Progress" type="button">In Progress</button>
+          <button class="mini-btn secondary-btn" data-task-status="${task.id}" data-status-value="Done" type="button">Done</button>
+        </div>
+
         <div class="card-actions">
-          <button class="view-btn" data-view-task="${task.id}" type="button">View</button>
           <button class="edit-btn" data-edit-task="${task.id}" type="button">Edit</button>
           <button class="delete-btn" data-delete-task="${task.id}" type="button">Delete</button>
         </div>
@@ -441,89 +485,16 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  function renderCourses() {
-    coursesList.innerHTML = "";
+  if (plannerList) {
+    plannerList.addEventListener("click", async function (e) {
+      const editId = e.target.getAttribute("data-edit-task");
+      const deleteId = e.target.getAttribute("data-delete-task");
+      const taskStatusId = e.target.getAttribute("data-task-status");
+      const nextStatus = e.target.getAttribute("data-status-value");
 
-    if (courses.length === 0) {
-      coursesList.innerHTML = '<div class="empty-state">No courses added yet.</div>';
-      return;
-    }
-
-    courses.forEach(function (course) {
-      const card = document.createElement("div");
-      card.className = "day-card";
-      card.innerHTML = `
-        <h3 class="task-title">${course.title}</h3>
-        <span class="course-badge">${course.code || "Course"}</span>
-        <p class="meta">Instructor: ${course.instructor || "Not set"}</p>
-        <p class="meta">${course.details || "No details added."}</p>
-        <div class="card-actions">
-          <button class="view-btn" data-view-course="${course.id}" type="button">View</button>
-          <button class="edit-btn" data-edit-course="${course.id}" type="button">Edit</button>
-          <button class="delete-btn" data-delete-course="${course.id}" type="button">Delete</button>
-        </div>
-      `;
-      coursesList.appendChild(card);
-    });
-  }
-
-  function renderNotes() {
-    notesList.innerHTML = "";
-
-    if (notes.length === 0) {
-      notesList.innerHTML = '<div class="empty-state">No notes added yet.</div>';
-      return;
-    }
-
-    notes.forEach(function (note) {
-      const card = document.createElement("div");
-      card.className = "day-card";
-      card.innerHTML = `
-        <h3 class="task-title">${note.title}</h3>
-        <span class="note-badge">${note.course || "General Note"}</span>
-        <p class="meta">${note.content || "No content added."}</p>
-        <div class="card-actions">
-          <button class="view-btn" data-view-note="${note.id}" type="button">View</button>
-          <button class="edit-btn" data-edit-note="${note.id}" type="button">Edit</button>
-          <button class="delete-btn" data-delete-note="${note.id}" type="button">Delete</button>
-        </div>
-      `;
-      notesList.appendChild(card);
-    });
-  }
-
-  function renderExams() {
-    examsList.innerHTML = "";
-
-    if (exams.length === 0) {
-      examsList.innerHTML = '<div class="empty-state">No exams added yet.</div>';
-      return;
-    }
-
-    exams.forEach(function (exam) {
-      const card = document.createElement("div");
-      const isPast = isPastExam(exam);
-
-      card.className = "day-card";
-      if (isPast) card.classList.add("past-item");
-
-      card.innerHTML = `
-        <h3 class="task-title">${exam.title}</h3>
-        <span class="status-badge status-progress">${exam.course || "Exam"}</span>
-        ${exam.grade ? `<span class="priority-badge priority-low">Grade: ${exam.grade}</span>` : ""}
-        ${exam.mark !== "" && exam.mark !== null ? `<span class="priority-badge priority-medium">Mark: ${exam.mark}</span>` : ""}
-        <p class="meta">Date: ${exam.date || "Not set"}</p>
-        <p class="meta">Time: ${exam.time || "Not set"}</p>
-        <p class="meta">Place: ${exam.place || "Not set"}</p>
-        <p class="meta">Seat: ${exam.seatNumber || "Not set"}</p>
-        <p class="meta">${exam.notes || "No revision notes added."}</p>
-        <div class="card-actions">
-          <button class="view-btn" data-view-exam="${exam.id}" type="button">View</button>
-          <button class="edit-btn" data-edit-exam="${exam.id}" type="button">Edit</button>
-          <button class="delete-btn" data-delete-exam="${exam.id}" type="button">Delete</button>
-        </div>
-      `;
-      examsList.appendChild(card);
+      if (editId !== null) editTask(editId);
+      if (deleteId !== null) await deleteTaskFromSupabase(deleteId);
+      if (taskStatusId !== null && nextStatus) await updateTaskStatus(taskStatusId, nextStatus);
     });
   }
 
@@ -550,54 +521,93 @@ document.addEventListener("DOMContentLoaded", function () {
         return task.date === dateKey;
       })
       .map(function (task) {
+        const course = task.courseId ? getCourseById(task.courseId) : null;
         return {
           type: "task",
-          id: task.id,
-          title: "Task: " + task.title,
-          timeLabel: task.status === "Done" ? "Done" : "All day",
-          isPast: isPastDate(task.date) || task.status === "Done"
+          id: "task-" + task.id,
+          title: (course ? course.code + " • " : "") + "Task: " + task.title,
+          date: task.date,
+          timeLabel: "All day",
+          location: "",
+          color: course ? course.color : "#dc2626",
+          data: task
         };
       });
 
-    const examItems = exams
-      .filter(function (exam) {
-        return exam.date === dateKey;
-      })
-      .map(function (exam) {
-        return {
-          type: "exam",
-          id: exam.id,
-          title: "Exam: " + exam.title,
-          timeLabel: exam.time || "Time not set",
-          isPast: isPastExam(exam)
-        };
-      });
+    return taskItems;
+  }
 
-    const noteItems = notes
-      .filter(function (note) {
-        return note.date === dateKey;
-      })
-      .map(function (note) {
-        return {
-          type: "note",
-          id: note.id,
-          title: "Note: " + note.title,
-          timeLabel: "Note",
-          isPast: false
-        };
-      });
+  function showDetailModal(title, items) {
+    detailTitle.textContent = title;
+    detailBody.innerHTML = items.map(function (pair) {
+      return `
+        <div class="detail-item">
+          <span class="detail-label">${pair[0]}</span>
+          <div>${pair[1]}</div>
+        </div>
+      `;
+    }).join("");
+    openModal("detailModal");
+  }
 
-    return taskItems.concat(examItems, noteItems);
+  function openCalendarItem(itemId) {
+    if (!String(itemId).startsWith("task-")) return;
+
+    const realId = itemId.replace("task-", "");
+    const task = tasks.find(function (item) {
+      return String(item.id) === String(realId);
+    });
+
+    if (!task) return;
+
+    const course = task.courseId ? getCourseById(task.courseId) : null;
+
+    showDetailModal(task.title, [
+      ["Type", "Task"],
+      ["Title", task.title],
+      ["Due Date", task.date],
+      ["Priority", task.priority],
+      ["Status", task.status],
+      ["Course", course ? course.name : "(No course)"],
+      ["Details", task.details || "No details added."]
+    ]);
+  }
+
+  function setCalendarView(view) {
+    currentCalendarView = view;
+
+    if (monthViewBtn) monthViewBtn.classList.remove("active-view-btn");
+    if (weekViewBtn) weekViewBtn.classList.remove("active-view-btn");
+    if (dayViewBtn) dayViewBtn.classList.remove("active-view-btn");
+
+    if (monthCalendarWrap) monthCalendarWrap.classList.add("hidden");
+    if (weekCalendarWrap) weekCalendarWrap.classList.add("hidden");
+    if (dayCalendarWrap) dayCalendarWrap.classList.add("hidden");
+
+    if (view === "month") {
+      monthViewBtn.classList.add("active-view-btn");
+      monthCalendarWrap.classList.remove("hidden");
+    } else if (view === "week") {
+      weekViewBtn.classList.add("active-view-btn");
+      weekCalendarWrap.classList.remove("hidden");
+    } else {
+      dayViewBtn.classList.add("active-view-btn");
+      dayCalendarWrap.classList.remove("hidden");
+    }
+
+    renderCalendar();
   }
 
   function renderMonthView() {
     const year = currentCalendarDate.getFullYear();
     const month = currentCalendarDate.getMonth();
-
-    calendarMonthLabel.textContent = currentCalendarDate.toLocaleString("en-US", {
+    const monthLabel = currentCalendarDate.toLocaleString("en-US", {
       month: "long",
       year: "numeric"
     });
+
+    if (calendarMonthLabel) calendarMonthLabel.textContent = monthLabel;
+    if (!calendarGrid) return;
 
     calendarGrid.innerHTML = "";
 
@@ -643,16 +653,18 @@ document.addEventListener("DOMContentLoaded", function () {
       if (cellKey === todayKey) cell.classList.add("today");
 
       const dayItems = getItemsForDate(cellKey);
+
       const itemsHtml = dayItems.map(function (item) {
         return `
           <button
             type="button"
             class="calendar-item ${item.type}"
+            data-calendar-item="${item.id}"
             title="${item.title}"
-            style="opacity:${item.isPast ? "0.55" : "1"};"
+            style="background:${item.color};"
           >
             <span>${item.title}</span>
-            <small>${item.timeLabel}</small>
+            ${item.location ? `<small>${item.location}</small>` : ""}
           </button>
         `;
       }).join("");
@@ -674,12 +686,16 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderWeekView() {
+    if (!weekCalendarGrid) return;
+
     const start = getStartOfWeek(currentCalendarDate);
     const end = new Date(start);
     end.setDate(start.getDate() + 6);
 
-    calendarMonthLabel.textContent =
-      formatDateLabel(formatDateKey(start)) + " - " + formatDateLabel(formatDateKey(end));
+    if (calendarMonthLabel) {
+      calendarMonthLabel.textContent =
+        formatDateLabel(formatDateKey(start)) + " - " + formatDateLabel(formatDateKey(end));
+    }
 
     weekCalendarGrid.innerHTML = "";
 
@@ -696,8 +712,15 @@ document.addEventListener("DOMContentLoaded", function () {
         ? '<div class="empty-state">No items</div>'
         : items.map(function (item) {
             return `
-              <button type="button" class="calendar-item ${item.type}" style="opacity:${item.isPast ? "0.55" : "1"};">
+              <button
+                type="button"
+                class="calendar-item ${item.type}"
+                data-calendar-item="${item.id}"
+                title="${item.title}"
+                style="background:${item.color};"
+              >
                 <span>${item.timeLabel} • ${item.title}</span>
+                ${item.location ? `<small>${item.location}</small>` : ""}
               </button>
             `;
           }).join("");
@@ -714,6 +737,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderDayView() {
+    if (!dayCalendarGrid) return;
+
     const dateKey = formatDateKey(currentCalendarDate);
     const items = getItemsForDate(dateKey);
 
@@ -724,14 +749,21 @@ document.addEventListener("DOMContentLoaded", function () {
       year: "numeric"
     });
 
-    calendarMonthLabel.textContent = label;
+    if (calendarMonthLabel) calendarMonthLabel.textContent = label;
 
     const itemsHtml = items.length === 0
       ? '<div class="empty-state">No items for this day.</div>'
       : items.map(function (item) {
           return `
-            <button type="button" class="calendar-item ${item.type}" style="opacity:${item.isPast ? "0.55" : "1"};">
+            <button
+              type="button"
+              class="calendar-item ${item.type}"
+              data-calendar-item="${item.id}"
+              title="${item.title}"
+              style="background:${item.color};"
+            >
               <span>${item.timeLabel} • ${item.title}</span>
+              ${item.location ? `<small>${item.location}</small>` : ""}
             </button>
           `;
         }).join("");
@@ -744,35 +776,6 @@ document.addEventListener("DOMContentLoaded", function () {
     `;
   }
 
-  function setCalendarView(view, rememberChoice) {
-    currentCalendarView = view;
-
-    if (rememberChoice !== false) {
-      userPickedCalendarView = true;
-    }
-
-    monthViewBtn.classList.remove("active-view-btn");
-    weekViewBtn.classList.remove("active-view-btn");
-    dayViewBtn.classList.remove("active-view-btn");
-
-    monthCalendarWrap.classList.add("hidden");
-    weekCalendarWrap.classList.add("hidden");
-    dayCalendarWrap.classList.add("hidden");
-
-    if (view === "month") {
-      monthViewBtn.classList.add("active-view-btn");
-      monthCalendarWrap.classList.remove("hidden");
-    } else if (view === "week") {
-      weekViewBtn.classList.add("active-view-btn");
-      weekCalendarWrap.classList.remove("hidden");
-    } else {
-      dayViewBtn.classList.add("active-view-btn");
-      dayCalendarWrap.classList.remove("hidden");
-    }
-
-    renderCalendar();
-  }
-
   function renderCalendar() {
     if (currentCalendarView === "month") renderMonthView();
     else if (currentCalendarView === "week") renderWeekView();
@@ -781,436 +784,121 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function moveCalendar(direction) {
     if (currentCalendarView === "month") {
-      currentCalendarDate = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth() + direction, 1);
+      currentCalendarDate = new Date(
+        currentCalendarDate.getFullYear(),
+        currentCalendarDate.getMonth() + direction,
+        1
+      );
     } else if (currentCalendarView === "week") {
-      currentCalendarDate = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), currentCalendarDate.getDate() + (7 * direction));
+      currentCalendarDate = new Date(
+        currentCalendarDate.getFullYear(),
+        currentCalendarDate.getMonth(),
+        currentCalendarDate.getDate() + (7 * direction)
+      );
     } else {
-      currentCalendarDate = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), currentCalendarDate.getDate() + direction);
+      currentCalendarDate = new Date(
+        currentCalendarDate.getFullYear(),
+        currentCalendarDate.getMonth(),
+        currentCalendarDate.getDate() + direction
+      );
     }
 
     renderCalendar();
+  }
+
+  function renderDashboardTasksList() {
+    if (!dashboardAllTasks) return;
+
+    dashboardAllTasks.innerHTML = "";
+
+    if (!currentUser) {
+      dashboardAllTasks.innerHTML = '<div class="empty-state">Sign in to load synced tasks.</div>';
+      return;
+    }
+
+    if (tasks.length === 0) {
+      dashboardAllTasks.innerHTML = '<div class="empty-state">No tasks yet.</div>';
+      return;
+    }
+
+    tasks.forEach(function (task) {
+      const item = document.createElement("div");
+      item.className = "detail-item";
+      item.innerHTML = `
+        <strong>${task.title}</strong>
+        <div class="meta">Due ${task.date} • ${task.status} • ${task.priority}</div>
+      `;
+      dashboardAllTasks.appendChild(item);
+    });
+  }
+
+  function renderDashboardDaySchedule(dayKey, container) {
+    if (!container) return;
+
+    const items = getItemsForDate(dayKey);
+    container.innerHTML = "";
+
+    if (!currentUser) {
+      container.innerHTML = '<div class="empty-state">Sign in to sync schedule.</div>';
+      return;
+    }
+
+    if (items.length === 0) {
+      container.innerHTML = '<div class="empty-state">No items scheduled.</div>';
+      return;
+    }
+
+    items.forEach(function (item) {
+      const row = document.createElement("div");
+      row.className = "detail-item";
+      row.innerHTML = `
+        <strong>${item.title}</strong>
+        <div class="meta">${item.timeLabel}</div>
+      `;
+      container.appendChild(row);
+    });
   }
 
   function renderDashboard() {
-    const todayKey = formatDateKey(new Date());
+    renderDashboardTasksList();
+
+    const today = new Date();
     const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowKey = formatDateKey(tomorrow);
+    tomorrow.setDate(today.getDate() + 1);
 
-    const todayItems = getItemsForDate(todayKey);
-    const tomorrowItems = getItemsForDate(tomorrowKey);
-    const upcomingExams = exams
-      .slice()
-      .sort(function (a, b) {
-        return (a.date || "").localeCompare(b.date || "");
-      })
-      .slice(0, 5);
-    const recentNotes = notes.slice(-5).reverse();
-
-    dashboardToday.innerHTML = todayItems.length
-      ? todayItems.map(function (item) {
-          return `<div class="detail-item"><strong>${item.title}</strong><div class="meta">${item.timeLabel}</div></div>`;
-        }).join("")
-      : '<div class="empty-state">No items for today.</div>';
-
-    dashboardTomorrow.innerHTML = tomorrowItems.length
-      ? tomorrowItems.map(function (item) {
-          return `<div class="detail-item"><strong>${item.title}</strong><div class="meta">${item.timeLabel}</div></div>`;
-        }).join("")
-      : '<div class="empty-state">No items for tomorrow.</div>';
-
-    dashboardExams.innerHTML = upcomingExams.length
-      ? upcomingExams.map(function (exam) {
-          return `<div class="detail-item"><strong>${exam.title}</strong><div class="meta">${exam.date || "No date"} ${exam.time ? "• " + exam.time : ""}</div></div>`;
-        }).join("")
-      : '<div class="empty-state">No exams added yet.</div>';
-
-    dashboardNotes.innerHTML = recentNotes.length
-      ? recentNotes.map(function (note) {
-          return `<div class="detail-item"><strong>${note.title}</strong><div class="meta">${note.course || "General Note"}</div></div>`;
-        }).join("")
-      : '<div class="empty-state">No notes added yet.</div>';
+    renderDashboardDaySchedule(formatDateKey(today), dashboardToday);
+    renderDashboardDaySchedule(formatDateKey(tomorrow), dashboardTomorrow);
   }
 
-  function renderAll() {
-    updateCounts();
-    renderTasks();
-    renderCourses();
-    renderNotes();
-    renderExams();
-    renderDashboard();
-    renderCalendar();
-  }
+  if (monthViewBtn) monthViewBtn.addEventListener("click", function () { setCalendarView("month"); });
+  if (weekViewBtn) weekViewBtn.addEventListener("click", function () { setCalendarView("week"); });
+  if (dayViewBtn) dayViewBtn.addEventListener("click", function () { setCalendarView("day"); });
+  if (prevPeriodBtn) prevPeriodBtn.addEventListener("click", function () { moveCalendar(-1); });
+  if (nextPeriodBtn) nextPeriodBtn.addEventListener("click", function () { moveCalendar(1); });
+  if (addTaskBtn) addTaskBtn.addEventListener("click", saveTask);
+  if (signUpBtn) signUpBtn.addEventListener("click", signUp);
+  if (signInBtn) signInBtn.addEventListener("click", signIn);
+  if (signOutBtn) signOutBtn.addEventListener("click", signOut);
 
-  function saveTask() {
-    const title = taskTitleInput.value.trim();
-    const details = taskDetailsInput.value.trim();
-    const date = taskDateInput.value;
-    const priority = taskPriorityInput.value;
-    const status = taskStatusInput.value;
-
-    if (!title) {
-      alert("Enter a task title.");
-      return;
-    }
-
-    if (editingTaskId) {
-      const task = tasks.find(function (item) { return item.id === editingTaskId; });
-      if (task) {
-        task.title = title;
-        task.details = details;
-        task.date = date;
-        task.priority = priority;
-        task.status = status;
-      }
-    } else {
-      tasks.push({
-        id: generateId("task"),
-        title,
-        details,
-        date,
-        priority,
-        status
-      });
-    }
-
-    saveAllLocal();
-    renderAll();
-    closeModal("taskModal");
-    resetTaskModal();
-  }
-
-  function saveCourse() {
-    const title = courseTitleInput.value.trim();
-    const code = courseCodeInput.value.trim();
-    const instructor = courseInstructorInput.value.trim();
-    const details = courseDetailsInput.value.trim();
-
-    if (!title) {
-      alert("Enter a course name.");
-      return;
-    }
-
-    if (editingCourseId) {
-      const course = courses.find(function (item) { return item.id === editingCourseId; });
-      if (course) {
-        course.title = title;
-        course.code = code;
-        course.instructor = instructor;
-        course.details = details;
-      }
-    } else {
-      courses.push({
-        id: generateId("course"),
-        title,
-        code,
-        instructor,
-        details
-      });
-    }
-
-    saveAllLocal();
-    renderAll();
-    closeModal("courseModal");
-    resetCourseModal();
-  }
-
-  function saveNote() {
-    const title = noteTitleInput.value.trim();
-    const course = noteCourseInput.value.trim();
-    const content = noteContentInput.value.trim();
-
-    if (!title) {
-      alert("Enter a note title.");
-      return;
-    }
-
-    if (editingNoteId) {
-      const note = notes.find(function (item) { return item.id === editingNoteId; });
-      if (note) {
-        note.title = title;
-        note.course = course;
-        note.content = content;
-      }
-    } else {
-      notes.push({
-        id: generateId("note"),
-        title,
-        course,
-        content,
-        date: formatDateKey(new Date())
-      });
-    }
-
-    saveAllLocal();
-    renderAll();
-    closeModal("noteModal");
-    resetNoteModal();
-  }
-
-  function saveExam() {
-    const title = examTitleInput.value.trim();
-    const course = examCourseInput.value.trim();
-    const date = examDateInput.value;
-    const time = examTimeInput.value;
-    const place = examPlaceInput.value.trim();
-    const seatNumber = examSeatNumberInput.value.trim();
-    const grade = examGradeInput.value.trim();
-    const mark = examMarkInput.value.trim();
-    const notesValue = examNotesInput.value.trim();
-
-    if (!title) {
-      alert("Enter an exam title.");
-      return;
-    }
-
-    if (editingExamId) {
-      const exam = exams.find(function (item) { return item.id === editingExamId; });
-      if (exam) {
-        exam.title = title;
-        exam.course = course;
-        exam.date = date;
-        exam.time = time;
-        exam.place = place;
-        exam.seatNumber = seatNumber;
-        exam.grade = grade;
-        exam.mark = mark;
-        exam.notes = notesValue;
-      }
-    } else {
-      exams.push({
-        id: generateId("exam"),
-        title,
-        course,
-        date,
-        time,
-        place,
-        seatNumber,
-        grade,
-        mark,
-        notes: notesValue
-      });
-    }
-
-    saveAllLocal();
-    renderAll();
-    closeModal("examModal");
-    resetExamModal();
-  }
-
-  function attachListHandlers() {
-    plannerList.addEventListener("click", function (e) {
-      const viewId = e.target.getAttribute("data-view-task");
-      const editId = e.target.getAttribute("data-edit-task");
-      const deleteId = e.target.getAttribute("data-delete-task");
-
-      if (viewId) {
-        const item = tasks.find(function (x) { return x.id === viewId; });
-        if (item) {
-          showDetailModal(item.title, [
-            ["Type", "Task"],
-            ["Due Date", item.date || "Not set"],
-            ["Priority", item.priority || "Not set"],
-            ["Status", item.status || "Not set"],
-            ["Details", item.details || "No details added."]
-          ]);
-        }
-      }
-
-      if (editId) {
-        const item = tasks.find(function (x) { return x.id === editId; });
-        if (item) {
-          taskTitleInput.value = item.title || "";
-          taskDetailsInput.value = item.details || "";
-          taskDateInput.value = item.date || "";
-          taskPriorityInput.value = item.priority || "High";
-          taskStatusInput.value = item.status || "To Do";
-          editingTaskId = item.id;
-          openModal("taskModal");
-        }
-      }
-
-      if (deleteId) {
-        tasks = tasks.filter(function (x) { return x.id !== deleteId; });
-        saveAllLocal();
-        renderAll();
-      }
-    });
-
-    coursesList.addEventListener("click", function (e) {
-      const viewId = e.target.getAttribute("data-view-course");
-      const editId = e.target.getAttribute("data-edit-course");
-      const deleteId = e.target.getAttribute("data-delete-course");
-
-      if (viewId) {
-        const item = courses.find(function (x) { return x.id === viewId; });
-        if (item) {
-          showDetailModal(item.title, [
-            ["Type", "Course"],
-            ["Code", item.code || "Not set"],
-            ["Instructor", item.instructor || "Not set"],
-            ["Details", item.details || "No details added."]
-          ]);
-        }
-      }
-
-      if (editId) {
-        const item = courses.find(function (x) { return x.id === editId; });
-        if (item) {
-          courseTitleInput.value = item.title || "";
-          courseCodeInput.value = item.code || "";
-          courseInstructorInput.value = item.instructor || "";
-          courseDetailsInput.value = item.details || "";
-          editingCourseId = item.id;
-          openModal("courseModal");
-        }
-      }
-
-      if (deleteId) {
-        courses = courses.filter(function (x) { return x.id !== deleteId; });
-        saveAllLocal();
-        renderAll();
-      }
-    });
-
-    notesList.addEventListener("click", function (e) {
-      const viewId = e.target.getAttribute("data-view-note");
-      const editId = e.target.getAttribute("data-edit-note");
-      const deleteId = e.target.getAttribute("data-delete-note");
-
-      if (viewId) {
-        const item = notes.find(function (x) { return x.id === viewId; });
-        if (item) {
-          showDetailModal(item.title, [
-            ["Type", "Note"],
-            ["Course", item.course || "General Note"],
-            ["Content", item.content || "No content added."]
-          ]);
-        }
-      }
-
-      if (editId) {
-        const item = notes.find(function (x) { return x.id === editId; });
-        if (item) {
-          noteTitleInput.value = item.title || "";
-          noteCourseInput.value = item.course || "";
-          noteContentInput.value = item.content || "";
-          editingNoteId = item.id;
-          openModal("noteModal");
-        }
-      }
-
-      if (deleteId) {
-        notes = notes.filter(function (x) { return x.id !== deleteId; });
-        saveAllLocal();
-        renderAll();
-      }
-    });
-
-    examsList.addEventListener("click", function (e) {
-      const viewId = e.target.getAttribute("data-view-exam");
-      const editId = e.target.getAttribute("data-edit-exam");
-      const deleteId = e.target.getAttribute("data-delete-exam");
-
-      if (viewId) {
-        const item = exams.find(function (x) { return x.id === viewId; });
-        if (item) {
-          showDetailModal(item.title, [
-            ["Type", "Exam"],
-            ["Course", item.course || "Not set"],
-            ["Date", item.date || "Not set"],
-            ["Time", item.time || "Not set"],
-            ["Place", item.place || "Not set"],
-            ["Seat Number", item.seatNumber || "Not set"],
-            ["Grade", item.grade || "Not entered"],
-            ["Mark", item.mark || "Not entered"],
-            ["Notes", item.notes || "No notes added."]
-          ]);
-        }
-      }
-
-      if (editId) {
-        const item = exams.find(function (x) { return x.id === editId; });
-        if (item) {
-          examTitleInput.value = item.title || "";
-          examCourseInput.value = item.course || "";
-          examDateInput.value = item.date || "";
-          examTimeInput.value = item.time || "";
-          examPlaceInput.value = item.place || "";
-          examSeatNumberInput.value = item.seatNumber || "";
-          examGradeInput.value = item.grade || "";
-          examMarkInput.value = item.mark || "";
-          examNotesInput.value = item.notes || "";
-          editingExamId = item.id;
-          openModal("examModal");
-        }
-      }
-
-      if (deleteId) {
-        exams = exams.filter(function (x) { return x.id !== deleteId; });
-        saveAllLocal();
-        renderAll();
-      }
-    });
-  }
-
-  monthViewBtn.addEventListener("click", function () {
-    setCalendarView("month", true);
+  document.addEventListener("click", function (e) {
+    const itemId = e.target.getAttribute("data-calendar-item") || e.target.closest("[data-calendar-item]")?.getAttribute("data-calendar-item");
+    if (itemId) openCalendarItem(itemId);
   });
 
-  weekViewBtn.addEventListener("click", function () {
-    setCalendarView("week", true);
-  });
-
-  dayViewBtn.addEventListener("click", function () {
-    setCalendarView("day", true);
-  });
-
-  prevPeriodBtn.addEventListener("click", function () {
-    moveCalendar(-1);
-  });
-
-  nextPeriodBtn.addEventListener("click", function () {
-    moveCalendar(1);
-  });
-
-  addTaskBtn.addEventListener("click", saveTask);
-  saveCourseBtn.addEventListener("click", saveCourse);
-  saveNoteBtn.addEventListener("click", saveNote);
-  saveExamBtn.addEventListener("click", saveExam);
-  signUpBtn.addEventListener("click", signUp);
-  signInBtn.addEventListener("click", signIn);
-  signOutBtn.addEventListener("click", signOut);
-
-  mobileQuery.addEventListener("change", function () {
-    applyResponsiveCalendarDefault(false);
-  });
-
-  window.addEventListener("offline", function () {
-    showAuthMessage("You are offline. Browser storage mode is active.", true);
-    loadLocalData();
-    renderAll();
-  });
-
-  window.addEventListener("online", function () {
-    showAuthMessage("You are back online.", false);
-  });
-
-  supabase.auth.onAuthStateChange(function (_event, session) {
+  supabase.auth.onAuthStateChange(async function (_event, session) {
     setAuthUI(session ? session.user : null);
+    await loadTasks();
   });
 
   async function init() {
     const user = await getCurrentUser();
     setAuthUI(user);
-    loadLocalData();
-    applyResponsiveCalendarDefault(true);
-    renderAll();
-    attachListHandlers();
-
-    if (!user) {
-      showAuthMessage("Not signed in. You can still use browser storage on this device.", false);
-    }
+    fillCourseOptions();
+    renderTasks();
+    renderDashboard();
+    setCalendarView("month");
+    updateDashboard();
+    await loadTasks();
   }
 
   init();
