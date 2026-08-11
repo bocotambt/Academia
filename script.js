@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let notes = [];
   let tasks = [];
   let exams = [];
+  let events = [];
   let courseSessions = [];
   let currentCalendarDate = new Date();
   let currentCalendarView = "month";
@@ -23,6 +24,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let editingNoteId = null;
   let editingAcademicYearId = null;
   let editingSemesterId = null;
+  let editingEventId = null;
   let pendingSessions = [];
 
   const tabButtons = document.querySelectorAll(".tab-btn");
@@ -104,6 +106,14 @@ document.addEventListener("DOMContentLoaded", function () {
   const examNotesInput = $("examNotes");
   const saveExamBtn = $("saveExamBtn");
 
+  const eventTitleInput = $("eventTitle");
+  const eventDateInput = $("eventDate");
+  const eventStartTimeInput = $("eventStartTime");
+  const eventEndTimeInput = $("eventEndTime");
+  const eventLocationInput = $("eventLocation");
+  const eventDetailsInput = $("eventDetails");
+  const saveEventBtn = $("saveEventBtn");
+
   const monthViewBtn = $("monthViewBtn");
   const weekViewBtn = $("weekViewBtn");
   const dayViewBtn = $("dayViewBtn");
@@ -135,19 +145,19 @@ document.addEventListener("DOMContentLoaded", function () {
     currentUser = user || null;
 
     if (currentUser) {
-      authSignedOut.classList.add("hidden");
-      authSignedIn.classList.remove("hidden");
-      brandUserArea.classList.remove("hidden");
-      brandSignedInText.textContent = "Signed in as " + (currentUser.email || "");
+      if (authSignedOut) authSignedOut.classList.add("hidden");
+      if (authSignedIn) authSignedIn.classList.remove("hidden");
+      if (brandUserArea) brandUserArea.classList.remove("hidden");
+      if (brandSignedInText) brandSignedInText.textContent = "Signed in as " + (currentUser.email || "");
       if (signOutBtn) signOutBtn.classList.remove("hidden");
-      authBox.classList.add("hidden");
+      if (authBox) authBox.classList.add("hidden");
     } else {
-      authSignedOut.classList.remove("hidden");
-      authSignedIn.classList.add("hidden");
-      brandUserArea.classList.add("hidden");
-      brandSignedInText.textContent = "";
+      if (authSignedOut) authSignedOut.classList.remove("hidden");
+      if (authSignedIn) authSignedIn.classList.add("hidden");
+      if (brandUserArea) brandUserArea.classList.add("hidden");
+      if (brandSignedInText) brandSignedInText.textContent = "";
       if (signOutBtn) signOutBtn.classList.add("hidden");
-      authBox.classList.remove("hidden");
+      if (authBox) authBox.classList.remove("hidden");
     }
   }
 
@@ -245,6 +255,13 @@ document.addEventListener("DOMContentLoaded", function () {
     return examDateTime < new Date();
   }
 
+  function isPastEvent(event) {
+    if (!event.date) return false;
+    const endTime = event.endTime || event.startTime || "23:59";
+    const endDateTime = new Date(event.date + "T" + endTime + ":00");
+    return endDateTime < new Date();
+  }
+
   function isWithinNext3Weeks(dateString) {
     if (!dateString) return false;
     const today = new Date();
@@ -339,6 +356,17 @@ document.addEventListener("DOMContentLoaded", function () {
     saveExamBtn.textContent = "Save Exam";
   }
 
+  function resetEventModal() {
+    if (eventTitleInput) eventTitleInput.value = "";
+    if (eventDateInput) eventDateInput.value = "";
+    if (eventStartTimeInput) eventStartTimeInput.value = "";
+    if (eventEndTimeInput) eventEndTimeInput.value = "";
+    if (eventLocationInput) eventLocationInput.value = "";
+    if (eventDetailsInput) eventDetailsInput.value = "";
+    editingEventId = null;
+    if (saveEventBtn) saveEventBtn.textContent = "Save Event";
+  }
+
   openModalButtons.forEach(function (btn) {
     btn.addEventListener("click", function () {
       const modalId = btn.dataset.openModal;
@@ -348,6 +376,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (modalId === "noteModal") resetNoteModal();
       if (modalId === "taskModal") resetTaskModal();
       if (modalId === "examModal") resetExamModal();
+      if (modalId === "eventModal") resetEventModal();
       refreshAcademicYearOptions();
       refreshSemesterOptions();
       refreshTaskCourseOptions();
@@ -410,9 +439,8 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   function refreshAcademicYearOptions() {
-    semesterAcademicYearInput.innerHTML = `
-      <option value="" selected disabled>Select academic year</option>
-    `;
+    if (!semesterAcademicYearInput) return;
+    semesterAcademicYearInput.innerHTML = `<option value="" selected disabled>Select academic year</option>`;
     academicYears.forEach(function (year) {
       const option = document.createElement("option");
       option.value = year.id;
@@ -422,9 +450,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function refreshSemesterOptions() {
-    courseSemesterInput.innerHTML = `
-      <option value="">No semester</option>
-    `;
+    if (!courseSemesterInput) return;
+    courseSemesterInput.innerHTML = `<option value="">No semester</option>`;
     semesters.forEach(function (semester) {
       const year = academicYears.find(function (item) {
         return item.id === semester.academicYearId;
@@ -437,9 +464,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function refreshTaskCourseOptions() {
-    taskCourseInput.innerHTML = `
-      <option value="">No course</option>
-    `;
+    if (!taskCourseInput) return;
+    taskCourseInput.innerHTML = `<option value="">No course</option>`;
     courses.forEach(function (course) {
       const option = document.createElement("option");
       option.value = course.id;
@@ -449,6 +475,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderPendingSessions() {
+    if (!pendingSessionsList) return;
     pendingSessionsList.innerHTML = "";
     if (pendingSessions.length === 0) {
       pendingSessionsList.innerHTML = `<div class="empty-state">No sessions added yet.</div>`;
@@ -488,10 +515,7 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("academic_years")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const { data, error } = await supabase.from("academic_years").select("*").order("created_at", { ascending: false });
 
     if (error) {
       showAuthMessage(error.message, true);
@@ -516,10 +540,7 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("semesters")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const { data, error } = await supabase.from("semesters").select("*").order("created_at", { ascending: false });
 
     if (error) {
       showAuthMessage(error.message, true);
@@ -551,10 +572,7 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("courses")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const { data, error } = await supabase.from("courses").select("*").order("created_at", { ascending: false });
 
     if (error) {
       showAuthMessage(error.message, true);
@@ -585,13 +603,11 @@ document.addEventListener("DOMContentLoaded", function () {
       courseSessions = [];
       renderCourses();
       renderCalendar();
+      renderDashboard();
       return;
     }
 
-    const { data, error } = await supabase
-      .from("course_sessions")
-      .select("*")
-      .order("created_at", { ascending: true });
+    const { data, error } = await supabase.from("course_sessions").select("*").order("created_at", { ascending: true });
 
     if (error) {
       showAuthMessage(error.message, true);
@@ -615,6 +631,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     renderCourses();
     renderCalendar();
+    renderDashboard();
   }
 
   async function loadNotes() {
@@ -624,10 +641,7 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("notes")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const { data, error } = await supabase.from("notes").select("*").order("created_at", { ascending: false });
 
     if (error) {
       showAuthMessage(error.message, true);
@@ -656,10 +670,7 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("tasks")
-      .select("*")
-      .order("due_date", { ascending: true });
+    const { data, error } = await supabase.from("tasks").select("*").order("due_date", { ascending: true });
 
     if (error) {
       showAuthMessage(error.message, true);
@@ -694,10 +705,7 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("exams")
-      .select("*")
-      .order("exam_date", { ascending: true });
+    const { data, error } = await supabase.from("exams").select("*").order("exam_date", { ascending: true });
 
     if (error) {
       showAuthMessage(error.message, true);
@@ -723,6 +731,37 @@ document.addEventListener("DOMContentLoaded", function () {
 
     renderExams();
     renderDashboard();
+    renderCalendar();
+  }
+
+  async function loadEvents() {
+    if (!currentUser) {
+      events = [];
+      renderCalendar();
+      return;
+    }
+
+    const { data, error } = await supabase.from("events").select("*").order("event_date", { ascending: true });
+
+    if (error) {
+      showAuthMessage(error.message, true);
+      events = [];
+      renderCalendar();
+      return;
+    }
+
+    events = (data || []).map(function (item) {
+      return {
+        id: item.id,
+        title: item.title || "",
+        date: item.event_date || "",
+        startTime: item.start_time || "",
+        endTime: item.end_time || "",
+        location: item.location || "",
+        details: item.details || ""
+      };
+    });
+
     renderCalendar();
   }
 
@@ -999,6 +1038,46 @@ document.addEventListener("DOMContentLoaded", function () {
     await loadExams();
   }
 
+  async function saveEvent() {
+    const title = eventTitleInput.value.trim();
+    const date = eventDateInput.value;
+    const startTime = eventStartTimeInput.value;
+    const endTime = eventEndTimeInput.value;
+    const location = eventLocationInput.value.trim();
+    const details = eventDetailsInput.value.trim();
+
+    if (!currentUser) return alert("Please sign in first.");
+    if (!title || !date) return alert("Please enter at least an event title and date.");
+
+    let error;
+    if (editingEventId) {
+      ({ error } = await supabase.from("events").update({
+        title,
+        event_date: date,
+        start_time: startTime,
+        end_time: endTime,
+        location,
+        details
+      }).eq("id", editingEventId));
+    } else {
+      ({ error } = await supabase.from("events").insert({
+        user_id: currentUser.id,
+        title,
+        event_date: date,
+        start_time: startTime,
+        end_time: endTime,
+        location,
+        details
+      }));
+    }
+
+    if (error) return alert(error.message);
+
+    closeModal("eventModal");
+    resetEventModal();
+    await loadEvents();
+  }
+
   async function deleteAcademicYear(id) {
     const { error } = await supabase.from("academic_years").delete().eq("id", id);
     if (error) return alert(error.message);
@@ -1040,6 +1119,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const { error } = await supabase.from("exams").delete().eq("id", id);
     if (error) return alert(error.message);
     await loadExams();
+  }
+
+  async function deleteEventFromSupabase(id) {
+    const { error } = await supabase.from("events").delete().eq("id", id);
+    if (error) return alert(error.message);
+    await loadEvents();
   }
 
   async function updateTaskStatus(id, status) {
@@ -1155,6 +1240,22 @@ document.addEventListener("DOMContentLoaded", function () {
     openModal("examModal");
   }
 
+  function editEvent(id) {
+    const event = events.find(function (item) {
+      return String(item.id) === String(id);
+    });
+    if (!event) return;
+    eventTitleInput.value = event.title || "";
+    eventDateInput.value = event.date || "";
+    eventStartTimeInput.value = event.startTime || "";
+    eventEndTimeInput.value = event.endTime || "";
+    eventLocationInput.value = event.location || "";
+    eventDetailsInput.value = event.details || "";
+    editingEventId = id;
+    saveEventBtn.textContent = "Update Event";
+    openModal("eventModal");
+  }
+
   function openTaskDetails(task) {
     showDetailModal(task.title, [
       ["Type", "Task"],
@@ -1181,7 +1282,18 @@ document.addEventListener("DOMContentLoaded", function () {
     ]);
   }
 
+  function openEventDetails(eventItem) {
+    showDetailModal(eventItem.title, [
+      ["Type", "Event"],
+      ["Date", eventItem.date || "No date"],
+      ["Time", [eventItem.startTime, eventItem.endTime].filter(Boolean).join(" - ") || "No time"],
+      ["Location", eventItem.location || "No location"],
+      ["Details", eventItem.details || "No details added."]
+    ]);
+  }
+
   function renderCourses() {
+    if (!coursesList) return;
     coursesList.innerHTML = "";
 
     if (!currentUser) {
@@ -1237,6 +1349,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderNotes() {
+    if (!notesList) return;
     notesList.innerHTML = "";
 
     if (!currentUser) {
@@ -1265,6 +1378,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderAcademic() {
+    if (!academicYearsList) return;
     academicYearsList.innerHTML = "";
 
     if (!currentUser) {
@@ -1315,6 +1429,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderTasks() {
+    if (!plannerList) return;
     plannerList.innerHTML = "";
 
     if (!currentUser) {
@@ -1380,6 +1495,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderExams() {
+    if (!examsList) return;
     examsList.innerHTML = "";
 
     if (!currentUser) {
@@ -1451,6 +1567,7 @@ document.addEventListener("DOMContentLoaded", function () {
           timeLabel: (session.startTime || "?") + " - " + (session.endTime || "?"),
           color: course ? (course.color || "#4f5fd7") : "#4f5fd7",
           location: session.location || "",
+          details: session.location || "",
           isPast: false
         };
       });
@@ -1466,17 +1583,35 @@ document.addEventListener("DOMContentLoaded", function () {
       })
       .map(function (exam) {
         return {
-          type: "custom",
+          type: "exam",
           id: "exam-" + exam.id,
           title: "Exam: " + exam.title,
           timeLabel: exam.time || "Time not set",
           color: "#0f766e",
           location: exam.place || "",
+          details: exam.notes || "",
           isPast: isPastExam(exam)
         };
       });
 
-    return courseItems.concat(examItems);
+    const eventItems = events
+      .filter(function (event) {
+        return event.date === dateKey;
+      })
+      .map(function (event) {
+        return {
+          type: "event",
+          id: "event-" + event.id,
+          title: event.title,
+          timeLabel: event.startTime && event.endTime ? event.startTime + " - " + event.endTime : (event.startTime || "All day"),
+          color: "#7c3aed",
+          location: event.location || "",
+          details: event.details || "",
+          isPast: isPastEvent(event)
+        };
+      });
+
+    return courseItems.concat(examItems, eventItems);
   }
 
   function getCalendarItemsForDate(dateKey) {
@@ -1495,6 +1630,7 @@ document.addEventListener("DOMContentLoaded", function () {
           timeLabel: task.status === "Done" ? "Done" : "All day",
           color: "#dc2626",
           location: "",
+          details: task.details || "",
           isPast: isPastDate(task.date) || task.status === "Done"
         };
       });
@@ -1505,20 +1641,39 @@ document.addEventListener("DOMContentLoaded", function () {
       })
       .map(function (exam) {
         return {
-          type: "custom",
+          type: "exam",
           id: "exam-" + exam.id,
           title: "Exam: " + exam.title,
           timeLabel: exam.time || "Time not set",
           color: "#0f766e",
           location: exam.place || "",
+          details: exam.notes || "",
           isPast: isPastExam(exam)
         };
       });
 
-    return courseItems.concat(taskItems, examItems);
+    const eventItems = events
+      .filter(function (event) {
+        return event.date === dateKey;
+      })
+      .map(function (event) {
+        return {
+          type: "event",
+          id: "event-" + event.id,
+          title: event.title,
+          timeLabel: event.startTime && event.endTime ? event.startTime + " - " + event.endTime : (event.startTime || "All day"),
+          color: "#7c3aed",
+          location: event.location || "",
+          details: event.details || "",
+          isPast: isPastEvent(event)
+        };
+      });
+
+    return courseItems.concat(taskItems, examItems, eventItems);
   }
 
   function renderDashboardDaySchedule(dayKey, container) {
+    if (!container) return;
     container.innerHTML = "";
 
     if (!currentUser) {
@@ -1546,6 +1701,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderDashboardUpcomingTasks() {
+    if (!dashboardUpcomingTasks) return;
     dashboardUpcomingTasks.innerHTML = "";
 
     if (!currentUser) {
@@ -1579,6 +1735,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderDashboardUpcomingExams() {
+    if (!dashboardUpcomingExams) return;
     dashboardUpcomingExams.innerHTML = "";
 
     if (!currentUser) {
@@ -1623,6 +1780,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function showDetailModal(title, items) {
+    if (!detailTitle || !detailBody) return;
     detailTitle.textContent = title;
     detailBody.innerHTML = items.map(function (pair) {
       return `
@@ -1651,35 +1809,46 @@ document.addEventListener("DOMContentLoaded", function () {
         return String(item.id) === String(realId);
       });
       if (exam) openExamDetails(exam);
+      return;
+    }
+
+    if (String(itemId).startsWith("event-")) {
+      const realId = itemId.replace("event-", "");
+      const ev = events.find(function (item) {
+        return String(item.id) === String(realId);
+      });
+      if (ev) openEventDetails(ev);
     }
   }
 
   function setCalendarView(view) {
     currentCalendarView = view;
 
-    monthViewBtn.classList.remove("active-view-btn");
-    weekViewBtn.classList.remove("active-view-btn");
-    dayViewBtn.classList.remove("active-view-btn");
+    if (monthViewBtn) monthViewBtn.classList.remove("active-view-btn");
+    if (weekViewBtn) weekViewBtn.classList.remove("active-view-btn");
+    if (dayViewBtn) dayViewBtn.classList.remove("active-view-btn");
 
-    monthCalendarWrap.classList.add("hidden");
-    weekCalendarWrap.classList.add("hidden");
-    dayCalendarWrap.classList.add("hidden");
+    if (monthCalendarWrap) monthCalendarWrap.classList.add("hidden");
+    if (weekCalendarWrap) weekCalendarWrap.classList.add("hidden");
+    if (dayCalendarWrap) dayCalendarWrap.classList.add("hidden");
 
     if (view === "month") {
-      monthViewBtn.classList.add("active-view-btn");
-      monthCalendarWrap.classList.remove("hidden");
+      if (monthViewBtn) monthViewBtn.classList.add("active-view-btn");
+      if (monthCalendarWrap) monthCalendarWrap.classList.remove("hidden");
     } else if (view === "week") {
-      weekViewBtn.classList.add("active-view-btn");
-      weekCalendarWrap.classList.remove("hidden");
+      if (weekViewBtn) weekViewBtn.classList.add("active-view-btn");
+      if (weekCalendarWrap) weekCalendarWrap.classList.remove("hidden");
     } else {
-      dayViewBtn.classList.add("active-view-btn");
-      dayCalendarWrap.classList.remove("hidden");
+      if (dayViewBtn) dayViewBtn.classList.add("active-view-btn");
+      if (dayCalendarWrap) dayCalendarWrap.classList.remove("hidden");
     }
 
     renderCalendar();
   }
 
   function renderMonthView() {
+    if (!calendarMonthLabel || !calendarGrid) return;
+
     const year = currentCalendarDate.getFullYear();
     const month = currentCalendarDate.getMonth();
     calendarMonthLabel.textContent = currentCalendarDate.toLocaleString("en-US", {
@@ -1757,6 +1926,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderWeekView() {
+    if (!calendarMonthLabel || !weekCalendarGrid) return;
+
     const start = getStartOfWeek(currentCalendarDate);
     const end = new Date(start);
     end.setDate(start.getDate() + 6);
@@ -1803,6 +1974,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderDayView() {
+    if (!calendarMonthLabel || !dayCalendarGrid) return;
+
     const dateKey = formatDateKey(currentCalendarDate);
     const items = getCalendarItemsForDate(dateKey);
 
@@ -1978,6 +2151,7 @@ document.addEventListener("DOMContentLoaded", function () {
   if (saveNoteBtn) saveNoteBtn.addEventListener("click", saveNote);
   if (addTaskBtn) addTaskBtn.addEventListener("click", saveTask);
   if (saveExamBtn) saveExamBtn.addEventListener("click", saveExam);
+  if (saveEventBtn) saveEventBtn.addEventListener("click", saveEvent);
 
   if (signUpBtn) signUpBtn.addEventListener("click", signUp);
   if (signInBtn) signInBtn.addEventListener("click", signIn);
@@ -2000,6 +2174,7 @@ document.addEventListener("DOMContentLoaded", function () {
     await loadNotes();
     await loadTasks();
     await loadExams();
+    await loadEvents();
 
     refreshAcademicYearOptions();
     refreshSemesterOptions();
@@ -2017,6 +2192,7 @@ document.addEventListener("DOMContentLoaded", function () {
     await loadNotes();
     await loadTasks();
     await loadExams();
+    await loadEvents();
 
     refreshAcademicYearOptions();
     refreshSemesterOptions();
