@@ -1455,22 +1455,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const dateObj = new Date(dateKey + "T00:00:00");
     const courseItems = getSessionsForDate(dateObj);
 
-    const taskItems = tasks
-      .filter(function (task) {
-        return task.date === dateKey;
-      })
-      .map(function (task) {
-        return {
-          type: "task",
-          id: "task-" + task.id,
-          title: "Task: " + task.title,
-          timeLabel: task.status === "Done" ? "Done" : "All day",
-          color: "#dc2626",
-          location: "",
-          isPast: isPastDate(task.date) || task.status === "Done"
-        };
-      });
-
     const examItems = exams
       .filter(function (exam) {
         return exam.date === dateKey;
@@ -1487,7 +1471,7 @@ document.addEventListener("DOMContentLoaded", function () {
         };
       });
 
-    return courseItems.concat(taskItems, examItems);
+    return courseItems.concat(examItems);
   }
 
   function renderDashboardDaySchedule(dayKey, container) {
@@ -1930,7 +1914,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (menuToggleBtn) {
     menuToggleBtn.addEventListener("click", function () {
-      if (tabNav) tabNav.classList.toggle("menu-open");
+      if (!tabNav) return;
+      if (window.innerWidth <= 640) {
+        tabNav.classList.toggle("menu-open");
+      }
     });
   }
 
