@@ -1,28 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Academia</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script defer src="script.js"></script>
 </head>
 <body>
   <div class="app-shell">
     <aside class="sidebar">
       <div class="sidebar-top">
         <div class="brand">
-          <div class="brand-mark">A</div>
-          <div class="brand-text-wrap">
-            <h1>Academia</h1>
-          </div>
+          <h1>Academia</h1>
+          <p class="brand-subtitle">Study dashboard</p>
         </div>
 
         <button id="menuToggleBtn" class="menu-toggle-btn" type="button" aria-label="Open menu">
-          <span></span>
-          <span></span>
-          <span></span>
+          ☰
         </button>
 
         <div id="brandUserArea" class="brand-user-area hidden">
@@ -30,71 +25,66 @@
         </div>
       </div>
 
-      <div class="auth-box" id="authBox">
+      <div id="authBox" class="auth-box">
         <div id="authSignedOut">
-          <p class="meta strongish">Sign in to sync across devices</p>
-          <input type="email" id="authEmail" placeholder="Email">
-          <input type="password" id="authPassword" placeholder="Password">
-          <div class="auth-btn-row">
+          <input id="authEmail" type="email" placeholder="Email" />
+          <input id="authPassword" type="password" placeholder="Password" />
+          <div class="auth-actions">
             <button id="signUpBtn" class="secondary-btn" type="button">Sign Up</button>
             <button id="signInBtn" class="primary-btn" type="button">Sign In</button>
           </div>
-          <p id="authMessage" class="meta"></p>
+          <p id="authMessage" class="auth-message"></p>
         </div>
 
         <div id="authSignedIn" class="hidden">
-          <p id="authMessageSignedIn" class="meta"></p>
+          <p id="authMessageSignedIn" class="auth-message"></p>
         </div>
       </div>
 
-      <nav class="tab-nav" id="tabNav">
+      <nav id="tabNav" class="tab-nav">
         <button class="tab-btn active" data-tab="dashboard" type="button">Dashboard</button>
         <button class="tab-btn" data-tab="courses" type="button">Courses</button>
         <button class="tab-btn" data-tab="planner" type="button">Tasks</button>
         <button class="tab-btn" data-tab="notes" type="button">Notes</button>
         <button class="tab-btn" data-tab="exams" type="button">Exams</button>
-        <button class="tab-btn" data-tab="academic" type="button">Academic Settings</button>
         <button class="tab-btn" data-tab="calendar" type="button">Calendar</button>
+        <button class="tab-btn" data-tab="academic" type="button">Academic Settings</button>
       </nav>
 
-      <button id="signOutBtn" class="ghost-btn brand-signout-btn hidden" type="button">Sign Out</button>
+      <button id="signOutBtn" class="brand-signout-btn hidden" type="button">Sign Out</button>
     </aside>
 
     <main class="main-content">
       <header class="topbar">
-        <div>
-          <h2 id="pageTitle">Dashboard</h2>
-        </div>
+        <h2 id="pageTitle">Dashboard</h2>
       </header>
 
       <section id="dashboard" class="tab-content active">
-        <div class="dashboard-grid dashboard-two-col">
+        <div class="dashboard-grid">
           <div class="panel">
-            <div class="panel-head">
-              <h3>Today’s Schedule</h3>
+            <div class="panel-header">
+              <h3>Today's Schedule</h3>
             </div>
             <div id="dashboardToday"></div>
           </div>
 
           <div class="panel">
-            <div class="panel-head">
-              <h3>Upcoming Tasks</h3>
-              <button class="secondary-btn open-modal-btn" data-open-modal="taskModal" type="button">Add Task</button>
-            </div>
-            <div id="dashboardUpcomingTasks"></div>
-          </div>
-
-          <div class="panel">
-            <div class="panel-head">
-              <h3>Tomorrow’s Schedule</h3>
+            <div class="panel-header">
+              <h3>Tomorrow's Schedule</h3>
             </div>
             <div id="dashboardTomorrow"></div>
           </div>
 
           <div class="panel">
-            <div class="panel-head">
+            <div class="panel-header">
+              <h3>Upcoming Tasks</h3>
+            </div>
+            <div id="dashboardUpcomingTasks"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
               <h3>Upcoming Exams</h3>
-              <button class="secondary-btn open-modal-btn" data-open-modal="examModal" type="button">Add Exam</button>
             </div>
             <div id="dashboardUpcomingExams"></div>
           </div>
@@ -102,363 +92,334 @@
       </section>
 
       <section id="courses" class="tab-content">
-        <div class="section-head">
+        <div class="section-header">
           <h3>Courses</h3>
-          <button class="primary-btn open-modal-btn" data-open-modal="courseModal" type="button">Add Course</button>
+          <button class="open-modal-btn primary-btn" data-open-modal="courseModal" type="button">
+            Add Course
+          </button>
         </div>
-        <div id="coursesList" class="card-grid"></div>
+        <div id="coursesList"></div>
       </section>
 
       <section id="planner" class="tab-content">
-        <div class="section-head">
+        <div class="section-header">
           <h3>Tasks</h3>
-          <button class="primary-btn open-modal-btn" data-open-modal="taskModal" type="button">Add Task</button>
+          <button class="open-modal-btn primary-btn" data-open-modal="taskModal" type="button">
+            Add Task
+          </button>
         </div>
-        <div id="plannerList" class="planner-grid"></div>
+        <div id="plannerList"></div>
       </section>
 
       <section id="notes" class="tab-content">
-        <div class="section-head">
+        <div class="section-header">
           <h3>Notes</h3>
-          <button class="primary-btn open-modal-btn" data-open-modal="noteModal" type="button">Add Note</button>
+          <button class="open-modal-btn primary-btn" data-open-modal="noteModal" type="button">
+            Add Note
+          </button>
         </div>
-        <div id="notesList" class="card-grid"></div>
+        <div id="notesList"></div>
       </section>
 
       <section id="exams" class="tab-content">
-        <div class="section-head">
+        <div class="section-header">
           <h3>Exams</h3>
-          <button class="primary-btn open-modal-btn" data-open-modal="examModal" type="button">Add Exam</button>
+          <button class="open-modal-btn primary-btn" data-open-modal="examModal" type="button">
+            Add Exam
+          </button>
         </div>
-        <div id="examsList" class="planner-grid"></div>
-      </section>
-
-      <section id="academic" class="tab-content">
-        <div class="section-head">
-          <h3>Academic Settings</h3>
-          <div class="head-btns">
-            <button class="secondary-btn open-modal-btn" data-open-modal="semesterModal" type="button">Add Semester</button>
-            <button class="primary-btn open-modal-btn" data-open-modal="academicYearModal" type="button">Add Academic Year</button>
-          </div>
-        </div>
-        <div id="academicYearsList" class="card-grid"></div>
+        <div id="examsList"></div>
       </section>
 
       <section id="calendar" class="tab-content">
-        <div class="section-head calendar-head">
+        <div class="section-header">
           <h3>Calendar</h3>
-          <div class="calendar-controls">
-            <div class="view-switch">
-              <button id="monthViewBtn" class="secondary-btn active-view-btn" type="button">Month</button>
-              <button id="weekViewBtn" class="secondary-btn" type="button">Week</button>
-              <button id="dayViewBtn" class="secondary-btn" type="button">Day</button>
-            </div>
-            <button id="prevPeriodBtn" class="secondary-btn" type="button">Prev</button>
-            <div id="calendarMonthLabel" class="calendar-month-label">Month Year</div>
-            <button id="nextPeriodBtn" class="secondary-btn" type="button">Next</button>
+          <div class="calendar-top-actions">
+            <button class="open-modal-btn primary-btn" data-open-modal="eventModal" type="button">
+              Add Event
+            </button>
           </div>
         </div>
 
-        <div class="calendar-board">
-          <div id="monthCalendarWrap">
-            <div class="calendar-weekdays">
-              <div>Sun</div>
-              <div>Mon</div>
-              <div>Tue</div>
-              <div>Wed</div>
-              <div>Thu</div>
-              <div>Fri</div>
-              <div>Sat</div>
-            </div>
-            <div id="calendarGrid" class="calendar-grid"></div>
+        <div class="calendar-toolbar">
+          <div class="calendar-nav">
+            <button id="prevPeriodBtn" class="secondary-btn" type="button">←</button>
+            <h3 id="calendarMonthLabel">Calendar</h3>
+            <button id="nextPeriodBtn" class="secondary-btn" type="button">→</button>
           </div>
 
-          <div id="weekCalendarWrap" class="hidden">
-            <div id="weekCalendarGrid" class="week-calendar-grid"></div>
-          </div>
-
-          <div id="dayCalendarWrap" class="hidden">
-            <div id="dayCalendarGrid" class="day-calendar-grid"></div>
+          <div class="calendar-view-switch">
+            <button id="monthViewBtn" class="secondary-btn active-view-btn" type="button">Month</button>
+            <button id="weekViewBtn" class="secondary-btn" type="button">Week</button>
+            <button id="dayViewBtn" class="secondary-btn" type="button">Day</button>
           </div>
         </div>
+
+        <div id="monthCalendarWrap">
+          <div class="calendar-weekdays">
+            <div>Sun</div>
+            <div>Mon</div>
+            <div>Tue</div>
+            <div>Wed</div>
+            <div>Thu</div>
+            <div>Fri</div>
+            <div>Sat</div>
+          </div>
+          <div id="calendarGrid" class="calendar-grid"></div>
+        </div>
+
+        <div id="weekCalendarWrap" class="hidden">
+          <div id="weekCalendarGrid" class="week-calendar-grid"></div>
+        </div>
+
+        <div id="dayCalendarWrap" class="hidden">
+          <div id="dayCalendarGrid" class="day-calendar-grid"></div>
+        </div>
+      </section>
+
+      <section id="academic" class="tab-content">
+        <div class="section-header">
+          <h3>Academic Settings</h3>
+          <div class="section-actions">
+            <button class="open-modal-btn secondary-btn" data-open-modal="academicYearModal" type="button">
+              Add Academic Year
+            </button>
+            <button class="open-modal-btn primary-btn" data-open-modal="semesterModal" type="button">
+              Add Semester
+            </button>
+          </div>
+        </div>
+        <div id="academicYearsList"></div>
       </section>
     </main>
   </div>
 
-  <div class="modal hidden" id="academicYearModal">
-    <div class="modal-card">
-      <div class="modal-head">
-        <h3 id="academicYearModalTitle">Add Academic Year</h3>
-      </div>
-      <div class="modal-body">
-        <label class="field-label" for="academicYearName">Academic year name</label>
-        <input type="text" id="academicYearName" placeholder="Example: 2026 - 2027">
-      </div>
-      <div class="modal-footer">
-        <button class="ghost-btn close-modal-btn" data-close-modal="academicYearModal" type="button">Cancel</button>
-        <button id="saveAcademicYearBtn" type="button" class="primary-btn">Save Academic Year</button>
-      </div>
+  <div id="detailModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Details">
+    <div class="modal-content">
+      <button class="close-modal-btn" data-close-modal="detailModal" type="button">✕</button>
+      <h2 id="detailTitle">Details</h2>
+      <div id="detailBody"></div>
     </div>
   </div>
 
-  <div class="modal hidden" id="semesterModal">
-    <div class="modal-card">
-      <div class="modal-head">
-        <h3 id="semesterModalTitle">Add Semester</h3>
-      </div>
-      <div class="modal-body">
-        <label class="field-label" for="semesterAcademicYear">Academic year</label>
-        <select id="semesterAcademicYear"></select>
-
-        <label class="field-label" for="semesterName">Semester name</label>
-        <input type="text" id="semesterName" placeholder="Example: Fall Semester">
-
-        <div class="input-row">
-          <div>
-            <label class="field-label" for="semesterStartDate">Start date</label>
-            <input type="date" id="semesterStartDate">
-          </div>
-          <div>
-            <label class="field-label" for="semesterEndDate">End date</label>
-            <input type="date" id="semesterEndDate">
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="ghost-btn close-modal-btn" data-close-modal="semesterModal" type="button">Cancel</button>
-        <button id="saveSemesterBtn" type="button" class="primary-btn">Save Semester</button>
-      </div>
+  <div id="academicYearModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Academic year">
+    <div class="modal-content">
+      <button class="close-modal-btn" data-close-modal="academicYearModal" type="button">✕</button>
+      <h2>Academic Year</h2>
+      <label for="academicYearName">Academic year name</label>
+      <input id="academicYearName" type="text" placeholder="2026/2027" />
+      <button id="saveAcademicYearBtn" class="primary-btn" type="button">Save Academic Year</button>
     </div>
   </div>
 
-  <div class="modal hidden" id="courseModal">
-    <div class="modal-card large-modal">
-      <div class="modal-head">
-        <h3 id="courseModalTitle">Add Course</h3>
-      </div>
-      <div class="modal-body">
-        <label class="field-label" for="courseName">Course name</label>
-        <input type="text" id="courseName" placeholder="Course name">
+  <div id="semesterModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Semester">
+    <div class="modal-content">
+      <button class="close-modal-btn" data-close-modal="semesterModal" type="button">✕</button>
+      <h2>Semester</h2>
 
-        <div class="input-row three-cols">
-          <div>
-            <label class="field-label" for="courseCode">Course code</label>
-            <input type="text" id="courseCode" placeholder="Example: ECON101">
-          </div>
-          <div>
-            <label class="field-label" for="courseInstructor">Instructor</label>
-            <input type="text" id="courseInstructor" placeholder="Instructor name">
-          </div>
-          <div>
-            <label class="field-label" for="courseColor">Course color</label>
-            <input type="color" id="courseColor" value="#2563eb">
-          </div>
-        </div>
+      <label for="semesterAcademicYear">Academic year</label>
+      <select id="semesterAcademicYear"></select>
 
-        <label class="field-label" for="courseSemester">Semester</label>
-        <select id="courseSemester"></select>
+      <label for="semesterName">Semester name</label>
+      <input id="semesterName" type="text" placeholder="Fall Semester" />
 
-        <div class="subsection-box">
-          <div class="panel-head">
-            <h4>Course Sessions</h4>
-          </div>
+      <label for="semesterStartDate">Start date</label>
+      <input id="semesterStartDate" type="date" />
 
-          <div class="input-row three-cols">
-            <div>
-              <label class="field-label" for="sessionType">Session type</label>
-              <select id="sessionType">
-                <option value="" disabled selected>Select session type</option>
-                <option value="Lecture">Lecture</option>
-                <option value="Lab">Lab</option>
-                <option value="Tutorial">Tutorial</option>
-                <option value="Seminar">Seminar</option>
-              </select>
-            </div>
+      <label for="semesterEndDate">End date</label>
+      <input id="semesterEndDate" type="date" />
 
-            <div>
-              <label class="field-label" for="sessionRepeat">Repeat rule</label>
-              <select id="sessionRepeat">
-                <option value="" disabled selected>Select repeat rule</option>
-                <option value="weekly">Repeat weekly</option>
-                <option value="specific">Repeat on specific date</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="field-label" for="sessionLocation">Location</label>
-              <input type="text" id="sessionLocation" placeholder="Example: Room B201">
-            </div>
-          </div>
-
-          <div class="input-row four-cols">
-            <div>
-              <label class="field-label" for="sessionDay">Weekly day</label>
-              <select id="sessionDay">
-                <option value="" selected>Select day</option>
-                <option value="Sunday">Sunday</option>
-                <option value="Monday">Monday</option>
-                <option value="Tuesday">Tuesday</option>
-                <option value="Wednesday">Wednesday</option>
-                <option value="Thursday">Thursday</option>
-                <option value="Friday">Friday</option>
-                <option value="Saturday">Saturday</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="field-label" for="sessionDate">Specific date</label>
-              <input type="date" id="sessionDate">
-            </div>
-
-            <div>
-              <label class="field-label" for="sessionStartTime">Start time</label>
-              <input type="time" id="sessionStartTime">
-            </div>
-
-            <div>
-              <label class="field-label" for="sessionEndTime">End time</label>
-              <input type="time" id="sessionEndTime">
-            </div>
-          </div>
-
-          <button id="addSessionBtn" type="button" class="secondary-btn">Add Session</button>
-          <div id="pendingSessionsList" class="pending-session-list"></div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="ghost-btn close-modal-btn" data-close-modal="courseModal" type="button">Cancel</button>
-        <button id="saveCourseBtn" type="button" class="primary-btn">Save Course</button>
-      </div>
+      <button id="saveSemesterBtn" class="primary-btn" type="button">Save Semester</button>
     </div>
   </div>
 
-  <div class="modal hidden" id="noteModal">
-    <div class="modal-card">
-      <div class="modal-head">
-        <h3 id="noteModalTitle">Add Note</h3>
-      </div>
-      <div class="modal-body">
-        <label class="field-label" for="noteTitle">Note title</label>
-        <input type="text" id="noteTitle" placeholder="Note title">
+  <div id="courseModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Course">
+    <div class="modal-content">
+      <button class="close-modal-btn" data-close-modal="courseModal" type="button">✕</button>
+      <h2>Course</h2>
 
-        <label class="field-label" for="noteContent">Note content</label>
-        <textarea id="noteContent" rows="12" placeholder="Write your notes here..."></textarea>
-      </div>
-      <div class="modal-footer">
-        <button class="ghost-btn close-modal-btn" data-close-modal="noteModal" type="button">Cancel</button>
-        <button id="saveNoteBtn" type="button" class="primary-btn">Save Note</button>
-      </div>
+      <label for="courseName">Course name</label>
+      <input id="courseName" type="text" placeholder="Biology 101" />
+
+      <label for="courseCode">Course code</label>
+      <input id="courseCode" type="text" placeholder="BIO101" />
+
+      <label for="courseInstructor">Instructor</label>
+      <input id="courseInstructor" type="text" placeholder="Dr. Smith" />
+
+      <label for="courseColor">Course color</label>
+      <input id="courseColor" type="color" value="#2563eb" />
+
+      <label for="courseSemester">Semester</label>
+      <select id="courseSemester"></select>
+
+      <hr />
+
+      <h3>Add Session</h3>
+
+      <label for="sessionType">Session type</label>
+      <select id="sessionType">
+        <option value="">Choose session type</option>
+        <option value="Lecture">Lecture</option>
+        <option value="Tutorial">Tutorial</option>
+        <option value="Lab">Lab</option>
+        <option value="Seminar">Seminar</option>
+      </select>
+
+      <label for="sessionRepeat">Repeat</label>
+      <select id="sessionRepeat">
+        <option value="">Choose repeat type</option>
+        <option value="weekly">Weekly</option>
+        <option value="specific">Specific date</option>
+      </select>
+
+      <label for="sessionDay">Day of week</label>
+      <select id="sessionDay">
+        <option value="">Choose a day</option>
+        <option value="Sunday">Sunday</option>
+        <option value="Monday">Monday</option>
+        <option value="Tuesday">Tuesday</option>
+        <option value="Wednesday">Wednesday</option>
+        <option value="Thursday">Thursday</option>
+        <option value="Friday">Friday</option>
+        <option value="Saturday">Saturday</option>
+      </select>
+
+      <label for="sessionDate">Specific date</label>
+      <input id="sessionDate" type="date" />
+
+      <label for="sessionStartTime">Start time</label>
+      <input id="sessionStartTime" type="time" />
+
+      <label for="sessionEndTime">End time</label>
+      <input id="sessionEndTime" type="time" />
+
+      <label for="sessionLocation">Location</label>
+      <input id="sessionLocation" type="text" placeholder="Room 301" />
+
+      <button id="addSessionBtn" class="secondary-btn" type="button">Add Session</button>
+
+      <div id="pendingSessionsList" class="pending-sessions-list"></div>
+
+      <button id="saveCourseBtn" class="primary-btn" type="button">Save Course</button>
     </div>
   </div>
 
-  <div class="modal hidden" id="taskModal">
-    <div class="modal-card">
-      <div class="modal-head">
-        <h3 id="taskModalTitle">Add Task</h3>
-      </div>
-      <div class="modal-body">
-        <label class="field-label" for="taskTitle">Task title</label>
-        <input type="text" id="taskTitle" placeholder="Task title">
+  <div id="taskModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Task">
+    <div class="modal-content">
+      <button class="close-modal-btn" data-close-modal="taskModal" type="button">✕</button>
+      <h2>Task</h2>
 
-        <label class="field-label" for="taskDetails">Task details</label>
-        <textarea id="taskDetails" placeholder="Task details"></textarea>
+      <label for="taskTitle">Task title</label>
+      <input id="taskTitle" type="text" placeholder="Finish assignment" />
 
-        <label class="field-label" for="taskCourse">Course</label>
-        <select id="taskCourse"></select>
+      <label for="taskDetails">Details</label>
+      <textarea id="taskDetails" rows="4" placeholder="Task instructions or reminders"></textarea>
 
-        <div class="input-row three-cols">
-          <div>
-            <label class="field-label" for="taskDate">Due date</label>
-            <input type="date" id="taskDate">
-          </div>
-          <div>
-            <label class="field-label" for="taskPriority">Priority</label>
-            <select id="taskPriority">
-              <option value="" disabled selected>Select priority</option>
-              <option value="High">High Priority</option>
-              <option value="Medium">Medium Priority</option>
-              <option value="Low">Low Priority</option>
-            </select>
-          </div>
-          <div>
-            <label class="field-label" for="taskStatus">Status</label>
-            <select id="taskStatus">
-              <option value="" disabled selected>Select status</option>
-              <option value="To Do">To Do</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Done">Done</option>
-            </select>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="ghost-btn close-modal-btn" data-close-modal="taskModal" type="button">Cancel</button>
-        <button id="addTaskBtn" type="button" class="primary-btn">Save Task</button>
-      </div>
+      <label for="taskCourse">Course</label>
+      <select id="taskCourse"></select>
+
+      <label for="taskDate">Due date</label>
+      <input id="taskDate" type="date" />
+
+      <label for="taskPriority">Priority</label>
+      <select id="taskPriority">
+        <option value="">Choose priority</option>
+        <option value="High">High</option>
+        <option value="Medium">Medium</option>
+        <option value="Low">Low</option>
+      </select>
+
+      <label for="taskStatus">Status</label>
+      <select id="taskStatus">
+        <option value="">Choose status</option>
+        <option value="To Do">To Do</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Done">Done</option>
+      </select>
+
+      <button id="addTaskBtn" class="primary-btn" type="button">Save Task</button>
     </div>
   </div>
 
-  <div class="modal hidden" id="examModal">
-    <div class="modal-card">
-      <div class="modal-head">
-        <h3 id="examModalTitle">Add Exam</h3>
-      </div>
-      <div class="modal-body">
-        <label class="field-label" for="examTitle">Exam title</label>
-        <input type="text" id="examTitle" placeholder="Exam title">
+  <div id="noteModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Note">
+    <div class="modal-content">
+      <button class="close-modal-btn" data-close-modal="noteModal" type="button">✕</button>
+      <h2>Note</h2>
 
-        <label class="field-label" for="examCourse">Course / subject</label>
-        <input type="text" id="examCourse" placeholder="Course / subject">
+      <label for="noteTitle">Title</label>
+      <input id="noteTitle" type="text" placeholder="Lecture notes" />
 
-        <div class="input-row three-cols">
-          <div>
-            <label class="field-label" for="examDate">Exam date</label>
-            <input type="date" id="examDate">
-          </div>
-          <div>
-            <label class="field-label" for="examTime">Exam time</label>
-            <input type="time" id="examTime">
-          </div>
-          <div>
-            <label class="field-label" for="examPlace">Place</label>
-            <input type="text" id="examPlace" placeholder="Place">
-          </div>
-        </div>
+      <label for="noteContent">Content</label>
+      <textarea id="noteContent" rows="6" placeholder="Write your notes here"></textarea>
 
-        <div class="input-row two-cols">
-          <div>
-            <label class="field-label" for="examSeatNumber">Seat number</label>
-            <input type="text" id="examSeatNumber" placeholder="Seat number">
-          </div>
-          <div>
-            <label class="field-label" for="examGrade">Grade or letter</label>
-            <input type="text" id="examGrade" placeholder="Grade (optional)">
-          </div>
-        </div>
-
-        <label class="field-label" for="examMark">Mark</label>
-        <input type="number" id="examMark" placeholder="Mark (optional)">
-
-        <label class="field-label" for="examNotes">Notes</label>
-        <textarea id="examNotes" placeholder="Revision notes / reminders"></textarea>
-      </div>
-      <div class="modal-footer">
-        <button class="ghost-btn close-modal-btn" data-close-modal="examModal" type="button">Cancel</button>
-        <button id="saveExamBtn" type="button" class="primary-btn">Save Exam</button>
-      </div>
+      <button id="saveNoteBtn" class="primary-btn" type="button">Save Note</button>
     </div>
   </div>
 
-  <div class="modal hidden" id="detailModal">
-    <div class="modal-card">
-      <div class="modal-head">
-        <h3 id="detailTitle">Item Details</h3>
-      </div>
-      <div class="modal-body detail-stack" id="detailBody"></div>
-      <div class="modal-footer">
-        <button class="primary-btn close-modal-btn" data-close-modal="detailModal" type="button">Close</button>
-      </div>
+  <div id="examModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Exam">
+    <div class="modal-content">
+      <button class="close-modal-btn" data-close-modal="examModal" type="button">✕</button>
+      <h2>Exam</h2>
+
+      <label for="examTitle">Exam title</label>
+      <input id="examTitle" type="text" placeholder="Midterm Exam" />
+
+      <label for="examCourse">Course</label>
+      <input id="examCourse" type="text" placeholder="Biology 101" />
+
+      <label for="examDate">Date</label>
+      <input id="examDate" type="date" />
+
+      <label for="examTime">Time</label>
+      <input id="examTime" type="time" />
+
+      <label for="examPlace">Place</label>
+      <input id="examPlace" type="text" placeholder="Hall A" />
+
+      <label for="examSeatNumber">Seat number</label>
+      <input id="examSeatNumber" type="text" placeholder="A12" />
+
+      <label for="examGrade">Grade</label>
+      <input id="examGrade" type="text" placeholder="A" />
+
+      <label for="examMark">Mark</label>
+      <input id="examMark" type="number" placeholder="92" />
+
+      <label for="examNotes">Notes</label>
+      <textarea id="examNotes" rows="4" placeholder="Revision notes"></textarea>
+
+      <button id="saveExamBtn" class="primary-btn" type="button">Save Exam</button>
     </div>
   </div>
+
+  <div id="eventModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Event">
+    <div class="modal-content">
+      <button class="close-modal-btn" data-close-modal="eventModal" type="button">✕</button>
+      <h2>Event</h2>
+
+      <label for="eventTitle">Title</label>
+      <input id="eventTitle" type="text" placeholder="Seminar, meeting, club activity" />
+
+      <label for="eventDate">Date</label>
+      <input id="eventDate" type="date" />
+
+      <label for="eventStartTime">Start time</label>
+      <input id="eventStartTime" type="time" />
+
+      <label for="eventEndTime">End time</label>
+      <input id="eventEndTime" type="time" />
+
+      <label for="eventLocation">Location</label>
+      <input id="eventLocation" type="text" placeholder="Room, building, Zoom link" />
+
+      <label for="eventDetails">Details</label>
+      <textarea id="eventDetails" rows="4" placeholder="Agenda, reminders, notes"></textarea>
+
+      <button id="saveEventBtn" class="primary-btn" type="button">Save Event</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
