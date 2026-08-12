@@ -93,9 +93,7 @@
       <section id="courses" class="tab-content">
         <div class="section-header">
           <h3>Courses</h3>
-          <button class="open-modal-btn primary-btn" data-open-modal="courseModal" type="button">
-            Add Course
-          </button>
+          <button class="open-modal-btn primary-btn" data-open-modal="courseModal" type="button">Add Course</button>
         </div>
         <div id="coursesList"></div>
       </section>
@@ -103,9 +101,7 @@
       <section id="planner" class="tab-content">
         <div class="section-header">
           <h3>Tasks</h3>
-          <button class="open-modal-btn primary-btn" data-open-modal="taskModal" type="button">
-            Add Task
-          </button>
+          <button class="open-modal-btn primary-btn" data-open-modal="taskModal" type="button">Add Task</button>
         </div>
         <div id="plannerList"></div>
       </section>
@@ -113,9 +109,7 @@
       <section id="notes" class="tab-content">
         <div class="section-header">
           <h3>Notes</h3>
-          <button class="open-modal-btn primary-btn" data-open-modal="noteModal" type="button">
-            Add Note
-          </button>
+          <button class="open-modal-btn primary-btn" data-open-modal="noteModal" type="button">Add Note</button>
         </div>
         <div id="notesList"></div>
       </section>
@@ -123,56 +117,61 @@
       <section id="exams" class="tab-content">
         <div class="section-header">
           <h3>Exams</h3>
-          <button class="open-modal-btn primary-btn" data-open-modal="examModal" type="button">
-            Add Exam
-          </button>
+          <button class="open-modal-btn primary-btn" data-open-modal="examModal" type="button">Add Exam</button>
         </div>
         <div id="examsList"></div>
       </section>
 
       <section id="calendar" class="tab-content">
-        <div class="section-header">
-          <h3>Calendar</h3>
-          <div class="calendar-top-actions">
-            <button class="open-modal-btn primary-btn" data-open-modal="eventModal" type="button">
+        <div class="calendar-shell">
+          <div class="calendar-topbar">
+            <div class="calendar-title-wrap">
+              <h3 class="calendar-title">Calendar</h3>
+              <p class="calendar-subtext">See classes, exams, and events in one place.</p>
+            </div>
+
+            <button class="open-modal-btn primary-btn calendar-add-btn" data-open-modal="eventModal" type="button">
               Add Event
             </button>
           </div>
-        </div>
 
-        <div class="calendar-toolbar">
-          <div class="calendar-nav">
-            <button id="prevPeriodBtn" class="secondary-btn nav-arrow-btn" type="button">←</button>
-            <h3 id="calendarMonthLabel">Calendar</h3>
-            <button id="nextPeriodBtn" class="secondary-btn nav-arrow-btn" type="button">→</button>
+          <div class="calendar-board">
+            <div class="calendar-board-header">
+              <div class="calendar-month-nav">
+                <button id="prevPeriodBtn" class="calendar-icon-btn" type="button" aria-label="Previous period">←</button>
+                <h3 id="calendarMonthLabel">August 2026</h3>
+                <button id="nextPeriodBtn" class="calendar-icon-btn" type="button" aria-label="Next period">→</button>
+              </div>
+
+              <div class="calendar-view-switch">
+                <button id="monthViewBtn" class="calendar-view-btn active-view-btn" type="button">Month</button>
+                <button id="weekViewBtn" class="calendar-view-btn" type="button">Week</button>
+                <button id="dayViewBtn" class="calendar-view-btn" type="button">Day</button>
+              </div>
+            </div>
+
+            <div id="monthCalendarWrap" class="calendar-panel">
+              <div class="calendar-weekdays">
+                <div>Sun</div>
+                <div>Mon</div>
+                <div>Tue</div>
+                <div>Wed</div>
+                <div>Thu</div>
+                <div>Fri</div>
+                <div>Sat</div>
+              </div>
+
+              <div id="calendarGrid" class="calendar-grid"></div>
+            </div>
+
+            <div id="weekCalendarWrap" class="calendar-panel hidden">
+              <div id="weekCalendarGrid" class="week-calendar-grid"></div>
+            </div>
+
+            <div id="dayCalendarWrap" class="calendar-panel hidden">
+              <div id="dayCalendarGrid" class="day-calendar-grid"></div>
+            </div>
           </div>
-
-          <div class="calendar-view-switch">
-            <button id="monthViewBtn" class="secondary-btn active-view-btn" type="button">Month</button>
-            <button id="weekViewBtn" class="secondary-btn" type="button">Week</button>
-            <button id="dayViewBtn" class="secondary-btn" type="button">Day</button>
-          </div>
-        </div>
-
-        <div id="monthCalendarWrap">
-          <div class="calendar-weekdays">
-            <div>Sun</div>
-            <div>Mon</div>
-            <div>Tue</div>
-            <div>Wed</div>
-            <div>Thu</div>
-            <div>Fri</div>
-            <div>Sat</div>
-          </div>
-          <div id="calendarGrid" class="calendar-grid"></div>
-        </div>
-
-        <div id="weekCalendarWrap" class="hidden">
-          <div id="weekCalendarGrid" class="week-calendar-grid"></div>
-        </div>
-
-        <div id="dayCalendarWrap" class="hidden">
-          <div id="dayCalendarGrid" class="day-calendar-grid"></div>
         </div>
       </section>
 
@@ -180,12 +179,8 @@
         <div class="section-header">
           <h3>Academic Settings</h3>
           <div class="section-actions">
-            <button class="open-modal-btn secondary-btn" data-open-modal="academicYearModal" type="button">
-              Add Academic Year
-            </button>
-            <button class="open-modal-btn primary-btn" data-open-modal="semesterModal" type="button">
-              Add Semester
-            </button>
+            <button class="open-modal-btn secondary-btn" data-open-modal="academicYearModal" type="button">Add Academic Year</button>
+            <button class="open-modal-btn primary-btn" data-open-modal="semesterModal" type="button">Add Semester</button>
           </div>
         </div>
         <div id="academicYearsList"></div>
