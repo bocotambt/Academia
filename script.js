@@ -1,5 +1,5 @@
-const SUPABASE_URL = "PASTE_YOUR_REAL_SUPABASE_URL_HERE";
-const SUPABASE_ANON_KEY = "PASTE_YOUR_REAL_SUPABASE_ANON_KEY_HERE";
+const SUPABASE_URL = "YOUR_SUPABASE_URL";
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -987,39 +987,36 @@ function renderDashboard() {
     })
     .slice(0, 5);
 
-  if (dashboardUpcomingTasks) {
-    dashboardUpcomingTasks.innerHTML = upcomingTasks.length
-      ? upcomingTasks.map(function (task) {
+  if (!dashboardUpcomingTasks) return;
+  dashboardUpcomingTasks.innerHTML = upcomingTasks.length
+    ? upcomingTasks.map(function (task) {
+        return `
+          <div class="day-card">
+            <h4 class="task-title">${escapeHtml(task.title)}</h4>
+            <p class="meta">${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
+          </div>
+        `;
+      }).join("")
+    : '<div class="empty-state">No upcoming tasks.</div>';
+
+  dashboardUpcomingExams.innerHTML = exams.length
+    ? exams
+        .slice()
+        .sort(function (a, b) {
+          return `${a.date || ""} ${a.time || ""}`.localeCompare(`${b.date || ""} ${b.time || ""}`);
+        })
+        .slice(0, 5)
+        .map(function (exam) {
           return `
-            <div class="day-card">
-              <h4 class="task-title">${escapeHtml(task.title)}</h4>
-              <p class="meta">${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
+            <div class="day-card ${isPastExam(exam) ? "past-item" : ""}">
+              <h4 class="task-title">${escapeHtml(exam.title)}</h4>
+              <p class="meta">${escapeHtml(exam.date ? formatDate(exam.date) : "No date")}</p>
+              <p class="meta">${escapeHtml(exam.time ? formatTime(exam.time) : "No time")}</p>
             </div>
           `;
-        }).join("")
-      : '<div class="empty-state">No upcoming tasks.</div>';
-  }
-
-  if (dashboardUpcomingExams) {
-    dashboardUpcomingExams.innerHTML = exams.length
-      ? exams
-          .slice()
-          .sort(function (a, b) {
-            return `${a.date || ""} ${a.time || ""}`.localeCompare(`${b.date || ""} ${b.time || ""}`);
-          })
-          .slice(0, 5)
-          .map(function (exam) {
-            return `
-              <div class="day-card ${isPastExam(exam) ? "past-item" : ""}">
-                <h4 class="task-title">${escapeHtml(exam.title)}</h4>
-                <p class="meta">${escapeHtml(exam.date ? formatDate(exam.date) : "No date")}</p>
-                <p class="meta">${escapeHtml(exam.time ? formatTime(exam.time) : "No time")}</p>
-              </div>
-            `;
-          })
-          .join("")
-      : '<div class="empty-state">No upcoming exams.</div>';
-  }
+        })
+        .join("")
+    : '<div class="empty-state">No upcoming exams.</div>';
 }
 
 function renderCourses() {
@@ -1179,7 +1176,7 @@ function buildCalendarItemHtml(item) {
   if (item.type === "event") itemClass = "event";
 
   return `
-    <button class="calendar-item ${itemClass}" type="button">
+    <button class="calendar-item ${itemClass}" type="button" data-calendar-item-id="${escapeHtml(item.id)}">
       <span>${escapeHtml(item.title)}</span>
       <small>${escapeHtml(item.timeLabel || "")}</small>
     </button>
@@ -1187,7 +1184,7 @@ function buildCalendarItemHtml(item) {
 }
 
 function renderMonthView() {
-  if (!calendarGrid || !calendarMonthLabel) return;
+  if (!calendarGrid) return;
 
   const year = currentCalendarDate.getFullYear();
   const month = currentCalendarDate.getMonth();
@@ -1227,7 +1224,7 @@ function renderMonthView() {
 }
 
 function renderWeekView() {
-  if (!weekCalendarGrid || !calendarMonthLabel) return;
+  if (!weekCalendarGrid) return;
 
   const today = new Date(currentCalendarDate);
   const day = today.getDay();
@@ -1262,7 +1259,7 @@ function renderWeekView() {
 }
 
 function renderDayView() {
-  if (!dayCalendarGrid || !calendarMonthLabel) return;
+  if (!dayCalendarGrid) return;
 
   const items = getItemsForDate(toDateKey(currentCalendarDate));
 
@@ -1293,13 +1290,13 @@ function renderDayView() {
 function setCalendarView(view) {
   currentCalendarView = view;
 
-  if (monthViewBtn) monthViewBtn.classList.toggle("active-view-btn", view === "month");
-  if (weekViewBtn) weekViewBtn.classList.toggle("active-view-btn", view === "week");
-  if (dayViewBtn) dayViewBtn.classList.toggle("active-view-btn", view === "day");
+  monthViewBtn.classList.toggle("active-view-btn", view === "month");
+  weekViewBtn.classList.toggle("active-view-btn", view === "week");
+  dayViewBtn.classList.toggle("active-view-btn", view === "day");
 
-  if (monthCalendarWrap) monthCalendarWrap.classList.toggle("hidden", view !== "month");
-  if (weekCalendarWrap) weekCalendarWrap.classList.toggle("hidden", view !== "week");
-  if (dayCalendarWrap) dayCalendarWrap.classList.toggle("hidden", view !== "day");
+  monthCalendarWrap.classList.toggle("hidden", view !== "month");
+  weekCalendarWrap.classList.toggle("hidden", view !== "week");
+  dayCalendarWrap.classList.toggle("hidden", view !== "day");
 
   renderCalendar();
 }
