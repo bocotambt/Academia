@@ -18,10 +18,6 @@
         <button id="menuToggleBtn" class="menu-toggle-btn" type="button" aria-label="Open menu">
           ☰
         </button>
-
-        <div id="brandUserArea" class="brand-user-area hidden">
-          <p id="brandSignedInText" class="brand-signed-in"></p>
-        </div>
       </div>
 
       <div id="authBox" class="auth-box">
@@ -51,11 +47,15 @@
       </nav>
 
       <button id="signOutBtn" class="brand-signout-btn hidden" type="button">Sign Out</button>
+
+      <div id="brandUserArea" class="brand-user-area hidden">
+        <p id="brandSignedInText" class="brand-signed-in"></p>
+      </div>
     </aside>
 
     <main class="main-content">
       <header class="topbar">
-        <h2 id="pageTitle">Dashboard</h2>
+        <h2 id="pageTitle" class="page-title-sm">Dashboard</h2>
       </header>
 
       <section id="dashboard" class="tab-content active">
@@ -92,7 +92,6 @@
 
       <section id="courses" class="tab-content">
         <div class="section-header">
-          <h3>Courses</h3>
           <button class="open-modal-btn primary-btn" data-open-modal="courseModal" type="button">Add Course</button>
         </div>
         <div id="coursesList"></div>
@@ -100,7 +99,6 @@
 
       <section id="planner" class="tab-content">
         <div class="section-header">
-          <h3>Tasks</h3>
           <button class="open-modal-btn primary-btn" data-open-modal="taskModal" type="button">Add Task</button>
         </div>
         <div id="plannerList"></div>
@@ -108,7 +106,6 @@
 
       <section id="notes" class="tab-content">
         <div class="section-header">
-          <h3>Notes</h3>
           <button class="open-modal-btn primary-btn" data-open-modal="noteModal" type="button">Add Note</button>
         </div>
         <div id="notesList"></div>
@@ -116,7 +113,6 @@
 
       <section id="exams" class="tab-content">
         <div class="section-header">
-          <h3>Exams</h3>
           <button class="open-modal-btn primary-btn" data-open-modal="examModal" type="button">Add Exam</button>
         </div>
         <div id="examsList"></div>
@@ -169,7 +165,6 @@
 
       <section id="academic" class="tab-content">
         <div class="section-header">
-          <h3>Academic Settings</h3>
           <div class="section-actions">
             <button class="open-modal-btn secondary-btn" data-open-modal="academicYearModal" type="button">Add Academic Year</button>
             <button class="open-modal-btn primary-btn" data-open-modal="semesterModal" type="button">Add Semester</button>
@@ -273,6 +268,8 @@
 
       <label for="sessionDate">Specific date</label>
       <input id="sessionDate" type="date" />
+      <button id="addSessionDateBtn" class="secondary-btn" type="button">Add Another Date</button>
+      <div id="specificDatesList" class="pending-sessions-list"></div>
 
       <label for="sessionStartTime">Start time</label>
       <input id="sessionStartTime" type="time" />
