@@ -1,446 +1,471 @@
-document.addEventListener("DOMContentLoaded", function () {
-  const SUPABASE_URL = "https://fdijdgvsqfzgzzwlvqff.supabase.co";
-  const SUPABASE_KEY = "sb_publishable_qkCIilGuoTE3FgWWzeqKLw_4R9ERznE";
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_URL = "YOUR_SUPABASE_URL";
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
 
-  function $(id) {
-    return document.getElementById(id);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+function $(id) {
+  return document.getElementById(id);
+}
+
+const pageTitle = $("pageTitle");
+const menuToggleBtn = $("menuToggleBtn");
+const tabNav = $("tabNav");
+const signOutBtn = $("signOutBtn");
+
+const authBox = $("authBox");
+const authSignedOut = $("authSignedOut");
+const authSignedIn = $("authSignedIn");
+const authEmail = $("authEmail");
+const authPassword = $("authPassword");
+const signUpBtn = $("signUpBtn");
+const signInBtn = $("signInBtn");
+const authMessage = $("authMessage");
+const authMessageSignedIn = $("authMessageSignedIn");
+const brandUserArea = $("brandUserArea");
+const brandSignedInText = $("brandSignedInText");
+
+const tabButtons = document.querySelectorAll(".tab-btn");
+const tabContents = document.querySelectorAll(".tab-content");
+
+const coursesList = $("coursesList");
+const plannerList = $("plannerList");
+const notesList = $("notesList");
+const examsList = $("examsList");
+const academicYearsList = $("academicYearsList");
+
+const dashboardToday = $("dashboardToday");
+const dashboardTomorrow = $("dashboardTomorrow");
+const dashboardUpcomingTasks = $("dashboardUpcomingTasks");
+const dashboardUpcomingExams = $("dashboardUpcomingExams");
+
+const courseNameInput = $("courseName");
+const courseCodeInput = $("courseCode");
+const courseInstructorInput = $("courseInstructor");
+const courseColorInput = $("courseColor");
+const courseSemesterInput = $("courseSemester");
+const saveCourseBtn = $("saveCourseBtn");
+
+const sessionTypeInput = $("sessionType");
+const sessionRepeatInput = $("sessionRepeat");
+const sessionDayInput = $("sessionDay");
+const sessionDateInput = $("sessionDate");
+const sessionStartTimeInput = $("sessionStartTime");
+const sessionEndTimeInput = $("sessionEndTime");
+const sessionLocationInput = $("sessionLocation");
+const addSessionBtn = $("addSessionBtn");
+const pendingSessionsList = $("pendingSessionsList");
+const addSessionDateBtn = $("addSessionDateBtn");
+const specificDatesList = $("specificDatesList");
+
+const taskTitleInput = $("taskTitle");
+const taskDetailsInput = $("taskDetails");
+const taskCourseInput = $("taskCourse");
+const taskDateInput = $("taskDate");
+const taskPriorityInput = $("taskPriority");
+const taskStatusInput = $("taskStatus");
+const addTaskBtn = $("addTaskBtn");
+
+const noteTitleInput = $("noteTitle");
+const noteContentInput = $("noteContent");
+const saveNoteBtn = $("saveNoteBtn");
+
+const examTitleInput = $("examTitle");
+const examCourseInput = $("examCourse");
+const examDateInput = $("examDate");
+const examTimeInput = $("examTime");
+const examPlaceInput = $("examPlace");
+const examSeatNumberInput = $("examSeatNumber");
+const examGradeInput = $("examGrade");
+const examMarkInput = $("examMark");
+const examNotesInput = $("examNotes");
+const saveExamBtn = $("saveExamBtn");
+
+const eventTitleInput = $("eventTitle");
+const eventDateInput = $("eventDate");
+const eventStartTimeInput = $("eventStartTime");
+const eventEndTimeInput = $("eventEndTime");
+const eventLocationInput = $("eventLocation");
+const eventDetailsInput = $("eventDetails");
+const saveEventBtn = $("saveEventBtn");
+
+const academicYearNameInput = $("academicYearName");
+const saveAcademicYearBtn = $("saveAcademicYearBtn");
+
+const semesterAcademicYearInput = $("semesterAcademicYear");
+const semesterNameInput = $("semesterName");
+const semesterStartDateInput = $("semesterStartDate");
+const semesterEndDateInput = $("semesterEndDate");
+const saveSemesterBtn = $("saveSemesterBtn");
+
+const detailTitle = $("detailTitle");
+const detailBody = $("detailBody");
+
+const monthViewBtn = $("monthViewBtn");
+const weekViewBtn = $("weekViewBtn");
+const dayViewBtn = $("dayViewBtn");
+const prevPeriodBtn = $("prevPeriodBtn");
+const nextPeriodBtn = $("nextPeriodBtn");
+const calendarMonthLabel = $("calendarMonthLabel");
+const monthCalendarWrap = $("monthCalendarWrap");
+const weekCalendarWrap = $("weekCalendarWrap");
+const dayCalendarWrap = $("dayCalendarWrap");
+const calendarGrid = $("calendarGrid");
+const weekCalendarGrid = $("weekCalendarGrid");
+const dayCalendarGrid = $("dayCalendarGrid");
+
+let currentUser = null;
+
+let academicYears = [];
+let semesters = [];
+let courses = [];
+let tasks = [];
+let notes = [];
+let exams = [];
+let events = [];
+
+let pendingSessions = [];
+let pendingSpecificDates = [];
+
+let editingCourseId = null;
+let currentCalendarView = "month";
+let currentCalendarDate = new Date();
+
+function generateId(prefix) {
+  return prefix + "-" + Date.now() + "-" + Math.floor(Math.random() * 100000);
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function setMessage(el, message, isError) {
+  if (!el) return;
+  el.textContent = message || "";
+  el.style.color = isError ? "#dc2626" : "#0f766e";
+}
+
+function formatDate(dateString) {
+  if (!dateString) return "No date";
+  const date = new Date(dateString + "T00:00:00");
+  return date.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+}
+
+function formatTime(timeString) {
+  if (!timeString) return "";
+  const [hour, minute] = timeString.split(":");
+  const date = new Date();
+  date.setHours(Number(hour), Number(minute));
+  return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
+function isSameDate(a, b) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+function toDateKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function dayNameFromDate(date) {
+  return date.toLocaleDateString([], { weekday: "long" });
+}
+
+function openModal(modalId) {
+  const modal = $(modalId);
+  if (modal) modal.classList.remove("hidden");
+}
+
+function closeModal(modalId) {
+  const modal = $(modalId);
+  if (modal) modal.classList.add("hidden");
+}
+
+document.querySelectorAll("[data-open-modal]").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    openModal(btn.dataset.openModal);
+  });
+});
+
+document.querySelectorAll("[data-close-modal]").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    closeModal(btn.dataset.closeModal);
+  });
+});
+
+document.querySelectorAll(".modal").forEach(function (modal) {
+  modal.addEventListener("click", function (e) {
+    if (e.target === modal) {
+      modal.classList.add("hidden");
+    }
+  });
+});
+
+function showTab(tabId) {
+  tabButtons.forEach(function (btn) {
+    btn.classList.remove("active");
+  });
+
+  tabContents.forEach(function (content) {
+    content.classList.remove("active");
+  });
+
+  const activeBtn = document.querySelector('.tab-btn[data-tab="' + tabId + '"]');
+  const activeTab = $(tabId);
+
+  if (activeBtn) activeBtn.classList.add("active");
+  if (activeTab) activeTab.classList.add("active");
+
+  const titles = {
+    dashboard: "Dashboard",
+    courses: "Courses",
+    planner: "Tasks",
+    notes: "Notes",
+    exams: "Exams",
+    academic: "Academic Settings",
+    calendar: "Calendar"
+  };
+
+  if (pageTitle) pageTitle.textContent = titles[tabId] || "Academia";
+
+  if (tabId === "calendar") {
+    renderCalendar();
   }
 
-  let currentUser = null;
-  let academicYears = [];
-  let semesters = [];
-  let courses = [];
-  let notes = [];
-  let tasks = [];
-  let exams = [];
-  let events = [];
-  let courseSessions = [];
-  let currentCalendarDate = new Date();
-  let currentCalendarView = "month";
-  let editingTaskId = null;
-  let editingExamId = null;
-  let editingCourseId = null;
-  let editingNoteId = null;
-  let editingAcademicYearId = null;
-  let editingSemesterId = null;
-  let editingEventId = null;
-  let pendingSessions = [];
-
-  const tabButtons = document.querySelectorAll(".tab-btn");
-  const tabContents = document.querySelectorAll(".tab-content");
-  const tabNav = $("tabNav");
-  const menuToggleBtn = $("menuToggleBtn");
-  const brandUserArea = $("brandUserArea");
-  const brandSignedInText = $("brandSignedInText");
-  const authBox = $("authBox");
-  const openModalButtons = document.querySelectorAll(".open-modal-btn");
-  const closeModalButtons = document.querySelectorAll(".close-modal-btn");
-
-  const pageTitle = $("pageTitle");
-  const plannerList = $("plannerList");
-  const coursesList = $("coursesList");
-  const notesList = $("notesList");
-  const examsList = $("examsList");
-  const academicYearsList = $("academicYearsList");
-  const dashboardUpcomingTasks = $("dashboardUpcomingTasks");
-  const dashboardUpcomingExams = $("dashboardUpcomingExams");
-  const dashboardToday = $("dashboardToday");
-  const dashboardTomorrow = $("dashboardTomorrow");
-
-  const authSignedOut = $("authSignedOut");
-  const authSignedIn = $("authSignedIn");
-  const authEmail = $("authEmail");
-  const authPassword = $("authPassword");
-  const authMessage = $("authMessage");
-  const authMessageSignedIn = $("authMessageSignedIn");
-  const signUpBtn = $("signUpBtn");
-  const signInBtn = $("signInBtn");
-  const signOutBtn = $("signOutBtn");
-
-  const academicYearNameInput = $("academicYearName");
-  const saveAcademicYearBtn = $("saveAcademicYearBtn");
-
-  const semesterAcademicYearInput = $("semesterAcademicYear");
-  const semesterNameInput = $("semesterName");
-  const semesterStartDateInput = $("semesterStartDate");
-  const semesterEndDateInput = $("semesterEndDate");
-  const saveSemesterBtn = $("saveSemesterBtn");
-
-  const courseNameInput = $("courseName");
-  const courseCodeInput = $("courseCode");
-  const courseInstructorInput = $("courseInstructor");
-  const courseColorInput = $("courseColor");
-  const courseSemesterInput = $("courseSemester");
-  const sessionTypeInput = $("sessionType");
-  const sessionRepeatInput = $("sessionRepeat");
-  const sessionDayInput = $("sessionDay");
-  const sessionDateInput = $("sessionDate");
-  const sessionStartTimeInput = $("sessionStartTime");
-  const sessionEndTimeInput = $("sessionEndTime");
-  const sessionLocationInput = $("sessionLocation");
-  const addSessionBtn = $("addSessionBtn");
-  const pendingSessionsList = $("pendingSessionsList");
-  const saveCourseBtn = $("saveCourseBtn");
-
-  const noteTitleInput = $("noteTitle");
-  const noteContentInput = $("noteContent");
-  const saveNoteBtn = $("saveNoteBtn");
-
-  const taskTitleInput = $("taskTitle");
-  const taskDetailsInput = $("taskDetails");
-  const taskCourseInput = $("taskCourse");
-  const taskDateInput = $("taskDate");
-  const taskPriorityInput = $("taskPriority");
-  const taskStatusInput = $("taskStatus");
-  const addTaskBtn = $("addTaskBtn");
-
-  const examTitleInput = $("examTitle");
-  const examCourseInput = $("examCourse");
-  const examDateInput = $("examDate");
-  const examTimeInput = $("examTime");
-  const examPlaceInput = $("examPlace");
-  const examSeatNumberInput = $("examSeatNumber");
-  const examGradeInput = $("examGrade");
-  const examMarkInput = $("examMark");
-  const examNotesInput = $("examNotes");
-  const saveExamBtn = $("saveExamBtn");
-
-  const eventTitleInput = $("eventTitle");
-  const eventDateInput = $("eventDate");
-  const eventStartTimeInput = $("eventStartTime");
-  const eventEndTimeInput = $("eventEndTime");
-  const eventLocationInput = $("eventLocation");
-  const eventDetailsInput = $("eventDetails");
-  const saveEventBtn = $("saveEventBtn");
-
-  const monthViewBtn = $("monthViewBtn");
-  const weekViewBtn = $("weekViewBtn");
-  const dayViewBtn = $("dayViewBtn");
-  const prevPeriodBtn = $("prevPeriodBtn");
-  const nextPeriodBtn = $("nextPeriodBtn");
-  const calendarMonthLabel = $("calendarMonthLabel");
-  const calendarGrid = $("calendarGrid");
-  const weekCalendarGrid = $("weekCalendarGrid");
-  const dayCalendarGrid = $("dayCalendarGrid");
-  const monthCalendarWrap = $("monthCalendarWrap");
-  const weekCalendarWrap = $("weekCalendarWrap");
-  const dayCalendarWrap = $("dayCalendarWrap");
-
-  const detailTitle = $("detailTitle");
-  const detailBody = $("detailBody");
-
-  function showAuthMessage(message, isError) {
-    if (authMessage) {
-      authMessage.textContent = message;
-      authMessage.style.color = isError ? "#b91c1c" : "#0f766e";
-    }
-    if (authMessageSignedIn) {
-      authMessageSignedIn.textContent = message;
-      authMessageSignedIn.style.color = isError ? "#b91c1c" : "#0f766e";
-    }
+  if (window.innerWidth <= 640 && tabNav) {
+    tabNav.classList.remove("menu-open");
   }
+}
 
-  function setAuthUI(user) {
-    currentUser = user || null;
+tabButtons.forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    showTab(btn.dataset.tab);
+  });
+});
 
-    if (currentUser) {
-      if (authSignedOut) authSignedOut.classList.add("hidden");
-      if (authSignedIn) authSignedIn.classList.remove("hidden");
-      if (brandUserArea) brandUserArea.classList.remove("hidden");
-      if (brandSignedInText) brandSignedInText.textContent = "Signed in as " + (currentUser.email || "");
-      if (signOutBtn) signOutBtn.classList.remove("hidden");
-      if (authBox) authBox.classList.add("hidden");
-    } else {
-      if (authSignedOut) authSignedOut.classList.remove("hidden");
-      if (authSignedIn) authSignedIn.classList.add("hidden");
-      if (brandUserArea) brandUserArea.classList.add("hidden");
-      if (brandSignedInText) brandSignedInText.textContent = "";
-      if (signOutBtn) signOutBtn.classList.add("hidden");
-      if (authBox) authBox.classList.remove("hidden");
+if (menuToggleBtn) {
+  menuToggleBtn.addEventListener("click", function () {
+    if (!tabNav) return;
+    if (window.innerWidth <= 640) {
+      tabNav.classList.toggle("menu-open");
     }
-  }
+  });
+}
 
-  async function signUp() {
+function updateAuthUI() {
+  const signedIn = !!currentUser;
+
+  if (authSignedOut) authSignedOut.classList.toggle("hidden", signedIn);
+  if (authSignedIn) authSignedIn.classList.toggle("hidden", !signedIn);
+  if (signOutBtn) signOutBtn.classList.toggle("hidden", !signedIn);
+  if (brandUserArea) brandUserArea.classList.toggle("hidden", !signedIn);
+
+  if (currentUser) {
+    const email = currentUser.email || "Signed in";
+    if (brandSignedInText) brandSignedInText.textContent = `Signed in as ${email}`;
+    setMessage(authMessageSignedIn, `Signed in as ${email}`, false);
+  } else {
+    if (brandSignedInText) brandSignedInText.textContent = "";
+    setMessage(authMessageSignedIn, "", false);
+  }
+}
+
+async function signUp() {
+  try {
     const email = authEmail.value.trim();
     const password = authPassword.value.trim();
 
     if (!email || !password) {
-      showAuthMessage("Enter email and password first.", true);
+      setMessage(authMessage, "Please enter email and password.", true);
       return;
     }
 
-    showAuthMessage("Creating account...", false);
-
-    const { error } = await supabase.auth.signUp({
+    const { error } = await supabaseClient.auth.signUp({
       email,
-      password,
-      options: {
-        emailRedirectTo: "https://bocotambt.github.io/Academia/"
-      }
+      password
     });
 
-    if (error) {
-      showAuthMessage(error.message, true);
-      return;
-    }
-
-    showAuthMessage("Sign-up submitted. Check your email and click the confirmation link.", false);
+    if (error) throw error;
+    setMessage(authMessage, "Sign-up successful. Check your email if confirmation is enabled.", false);
+  } catch (error) {
+    setMessage(authMessage, error.message || "Sign-up failed.", true);
   }
+}
 
-  async function signIn() {
+async function signIn() {
+  try {
     const email = authEmail.value.trim();
     const password = authPassword.value.trim();
 
     if (!email || !password) {
-      showAuthMessage("Enter email and password first.", true);
+      setMessage(authMessage, "Please enter email and password.", true);
       return;
     }
 
-    showAuthMessage("Signing in...", false);
-
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-
-    if (error) {
-      showAuthMessage(error.message, true);
-      return;
-    }
-
-    showAuthMessage("Signed in.", false);
-  }
-
-  async function signOut() {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      showAuthMessage(error.message, true);
-      return;
-    }
-    showAuthMessage("Signed out.", false);
-  }
-
-  async function getCurrentUser() {
-    const { data } = await supabase.auth.getUser();
-    return data.user || null;
-  }
-
-  function pad(num) {
-    return String(num).padStart(2, "0");
-  }
-
-  function formatDateKey(date) {
-    return date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate());
-  }
-
-  function formatDateLabel(dateString) {
-    const date = new Date(dateString + "T00:00:00");
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric"
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+      email,
+      password
     });
-  }
 
-  function isPastDate(dateString) {
-    if (!dateString) return false;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const itemDate = new Date(dateString + "T00:00:00");
-    return itemDate < today;
-  }
+    if (error) throw error;
 
-  function isPastExam(exam) {
-    if (!exam.date) return false;
-    const examTime = exam.time ? exam.time : "23:59";
-    const examDateTime = new Date(exam.date + "T" + examTime + ":00");
-    return examDateTime < new Date();
+    currentUser = data.user || null;
+    updateAuthUI();
+    await loadAllData();
+    renderAll();
+    setMessage(authMessage, "", false);
+  } catch (error) {
+    setMessage(authMessage, error.message || "Sign-in failed.", true);
   }
+}
 
-  function isPastEvent(event) {
-    if (!event.date) return false;
-    const endTime = event.endTime || event.startTime || "23:59";
-    const endDateTime = new Date(event.date + "T" + endTime + ":00");
-    return endDateTime < new Date();
-  }
+async function signOut() {
+  try {
+    const { error } = await supabaseClient.auth.signOut();
+    if (error) throw error;
 
-  function isWithinNext3Weeks(dateString) {
-    if (!dateString) return false;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const threeWeeks = new Date(today);
-    threeWeeks.setDate(threeWeeks.getDate() + 21);
-    const itemDate = new Date(dateString + "T00:00:00");
-    return itemDate >= today && itemDate <= threeWeeks;
-  }
-
-  function openModal(id) {
-    const modal = $(id);
-    if (!modal) return;
-    modal.classList.remove("hidden");
-    document.body.style.overflow = "hidden";
-  }
-
-  function closeModal(id) {
-    const modal = $(id);
-    if (!modal) return;
-    modal.classList.add("hidden");
-    document.body.style.overflow = "";
-  }
-
-  function resetAcademicYearModal() {
-    academicYearNameInput.value = "";
-    editingAcademicYearId = null;
-    saveAcademicYearBtn.textContent = "Save Academic Year";
-  }
-
-  function resetSemesterModal() {
-    semesterAcademicYearInput.value = "";
-    semesterNameInput.value = "";
-    semesterStartDateInput.value = "";
-    semesterEndDateInput.value = "";
-    editingSemesterId = null;
-    saveSemesterBtn.textContent = "Save Semester";
-  }
-
-  function resetCourseSessionInputs() {
-    sessionTypeInput.value = "";
-    sessionRepeatInput.value = "";
-    sessionDayInput.value = "";
-    sessionDateInput.value = "";
-    sessionStartTimeInput.value = "";
-    sessionEndTimeInput.value = "";
-    sessionLocationInput.value = "";
-  }
-
-  function resetCourseModal() {
-    courseNameInput.value = "";
-    courseCodeInput.value = "";
-    courseInstructorInput.value = "";
-    courseColorInput.value = "#2563eb";
-    courseSemesterInput.value = "";
-    editingCourseId = null;
+    currentUser = null;
+    academicYears = [];
+    semesters = [];
+    courses = [];
+    tasks = [];
+    notes = [];
+    exams = [];
+    events = [];
     pendingSessions = [];
-    renderPendingSessions();
-    resetCourseSessionInputs();
-    saveCourseBtn.textContent = "Save Course";
+    pendingSpecificDates = [];
+    updateAuthUI();
+    renderAll();
+    showTab("dashboard");
+  } catch (error) {
+    alert(error.message || "Sign-out failed.");
+  }
+}
+
+if (signUpBtn) signUpBtn.addEventListener("click", signUp);
+if (signInBtn) signInBtn.addEventListener("click", signIn);
+if (signOutBtn) signOutBtn.addEventListener("click", signOut);
+
+async function getCurrentSession() {
+  const { data } = await supabaseClient.auth.getSession();
+  currentUser = data.session?.user || null;
+  updateAuthUI();
+  if (currentUser) {
+    await loadAllData();
+    renderAll();
+  } else {
+    renderAll();
+  }
+}
+
+supabaseClient.auth.onAuthStateChange(async function (_event, session) {
+  currentUser = session?.user || null;
+  updateAuthUI();
+  if (currentUser) {
+    await loadAllData();
+  } else {
+    academicYears = [];
+    semesters = [];
+    courses = [];
+    tasks = [];
+    notes = [];
+    exams = [];
+    events = [];
+  }
+  renderAll();
+});
+
+async function loadTable(tableName) {
+  if (!currentUser) return [];
+  const { data, error } = await supabaseClient
+    .from(tableName)
+    .select("*")
+    .eq("user_id", currentUser.id)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+  return data || [];
+}
+
+async function loadAllData() {
+  if (!currentUser) return;
+
+  academicYears = await loadTable("academic_years");
+  semesters = await loadTable("semesters");
+  courses = await loadTable("courses");
+  tasks = await loadTable("tasks");
+  notes = await loadTable("notes");
+  exams = await loadTable("exams");
+  events = await loadTable("events");
+}
+
+async function upsertRecord(tableName, payload) {
+  if (!currentUser) {
+    alert("Please sign in first.");
+    return null;
   }
 
-  function resetNoteModal() {
-    noteTitleInput.value = "";
-    noteContentInput.value = "";
-    editingNoteId = null;
-    saveNoteBtn.textContent = "Save Note";
+  const record = {
+    ...payload,
+    user_id: currentUser.id
+  };
+
+  const { data, error } = await supabaseClient
+    .from(tableName)
+    .upsert(record)
+    .select()
+    .single();
+
+  if (error) {
+    alert(error.message || "Save failed.");
+    return null;
   }
 
-  function resetTaskModal() {
-    taskTitleInput.value = "";
-    taskDetailsInput.value = "";
-    taskCourseInput.value = "";
-    taskDateInput.value = "";
-    taskPriorityInput.value = "";
-    taskStatusInput.value = "";
-    editingTaskId = null;
-    addTaskBtn.textContent = "Save Task";
+  return data;
+}
+
+async function deleteRecord(tableName, id) {
+  const { error } = await supabaseClient
+    .from(tableName)
+    .delete()
+    .eq("id", id)
+    .eq("user_id", currentUser.id);
+
+  if (error) {
+    alert(error.message || "Delete failed.");
+    return false;
   }
 
-  function resetExamModal() {
-    examTitleInput.value = "";
-    examCourseInput.value = "";
-    examDateInput.value = "";
-    examTimeInput.value = "";
-    examPlaceInput.value = "";
-    examSeatNumberInput.value = "";
-    examGradeInput.value = "";
-    examMarkInput.value = "";
-    examNotesInput.value = "";
-    editingExamId = null;
-    saveExamBtn.textContent = "Save Exam";
+  return true;
+}
+
+function populateSemesterOptions() {
+  if (courseSemesterInput) {
+    courseSemesterInput.innerHTML = `<option value="">Choose semester</option>`;
+    semesters.forEach(function (semester) {
+      const option = document.createElement("option");
+      option.value = semester.id;
+      option.textContent = semester.name;
+      courseSemesterInput.appendChild(option);
+    });
   }
 
-  function resetEventModal() {
-    if (eventTitleInput) eventTitleInput.value = "";
-    if (eventDateInput) eventDateInput.value = "";
-    if (eventStartTimeInput) eventStartTimeInput.value = "";
-    if (eventEndTimeInput) eventEndTimeInput.value = "";
-    if (eventLocationInput) eventLocationInput.value = "";
-    if (eventDetailsInput) eventDetailsInput.value = "";
-    editingEventId = null;
-    if (saveEventBtn) saveEventBtn.textContent = "Save Event";
-  }
-
-  openModalButtons.forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      const modalId = btn.dataset.openModal;
-      if (modalId === "academicYearModal") resetAcademicYearModal();
-      if (modalId === "semesterModal") resetSemesterModal();
-      if (modalId === "courseModal") resetCourseModal();
-      if (modalId === "noteModal") resetNoteModal();
-      if (modalId === "taskModal") resetTaskModal();
-      if (modalId === "examModal") resetExamModal();
-      if (modalId === "eventModal") resetEventModal();
-      refreshAcademicYearOptions();
-      refreshSemesterOptions();
-      refreshTaskCourseOptions();
-      openModal(modalId);
-    });
-  });
-
-  closeModalButtons.forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      closeModal(btn.dataset.closeModal);
-    });
-  });
-
-  document.querySelectorAll(".modal").forEach(function (modal) {
-    modal.addEventListener("click", function (e) {
-      if (e.target === modal) {
-        modal.classList.add("hidden");
-        document.body.style.overflow = "";
-      }
-    });
-  });
-
-  function showTab(tabId) {
-    tabButtons.forEach(function (btn) {
-      btn.classList.remove("active");
-    });
-
-    tabContents.forEach(function (content) {
-      content.classList.remove("active");
-    });
-
-    const activeBtn = document.querySelector('.tab-btn[data-tab="' + tabId + '"]');
-    const activeTab = $(tabId);
-
-    if (activeBtn) activeBtn.classList.add("active");
-    if (activeTab) activeTab.classList.add("active");
-
-    const titles = {
-      dashboard: "Dashboard",
-      courses: "Courses",
-      planner: "Tasks",
-      notes: "Notes",
-      exams: "Exams",
-      academic: "Academic Settings",
-      calendar: "Calendar"
-    };
-
-    if (pageTitle) pageTitle.textContent = titles[tabId] || "Academia";
-    if (tabId === "calendar") renderCalendar();
-
-    if (window.innerWidth <= 640 && tabNav) {
-      tabNav.classList.remove("menu-open");
-    }
-  }
-
-  tabButtons.forEach(function (button) {
-    button.addEventListener("click", function () {
-      showTab(button.dataset.tab);
-    });
-  });
-
-  function refreshAcademicYearOptions() {
-    if (!semesterAcademicYearInput) return;
-    semesterAcademicYearInput.innerHTML = `<option value="" selected disabled>Select academic year</option>`;
+  if (semesterAcademicYearInput) {
+    semesterAcademicYearInput.innerHTML = `<option value="">Choose academic year</option>`;
     academicYears.forEach(function (year) {
       const option = document.createElement("option");
       option.value = year.id;
@@ -448,1760 +473,895 @@ document.addEventListener("DOMContentLoaded", function () {
       semesterAcademicYearInput.appendChild(option);
     });
   }
+}
 
-  function refreshSemesterOptions() {
-    if (!courseSemesterInput) return;
-    courseSemesterInput.innerHTML = `<option value="">No semester</option>`;
-    semesters.forEach(function (semester) {
-      const year = academicYears.find(function (item) {
-        return item.id === semester.academicYearId;
+function populateCourseOptions() {
+  if (!taskCourseInput) return;
+  taskCourseInput.innerHTML = `<option value="">No course</option>`;
+  courses.forEach(function (course) {
+    const option = document.createElement("option");
+    option.value = course.id;
+    option.textContent = course.name;
+    taskCourseInput.appendChild(option);
+  });
+}
+
+function resetCourseSessionInputs() {
+  sessionTypeInput.value = "";
+  sessionRepeatInput.value = "";
+  sessionDayInput.value = "";
+  sessionDateInput.value = "";
+  sessionStartTimeInput.value = "";
+  sessionEndTimeInput.value = "";
+  sessionLocationInput.value = "";
+}
+
+function renderSpecificDatesList() {
+  if (!specificDatesList) return;
+
+  specificDatesList.innerHTML = "";
+
+  if (pendingSpecificDates.length === 0) {
+    specificDatesList.innerHTML = '<div class="empty-state">No extra dates added yet.</div>';
+    return;
+  }
+
+  pendingSpecificDates.forEach(function (date, index) {
+    const item = document.createElement("div");
+    item.className = "pending-session-item";
+    item.innerHTML = `
+      <strong>${escapeHtml(date)}</strong>
+      <div class="card-actions" style="margin-top:10px;">
+        <button class="delete-btn" data-remove-specific-date="${index}" type="button">Remove</button>
+      </div>
+    `;
+    specificDatesList.appendChild(item);
+  });
+}
+
+function renderPendingSessions() {
+  if (!pendingSessionsList) return;
+
+  pendingSessionsList.innerHTML = "";
+
+  if (pendingSessions.length === 0) {
+    pendingSessionsList.innerHTML = '<div class="empty-state">No sessions added yet.</div>';
+    return;
+  }
+
+  pendingSessions.forEach(function (session, index) {
+    const item = document.createElement("div");
+    item.className = "pending-session-item";
+    item.innerHTML = `
+      <strong>${escapeHtml(session.sessionType)}</strong>
+      <p class="meta">
+        ${session.repeatType === "weekly"
+          ? `Weekly on ${escapeHtml(session.dayOfWeek)}`
+          : `Specific date: ${escapeHtml(session.specificDate)}`}
+      </p>
+      <p class="meta">${escapeHtml(formatTime(session.startTime))} - ${escapeHtml(formatTime(session.endTime))}</p>
+      <p class="meta">${escapeHtml(session.location || "No location")}</p>
+      <div class="card-actions">
+        <button class="delete-btn" data-remove-session="${index}" type="button">Remove</button>
+      </div>
+    `;
+    pendingSessionsList.appendChild(item);
+  });
+}
+
+function addPendingSession() {
+  const sessionType = sessionTypeInput.value;
+  const repeatType = sessionRepeatInput.value;
+  const dayOfWeek = sessionDayInput.value;
+  const specificDate = sessionDateInput.value;
+  const startTime = sessionStartTimeInput.value;
+  const endTime = sessionEndTimeInput.value;
+  const location = sessionLocationInput.value.trim();
+
+  if (!sessionType || !repeatType || !startTime || !endTime) {
+    alert("Please choose session type, repeat rule, start time, and end time.");
+    return;
+  }
+
+  if (repeatType === "weekly" && !dayOfWeek) {
+    alert("Please choose a weekly day.");
+    return;
+  }
+
+  if (repeatType === "specific" && pendingSpecificDates.length === 0 && !specificDate) {
+    alert("Please add at least one specific date.");
+    return;
+  }
+
+  if (repeatType === "specific") {
+    const dates = pendingSpecificDates.length ? pendingSpecificDates.slice() : [specificDate];
+
+    dates.forEach(function (dateValue) {
+      pendingSessions.push({
+        sessionType,
+        repeatType,
+        dayOfWeek: "",
+        specificDate: dateValue,
+        startTime,
+        endTime,
+        location
       });
-      const option = document.createElement("option");
-      option.value = semester.id;
-      option.textContent = year ? semester.name + " — " + year.name : semester.name;
-      courseSemesterInput.appendChild(option);
-    });
-  }
-
-  function refreshTaskCourseOptions() {
-    if (!taskCourseInput) return;
-    taskCourseInput.innerHTML = `<option value="">No course</option>`;
-    courses.forEach(function (course) {
-      const option = document.createElement("option");
-      option.value = course.id;
-      option.textContent = course.name + (course.code ? " (" + course.code + ")" : "");
-      taskCourseInput.appendChild(option);
-    });
-  }
-
-  function renderPendingSessions() {
-    if (!pendingSessionsList) return;
-    pendingSessionsList.innerHTML = "";
-    if (pendingSessions.length === 0) {
-      pendingSessionsList.innerHTML = `<div class="empty-state">No sessions added yet.</div>`;
-      return;
-    }
-
-    pendingSessions.forEach(function (session, index) {
-      const box = document.createElement("div");
-      box.className = "pending-session-item";
-      box.innerHTML = `
-        <strong>${session.sessionType}</strong>
-        <div class="meta">Repeat: ${session.repeatType === "weekly" ? "Weekly" : "Specific date"}</div>
-        <div class="meta">${session.repeatType === "weekly" ? "Day: " + (session.dayOfWeek || "Not set") : "Date: " + (session.specificDate || "Not set")}</div>
-        <div class="meta">Time: ${session.startTime || "?"} - ${session.endTime || "?"}</div>
-        <div class="meta">Location: ${session.location || "Not set"}</div>
-        <div class="card-actions" style="margin-top:10px;">
-          <button class="delete-btn" data-remove-pending-session="${index}" type="button">Remove</button>
-        </div>
-      `;
-      pendingSessionsList.appendChild(box);
-    });
-  }
-
-  function getCourseName(courseId) {
-    if (!courseId) return "No course";
-    const course = courses.find(function (item) {
-      return item.id === courseId;
-    });
-    return course ? course.name : "Unknown course";
-  }
-
-  async function loadAcademicYears() {
-    if (!currentUser) {
-      academicYears = [];
-      renderAcademic();
-      refreshAcademicYearOptions();
-      return;
-    }
-
-    const { data, error } = await supabase.from("academic_years").select("*").order("created_at", { ascending: false });
-
-    if (error) {
-      showAuthMessage(error.message, true);
-      academicYears = [];
-      renderAcademic();
-      return;
-    }
-
-    academicYears = (data || []).map(function (item) {
-      return { id: item.id, name: item.name };
     });
 
-    renderAcademic();
-    refreshAcademicYearOptions();
-  }
-
-  async function loadSemesters() {
-    if (!currentUser) {
-      semesters = [];
-      renderAcademic();
-      refreshSemesterOptions();
-      return;
-    }
-
-    const { data, error } = await supabase.from("semesters").select("*").order("created_at", { ascending: false });
-
-    if (error) {
-      showAuthMessage(error.message, true);
-      semesters = [];
-      renderAcademic();
-      return;
-    }
-
-    semesters = (data || []).map(function (item) {
-      return {
-        id: item.id,
-        academicYearId: item.academic_year_id,
-        name: item.name,
-        startDate: item.start_date || "",
-        endDate: item.end_date || ""
-      };
-    });
-
-    renderAcademic();
-    refreshSemesterOptions();
-  }
-
-  async function loadCourses() {
-    if (!currentUser) {
-      courses = [];
-      renderCourses();
-      refreshTaskCourseOptions();
-      renderCalendar();
-      return;
-    }
-
-    const { data, error } = await supabase.from("courses").select("*").order("created_at", { ascending: false });
-
-    if (error) {
-      showAuthMessage(error.message, true);
-      courses = [];
-      renderCourses();
-      return;
-    }
-
-    courses = (data || []).map(function (item) {
-      return {
-        id: item.id,
-        semesterId: item.semester_id || "",
-        name: item.name,
-        code: item.code || "",
-        instructor: item.instructor || "",
-        color: item.color || "#4f5fd7"
-      };
-    });
-
-    renderCourses();
-    refreshTaskCourseOptions();
-    renderTasks();
-    renderCalendar();
-  }
-
-  async function loadCourseSessions() {
-    if (!currentUser) {
-      courseSessions = [];
-      renderCourses();
-      renderCalendar();
-      renderDashboard();
-      return;
-    }
-
-    const { data, error } = await supabase.from("course_sessions").select("*").order("created_at", { ascending: true });
-
-    if (error) {
-      showAuthMessage(error.message, true);
-      courseSessions = [];
-      return;
-    }
-
-    courseSessions = (data || []).map(function (item) {
-      return {
-        id: item.id,
-        courseId: item.course_id,
-        sessionType: item.session_type,
-        repeatType: item.repeat_type,
-        dayOfWeek: item.day_of_week || "",
-        specificDate: item.specific_date || "",
-        startTime: item.start_time || "",
-        endTime: item.end_time || "",
-        location: item.location || ""
-      };
-    });
-
-    renderCourses();
-    renderCalendar();
-    renderDashboard();
-  }
-
-  async function loadNotes() {
-    if (!currentUser) {
-      notes = [];
-      renderNotes();
-      return;
-    }
-
-    const { data, error } = await supabase.from("notes").select("*").order("created_at", { ascending: false });
-
-    if (error) {
-      showAuthMessage(error.message, true);
-      notes = [];
-      renderNotes();
-      return;
-    }
-
-    notes = (data || []).map(function (item) {
-      return {
-        id: item.id,
-        title: item.title || "",
-        content: item.content || ""
-      };
-    });
-
-    renderNotes();
-  }
-
-  async function loadTasks() {
-    if (!currentUser) {
-      tasks = [];
-      renderTasks();
-      renderDashboard();
-      renderCalendar();
-      return;
-    }
-
-    const { data, error } = await supabase.from("tasks").select("*").order("due_date", { ascending: true });
-
-    if (error) {
-      showAuthMessage(error.message, true);
-      tasks = [];
-      renderTasks();
-      return;
-    }
-
-    tasks = (data || []).map(function (item) {
-      return {
-        id: item.id,
-        title: item.title,
-        details: item.details || "",
-        courseId: item.course_id || "",
-        date: item.due_date,
-        priority: item.priority || "High",
-        status: item.status || "To Do"
-      };
-    });
-
-    renderTasks();
-    renderDashboard();
-    renderCalendar();
-  }
-
-  async function loadExams() {
-    if (!currentUser) {
-      exams = [];
-      renderExams();
-      renderDashboard();
-      renderCalendar();
-      return;
-    }
-
-    const { data, error } = await supabase.from("exams").select("*").order("exam_date", { ascending: true });
-
-    if (error) {
-      showAuthMessage(error.message, true);
-      exams = [];
-      renderExams();
-      return;
-    }
-
-    exams = (data || []).map(function (item) {
-      return {
-        id: item.id,
-        title: item.title,
-        course: item.course || "",
-        date: item.exam_date,
-        time: item.exam_time || "",
-        place: item.place || "",
-        seatNumber: item.seat_number || "",
-        grade: item.grade || "",
-        mark: item.mark ?? "",
-        notes: item.notes || ""
-      };
-    });
-
-    renderExams();
-    renderDashboard();
-    renderCalendar();
-  }
-
-  async function loadEvents() {
-    if (!currentUser) {
-      events = [];
-      renderCalendar();
-      return;
-    }
-
-    const { data, error } = await supabase.from("events").select("*").order("event_date", { ascending: true });
-
-    if (error) {
-      showAuthMessage(error.message, true);
-      events = [];
-      renderCalendar();
-      return;
-    }
-
-    events = (data || []).map(function (item) {
-      return {
-        id: item.id,
-        title: item.title || "",
-        date: item.event_date || "",
-        startTime: item.start_time || "",
-        endTime: item.end_time || "",
-        location: item.location || "",
-        details: item.details || ""
-      };
-    });
-
-    renderCalendar();
-  }
-
-  async function saveAcademicYear() {
-    const name = academicYearNameInput.value.trim();
-    if (!currentUser) return alert("Please sign in first.");
-    if (!name) return alert("Please enter an academic year name.");
-
-    let error;
-    if (editingAcademicYearId) {
-      ({ error } = await supabase.from("academic_years").update({ name }).eq("id", editingAcademicYearId));
-    } else {
-      ({ error } = await supabase.from("academic_years").insert({ user_id: currentUser.id, name }));
-    }
-
-    if (error) return alert(error.message);
-
-    closeModal("academicYearModal");
-    resetAcademicYearModal();
-    await loadAcademicYears();
-  }
-
-  async function saveSemester() {
-    const academicYearId = semesterAcademicYearInput.value;
-    const name = semesterNameInput.value.trim();
-    const startDate = semesterStartDateInput.value || null;
-    const endDate = semesterEndDateInput.value || null;
-
-    if (!currentUser) return alert("Please sign in first.");
-    if (!academicYearId || !name) return alert("Please select an academic year and enter a semester name.");
-
-    let error;
-    if (editingSemesterId) {
-      ({ error } = await supabase.from("semesters").update({
-        academic_year_id: academicYearId,
-        name,
-        start_date: startDate,
-        end_date: endDate
-      }).eq("id", editingSemesterId));
-    } else {
-      ({ error } = await supabase.from("semesters").insert({
-        user_id: currentUser.id,
-        academic_year_id: academicYearId,
-        name,
-        start_date: startDate,
-        end_date: endDate
-      }));
-    }
-
-    if (error) return alert(error.message);
-
-    closeModal("semesterModal");
-    resetSemesterModal();
-    await loadSemesters();
-  }
-
-  function addPendingSession() {
-    const sessionType = sessionTypeInput.value;
-    const repeatType = sessionRepeatInput.value;
-    const dayOfWeek = sessionDayInput.value;
-    const specificDate = sessionDateInput.value;
-    const startTime = sessionStartTimeInput.value;
-    const endTime = sessionEndTimeInput.value;
-    const location = sessionLocationInput.value.trim();
-
-    if (!sessionType || !repeatType || !startTime || !endTime) {
-      alert("Please choose session type, repeat rule, start time, and end time.");
-      return;
-    }
-
-    if (repeatType === "weekly" && !dayOfWeek) {
-      alert("Please choose a weekly day.");
-      return;
-    }
-
-    if (repeatType === "specific" && !specificDate) {
-      alert("Please choose a specific date.");
-      return;
-    }
-
+    pendingSpecificDates = [];
+    renderSpecificDatesList();
+  } else {
     pendingSessions.push({
       sessionType,
       repeatType,
-      dayOfWeek: repeatType === "weekly" ? dayOfWeek : "",
-      specificDate: repeatType === "specific" ? specificDate : "",
+      dayOfWeek,
+      specificDate: "",
       startTime,
       endTime,
       location
     });
-
-    resetCourseSessionInputs();
-    renderPendingSessions();
   }
 
-  async function saveCourse() {
-    const name = courseNameInput.value.trim();
-    const code = courseCodeInput.value.trim();
-    const instructor = courseInstructorInput.value.trim();
-    const color = courseColorInput.value || "#4f5fd7";
-    const semesterId = courseSemesterInput.value || null;
+  resetCourseSessionInputs();
+  renderPendingSessions();
+}
 
-    if (!currentUser) return alert("Please sign in first.");
-    if (!name) return alert("Please enter a course name.");
+if (addSessionBtn) {
+  addSessionBtn.addEventListener("click", addPendingSession);
+}
 
-    let courseId = editingCourseId;
-    let error;
-
-    if (editingCourseId) {
-      ({ error } = await supabase.from("courses").update({
-        semester_id: semesterId,
-        name,
-        code,
-        instructor,
-        color
-      }).eq("id", editingCourseId));
-      if (error) return alert(error.message);
-
-      const deleteOld = await supabase.from("course_sessions").delete().eq("course_id", editingCourseId);
-      if (deleteOld.error) return alert(deleteOld.error.message);
-    } else {
-      const inserted = await supabase
-        .from("courses")
-        .insert({
-          user_id: currentUser.id,
-          semester_id: semesterId,
-          name,
-          code,
-          instructor,
-          color
-        })
-        .select()
-        .single();
-
-      if (inserted.error) return alert(inserted.error.message);
-      courseId = inserted.data.id;
+if (addSessionDateBtn) {
+  addSessionDateBtn.addEventListener("click", function () {
+    const date = sessionDateInput.value;
+    if (!date) {
+      alert("Please choose a specific date first.");
+      return;
     }
-
-    if (pendingSessions.length > 0) {
-      const sessionRows = pendingSessions.map(function (session) {
-        return {
-          user_id: currentUser.id,
-          course_id: courseId,
-          session_type: session.sessionType,
-          repeat_type: session.repeatType,
-          day_of_week: session.dayOfWeek || null,
-          specific_date: session.specificDate || null,
-          start_time: session.startTime || null,
-          end_time: session.endTime || null,
-          location: session.location || null
-        };
-      });
-
-      const sessionInsert = await supabase.from("course_sessions").insert(sessionRows);
-      if (sessionInsert.error) return alert(sessionInsert.error.message);
+    if (!pendingSpecificDates.includes(date)) {
+      pendingSpecificDates.push(date);
+      pendingSpecificDates.sort();
+      renderSpecificDatesList();
     }
+    sessionDateInput.value = "";
+  });
+}
 
-    closeModal("courseModal");
-    resetCourseModal();
-    await loadCourses();
-    await loadCourseSessions();
+function resetCourseModal() {
+  courseNameInput.value = "";
+  courseCodeInput.value = "";
+  courseInstructorInput.value = "";
+  courseColorInput.value = "#2563eb";
+  courseSemesterInput.value = "";
+  editingCourseId = null;
+  pendingSessions = [];
+  pendingSpecificDates = [];
+  renderPendingSessions();
+  renderSpecificDatesList();
+  resetCourseSessionInputs();
+  saveCourseBtn.textContent = "Save Course";
+}
+
+async function saveCourse() {
+  const name = courseNameInput.value.trim();
+  const code = courseCodeInput.value.trim();
+  const instructor = courseInstructorInput.value.trim();
+  const color = courseColorInput.value;
+  const semester_id = courseSemesterInput.value || null;
+
+  if (!name) {
+    alert("Please enter a course name.");
+    return;
   }
 
-  async function saveNote() {
-    const title = noteTitleInput.value.trim();
-    const content = noteContentInput.value.trim();
+  const payload = {
+    id: editingCourseId || generateId("course"),
+    name,
+    code,
+    instructor,
+    color,
+    semester_id,
+    sessions: pendingSessions
+  };
 
-    if (!currentUser) return alert("Please sign in first.");
-    if (!title && !content) return alert("Please enter a note title or note content.");
+  const saved = await upsertRecord("courses", payload);
+  if (!saved) return;
 
-    let error;
-    if (editingNoteId) {
-      ({ error } = await supabase.from("notes").update({ title, content }).eq("id", editingNoteId));
-    } else {
-      ({ error } = await supabase.from("notes").insert({
-        user_id: currentUser.id,
-        title,
-        content
-      }));
-    }
+  await loadAllData();
+  populateCourseOptions();
+  renderAll();
+  resetCourseModal();
+  closeModal("courseModal");
+}
 
-    if (error) return alert(error.message);
+if (saveCourseBtn) {
+  saveCourseBtn.addEventListener("click", saveCourse);
+}
 
-    closeModal("noteModal");
-    resetNoteModal();
-    await loadNotes();
+async function saveTask() {
+  const title = taskTitleInput.value.trim();
+  if (!title) {
+    alert("Please enter a task title.");
+    return;
   }
 
-  async function saveTask() {
-    const title = taskTitleInput.value.trim();
-    const details = taskDetailsInput.value.trim();
-    const courseId = taskCourseInput.value || null;
-    const date = taskDateInput.value;
-    const priority = taskPriorityInput.value || "High";
-    const status = taskStatusInput.value || "To Do";
+  const payload = {
+    id: generateId("task"),
+    title,
+    details: taskDetailsInput.value.trim(),
+    course_id: taskCourseInput.value || null,
+    due_date: taskDateInput.value || null,
+    priority: taskPriorityInput.value || "",
+    status: taskStatusInput.value || "To Do"
+  };
 
-    if (!currentUser) return alert("Please sign in first.");
-    if (!title || !date) return alert("Please enter both task title and due date.");
+  const saved = await upsertRecord("tasks", payload);
+  if (!saved) return;
 
-    let error;
-    if (editingTaskId) {
-      ({ error } = await supabase.from("tasks").update({
-        title,
-        details,
-        course_id: courseId,
-        due_date: date,
-        priority,
-        status
-      }).eq("id", editingTaskId));
-    } else {
-      ({ error } = await supabase.from("tasks").insert({
-        user_id: currentUser.id,
-        title,
-        details,
-        course_id: courseId,
-        due_date: date,
-        priority,
-        status
-      }));
-    }
+  taskTitleInput.value = "";
+  taskDetailsInput.value = "";
+  taskCourseInput.value = "";
+  taskDateInput.value = "";
+  taskPriorityInput.value = "";
+  taskStatusInput.value = "";
 
-    if (error) return alert(error.message);
+  await loadAllData();
+  renderAll();
+  closeModal("taskModal");
+}
 
-    closeModal("taskModal");
-    resetTaskModal();
-    await loadTasks();
+if (addTaskBtn) addTaskBtn.addEventListener("click", saveTask);
+
+async function saveNote() {
+  const title = noteTitleInput.value.trim();
+  if (!title) {
+    alert("Please enter a note title.");
+    return;
   }
 
-  async function saveExam() {
-    const title = examTitleInput.value.trim();
-    const course = examCourseInput.value.trim();
-    const date = examDateInput.value;
-    const time = examTimeInput.value;
-    const place = examPlaceInput.value.trim();
-    const seatNumber = examSeatNumberInput.value.trim();
-    const grade = examGradeInput.value.trim();
-    const mark = examMarkInput.value.trim();
-    const notesValue = examNotesInput.value.trim();
+  const payload = {
+    id: generateId("note"),
+    title,
+    content: noteContentInput.value.trim()
+  };
 
-    if (!currentUser) return alert("Please sign in first.");
-    if (!title || !date) return alert("Please enter both exam title and exam date.");
+  const saved = await upsertRecord("notes", payload);
+  if (!saved) return;
 
-    let error;
-    if (editingExamId) {
-      ({ error } = await supabase.from("exams").update({
-        title,
-        course,
-        exam_date: date,
-        exam_time: time,
-        place,
-        seat_number: seatNumber,
-        grade,
-        mark: mark === "" ? null : mark,
-        notes: notesValue
-      }).eq("id", editingExamId));
-    } else {
-      ({ error } = await supabase.from("exams").insert({
-        user_id: currentUser.id,
-        title,
-        course,
-        exam_date: date,
-        exam_time: time,
-        place,
-        seat_number: seatNumber,
-        grade,
-        mark: mark === "" ? null : mark,
-        notes: notesValue
-      }));
-    }
+  noteTitleInput.value = "";
+  noteContentInput.value = "";
 
-    if (error) return alert(error.message);
+  await loadAllData();
+  renderAll();
+  closeModal("noteModal");
+}
 
-    closeModal("examModal");
-    resetExamModal();
-    await loadExams();
+if (saveNoteBtn) saveNoteBtn.addEventListener("click", saveNote);
+
+async function saveExam() {
+  const title = examTitleInput.value.trim();
+  if (!title) {
+    alert("Please enter an exam title.");
+    return;
   }
 
-  async function saveEvent() {
-    const title = eventTitleInput.value.trim();
-    const date = eventDateInput.value;
-    const startTime = eventStartTimeInput.value;
-    const endTime = eventEndTimeInput.value;
-    const location = eventLocationInput.value.trim();
-    const details = eventDetailsInput.value.trim();
+  const payload = {
+    id: generateId("exam"),
+    title,
+    course_name: examCourseInput.value.trim(),
+    date: examDateInput.value || null,
+    time: examTimeInput.value || null,
+    place: examPlaceInput.value.trim(),
+    seat_number: examSeatNumberInput.value.trim(),
+    grade: examGradeInput.value.trim(),
+    mark: examMarkInput.value ? Number(examMarkInput.value) : null,
+    notes: examNotesInput.value.trim()
+  };
 
-    if (!currentUser) return alert("Please sign in first.");
-    if (!title || !date) return alert("Please enter at least an event title and date.");
+  const saved = await upsertRecord("exams", payload);
+  if (!saved) return;
 
-    let error;
-    if (editingEventId) {
-      ({ error } = await supabase.from("events").update({
-        title,
-        event_date: date,
-        start_time: startTime,
-        end_time: endTime,
-        location,
-        details
-      }).eq("id", editingEventId));
-    } else {
-      ({ error } = await supabase.from("events").insert({
-        user_id: currentUser.id,
-        title,
-        event_date: date,
-        start_time: startTime,
-        end_time: endTime,
-        location,
-        details
-      }));
-    }
+  examTitleInput.value = "";
+  examCourseInput.value = "";
+  examDateInput.value = "";
+  examTimeInput.value = "";
+  examPlaceInput.value = "";
+  examSeatNumberInput.value = "";
+  examGradeInput.value = "";
+  examMarkInput.value = "";
+  examNotesInput.value = "";
 
-    if (error) return alert(error.message);
+  await loadAllData();
+  renderAll();
+  closeModal("examModal");
+}
 
-    closeModal("eventModal");
-    resetEventModal();
-    await loadEvents();
+if (saveExamBtn) saveExamBtn.addEventListener("click", saveExam);
+
+async function saveEvent() {
+  const title = eventTitleInput.value.trim();
+  if (!title) {
+    alert("Please enter an event title.");
+    return;
   }
 
-  async function deleteAcademicYear(id) {
-    const { error } = await supabase.from("academic_years").delete().eq("id", id);
-    if (error) return alert(error.message);
-    await loadAcademicYears();
-    await loadSemesters();
-    await loadCourses();
-    await loadCourseSessions();
+  const payload = {
+    id: generateId("event"),
+    title,
+    date: eventDateInput.value || null,
+    start_time: eventStartTimeInput.value || null,
+    end_time: eventEndTimeInput.value || null,
+    location: eventLocationInput.value.trim(),
+    details: eventDetailsInput.value.trim()
+  };
+
+  const saved = await upsertRecord("events", payload);
+  if (!saved) return;
+
+  eventTitleInput.value = "";
+  eventDateInput.value = "";
+  eventStartTimeInput.value = "";
+  eventEndTimeInput.value = "";
+  eventLocationInput.value = "";
+  eventDetailsInput.value = "";
+
+  await loadAllData();
+  renderAll();
+  closeModal("eventModal");
+}
+
+if (saveEventBtn) saveEventBtn.addEventListener("click", saveEvent);
+
+async function saveAcademicYear() {
+  const name = academicYearNameInput.value.trim();
+  if (!name) {
+    alert("Please enter an academic year.");
+    return;
   }
 
-  async function deleteSemester(id) {
-    const { error } = await supabase.from("semesters").delete().eq("id", id);
-    if (error) return alert(error.message);
-    await loadSemesters();
-    await loadCourses();
-    await loadCourseSessions();
+  const saved = await upsertRecord("academic_years", {
+    id: generateId("academic-year"),
+    name
+  });
+
+  if (!saved) return;
+
+  academicYearNameInput.value = "";
+  await loadAllData();
+  populateSemesterOptions();
+  renderAll();
+  closeModal("academicYearModal");
+}
+
+if (saveAcademicYearBtn) saveAcademicYearBtn.addEventListener("click", saveAcademicYear);
+
+async function saveSemester() {
+  const academic_year_id = semesterAcademicYearInput.value;
+  const name = semesterNameInput.value.trim();
+  const start_date = semesterStartDateInput.value || null;
+  const end_date = semesterEndDateInput.value || null;
+
+  if (!academic_year_id || !name) {
+    alert("Please choose an academic year and enter a semester name.");
+    return;
   }
 
-  async function deleteCourse(id) {
-    const { error } = await supabase.from("courses").delete().eq("id", id);
-    if (error) return alert(error.message);
-    await loadCourses();
-    await loadCourseSessions();
-    await loadTasks();
-  }
+  const saved = await upsertRecord("semesters", {
+    id: generateId("semester"),
+    academic_year_id,
+    name,
+    start_date,
+    end_date
+  });
 
-  async function deleteNote(id) {
-    const { error } = await supabase.from("notes").delete().eq("id", id);
-    if (error) return alert(error.message);
-    await loadNotes();
-  }
+  if (!saved) return;
 
-  async function deleteTaskFromSupabase(id) {
-    const { error } = await supabase.from("tasks").delete().eq("id", id);
-    if (error) return alert(error.message);
-    await loadTasks();
-  }
+  semesterAcademicYearInput.value = "";
+  semesterNameInput.value = "";
+  semesterStartDateInput.value = "";
+  semesterEndDateInput.value = "";
 
-  async function deleteExamFromSupabase(id) {
-    const { error } = await supabase.from("exams").delete().eq("id", id);
-    if (error) return alert(error.message);
-    await loadExams();
-  }
+  await loadAllData();
+  populateSemesterOptions();
+  renderAll();
+  closeModal("semesterModal");
+}
 
-  async function deleteEventFromSupabase(id) {
-    const { error } = await supabase.from("events").delete().eq("id", id);
-    if (error) return alert(error.message);
-    await loadEvents();
-  }
+if (saveSemesterBtn) saveSemesterBtn.addEventListener("click", saveSemester);
 
-  async function updateTaskStatus(id, status) {
-    const { error } = await supabase.from("tasks").update({ status }).eq("id", id);
-    if (error) return alert(error.message);
-    await loadTasks();
-  }
+function getCourseById(courseId) {
+  return courses.find(function (course) {
+    return course.id === courseId;
+  }) || null;
+}
 
-  function editAcademicYear(id) {
-    const item = academicYears.find(function (year) {
-      return year.id === id;
+function getSessionsForDate(date) {
+  const dateKey = toDateKey(date);
+  const dayName = dayNameFromDate(date);
+
+  const items = [];
+
+  courses.forEach(function (course) {
+    const sessions = Array.isArray(course.sessions) ? course.sessions : [];
+
+    sessions.forEach(function (session, index) {
+      const weeklyMatch = session.repeatType === "weekly" && session.dayOfWeek === dayName;
+      const specificMatch = session.repeatType === "specific" && session.specificDate === dateKey;
+
+      if (weeklyMatch || specificMatch) {
+        items.push({
+          type: "course",
+          id: `${course.id}-${index}-${dateKey}`,
+          title: `${course.name} - ${session.sessionType}`,
+          timeLabel: `${formatTime(session.startTime)} - ${formatTime(session.endTime)}`,
+          color: course.color || "#5666dd",
+          location: session.location || "",
+          courseId: course.id
+        });
+      }
     });
-    if (!item) return;
-    academicYearNameInput.value = item.name || "";
-    editingAcademicYearId = id;
-    saveAcademicYearBtn.textContent = "Update Academic Year";
-    openModal("academicYearModal");
-  }
+  });
 
-  function editSemester(id) {
-    const item = semesters.find(function (semester) {
-      return semester.id === id;
-    });
-    if (!item) return;
-    refreshAcademicYearOptions();
-    semesterAcademicYearInput.value = item.academicYearId || "";
-    semesterNameInput.value = item.name || "";
-    semesterStartDateInput.value = item.startDate || "";
-    semesterEndDateInput.value = item.endDate || "";
-    editingSemesterId = id;
-    saveSemesterBtn.textContent = "Update Semester";
-    openModal("semesterModal");
-  }
+  return items.sort(function (a, b) {
+    return (a.timeLabel || "").localeCompare(b.timeLabel || "");
+  });
+}
 
-  function editCourse(id) {
-    const item = courses.find(function (course) {
-      return course.id === id;
-    });
-    if (!item) return;
+function isPastExam(exam) {
+  if (!exam.date) return false;
+  const now = new Date();
+  const examDateTime = new Date(`${exam.date}T${exam.time || "23:59"}`);
+  return examDateTime < now;
+}
 
-    const existingSessions = courseSessions.filter(function (session) {
-      return session.courseId === id;
-    });
+function getItemsForDate(dateKey) {
+  const dateObj = new Date(dateKey + "T00:00:00");
+  const courseItems = getSessionsForDate(dateObj);
 
-    refreshSemesterOptions();
-    courseNameInput.value = item.name || "";
-    courseCodeInput.value = item.code || "";
-    courseInstructorInput.value = item.instructor || "";
-    courseColorInput.value = item.color || "#4f5fd7";
-    courseSemesterInput.value = item.semesterId || "";
-    editingCourseId = id;
-    pendingSessions = existingSessions.map(function (session) {
+  const examItems = exams
+    .filter(function (exam) {
+      return exam.date === dateKey;
+    })
+    .map(function (exam) {
       return {
-        sessionType: session.sessionType,
-        repeatType: session.repeatType,
-        dayOfWeek: session.dayOfWeek,
-        specificDate: session.specificDate,
-        startTime: session.startTime,
-        endTime: session.endTime,
-        location: session.location
+        type: "custom",
+        id: "exam-" + exam.id,
+        title: "Exam: " + exam.title,
+        timeLabel: exam.time || "Time not set",
+        color: "#0f766e",
+        location: exam.place || "",
+        isPast: isPastExam(exam)
       };
     });
-    renderPendingSessions();
-    saveCourseBtn.textContent = "Update Course";
-    openModal("courseModal");
-  }
 
-  function editNote(id) {
-    const item = notes.find(function (note) {
-      return note.id === id;
-    });
-    if (!item) return;
-    noteTitleInput.value = item.title || "";
-    noteContentInput.value = item.content || "";
-    editingNoteId = id;
-    saveNoteBtn.textContent = "Update Note";
-    openModal("noteModal");
-  }
-
-  function editTask(id) {
-    const task = tasks.find(function (item) {
-      return String(item.id) === String(id);
-    });
-    if (!task) return;
-    refreshTaskCourseOptions();
-    taskTitleInput.value = task.title || "";
-    taskDetailsInput.value = task.details || "";
-    taskCourseInput.value = task.courseId || "";
-    taskDateInput.value = task.date || "";
-    taskPriorityInput.value = task.priority || "High";
-    taskStatusInput.value = task.status || "To Do";
-    editingTaskId = id;
-    addTaskBtn.textContent = "Update Task";
-    openModal("taskModal");
-  }
-
-  function editExam(id) {
-    const exam = exams.find(function (item) {
-      return String(item.id) === String(id);
-    });
-    if (!exam) return;
-    examTitleInput.value = exam.title || "";
-    examCourseInput.value = exam.course || "";
-    examDateInput.value = exam.date || "";
-    examTimeInput.value = exam.time || "";
-    examPlaceInput.value = exam.place || "";
-    examSeatNumberInput.value = exam.seatNumber || "";
-    examGradeInput.value = exam.grade || "";
-    examMarkInput.value = exam.mark || "";
-    examNotesInput.value = exam.notes || "";
-    editingExamId = id;
-    saveExamBtn.textContent = "Update Exam";
-    openModal("examModal");
-  }
-
-  function editEvent(id) {
-    const event = events.find(function (item) {
-      return String(item.id) === String(id);
-    });
-    if (!event) return;
-    eventTitleInput.value = event.title || "";
-    eventDateInput.value = event.date || "";
-    eventStartTimeInput.value = event.startTime || "";
-    eventEndTimeInput.value = event.endTime || "";
-    eventLocationInput.value = event.location || "";
-    eventDetailsInput.value = event.details || "";
-    editingEventId = id;
-    saveEventBtn.textContent = "Update Event";
-    openModal("eventModal");
-  }
-
-  function openTaskDetails(task) {
-    showDetailModal(task.title, [
-      ["Type", "Task"],
-      ["Title", task.title],
-      ["Course", getCourseName(task.courseId)],
-      ["Due Date", task.date],
-      ["Priority", task.priority],
-      ["Status", task.status],
-      ["Details", task.details || "No details added."]
-    ]);
-  }
-
-  function openExamDetails(exam) {
-    showDetailModal(exam.title, [
-      ["Type", "Exam"],
-      ["Course", exam.course || "No course entered"],
-      ["Date", exam.date || "No date entered"],
-      ["Time", exam.time || "No time entered"],
-      ["Place", exam.place || "No place entered"],
-      ["Seat Number", exam.seatNumber || "No seat number entered"],
-      ["Grade", exam.grade || "Not entered"],
-      ["Mark", exam.mark !== "" && exam.mark !== null ? exam.mark : "Not entered"],
-      ["Notes", exam.notes || "No notes added."]
-    ]);
-  }
-
-  function openEventDetails(eventItem) {
-    showDetailModal(eventItem.title, [
-      ["Type", "Event"],
-      ["Date", eventItem.date || "No date"],
-      ["Time", [eventItem.startTime, eventItem.endTime].filter(Boolean).join(" - ") || "No time"],
-      ["Location", eventItem.location || "No location"],
-      ["Details", eventItem.details || "No details added."]
-    ]);
-  }
-
-  function renderCourses() {
-    if (!coursesList) return;
-    coursesList.innerHTML = "";
-
-    if (!currentUser) {
-      coursesList.innerHTML = '<div class="empty-state">Please sign in to view courses.</div>';
-      return;
-    }
-
-    if (courses.length === 0) {
-      coursesList.innerHTML = '<div class="empty-state">No courses added yet.</div>';
-      return;
-    }
-
-    courses.forEach(function (course) {
-      const semester = semesters.find(function (item) {
-        return item.id === course.semesterId;
-      });
-
-      const sessions = courseSessions.filter(function (session) {
-        return session.courseId === course.id;
-      });
-
-      const sessionsHtml = sessions.length
-        ? sessions.map(function (session) {
-            return `
-              <div class="detail-item" style="margin-top:10px;">
-                <strong>${session.sessionType}</strong>
-                <div class="meta">Repeat: ${session.repeatType === "weekly" ? "Weekly" : "Specific date"}</div>
-                <div class="meta">${session.repeatType === "weekly" ? "Day: " + (session.dayOfWeek || "Not set") : "Date: " + (session.specificDate || "Not set")}</div>
-                <div class="meta">Time: ${session.startTime || "?"} - ${session.endTime || "?"}</div>
-                <div class="meta">Location: ${session.location || "Not set"}</div>
-              </div>
-            `;
-          }).join("")
-        : '<div class="empty-state">No sessions yet.</div>';
-
-      const card = document.createElement("div");
-      card.className = "course-card";
-      card.innerHTML = `
-        <h3 class="task-title">${course.name}</h3>
-        <div class="badge-row">
-          ${course.code ? `<span class="course-badge" style="background:${course.color};">${course.code}</span>` : ""}
-        </div>
-        <p class="meta">Instructor: ${course.instructor || "Not set"}</p>
-        <p class="meta">Semester: ${semester ? semester.name : "Not set"}</p>
-        ${sessionsHtml}
-        <div class="card-actions" style="margin-top:12px;">
-          <button class="edit-btn" data-edit-course="${course.id}" type="button">Edit</button>
-          <button class="delete-btn" data-delete-course="${course.id}" type="button">Delete</button>
-        </div>
-      `;
-      coursesList.appendChild(card);
-    });
-  }
-
-  function renderNotes() {
-    if (!notesList) return;
-    notesList.innerHTML = "";
-
-    if (!currentUser) {
-      notesList.innerHTML = '<div class="empty-state">Please sign in to view notes.</div>';
-      return;
-    }
-
-    if (notes.length === 0) {
-      notesList.innerHTML = '<div class="empty-state">No notes added yet.</div>';
-      return;
-    }
-
-    notes.forEach(function (note) {
-      const card = document.createElement("div");
-      card.className = "note-card";
-      card.innerHTML = `
-        <h3 class="task-title">${note.title || "Untitled Note"}</h3>
-        <p class="meta">${(note.content || "").replace(/\n/g, "<br>") || "No content added."}</p>
-        <div class="card-actions">
-          <button class="edit-btn" data-edit-note="${note.id}" type="button">Edit</button>
-          <button class="delete-btn" data-delete-note="${note.id}" type="button">Delete</button>
-        </div>
-      `;
-      notesList.appendChild(card);
-    });
-  }
-
-  function renderAcademic() {
-    if (!academicYearsList) return;
-    academicYearsList.innerHTML = "";
-
-    if (!currentUser) {
-      academicYearsList.innerHTML = '<div class="empty-state">Please sign in to view academic settings.</div>';
-      return;
-    }
-
-    if (academicYears.length === 0) {
-      academicYearsList.innerHTML = '<div class="empty-state">No academic years added yet.</div>';
-      return;
-    }
-
-    academicYears.forEach(function (year) {
-      const yearBox = document.createElement("div");
-      yearBox.className = "academic-card";
-
-      const matchingSemesters = semesters.filter(function (semester) {
-        return semester.academicYearId === year.id;
-      });
-
-      const semestersHtml = matchingSemesters.length
-        ? matchingSemesters.map(function (semester) {
-            return `
-              <div class="semester-box">
-                <h4 class="task-title">${semester.name}</h4>
-                <p class="meta">Start: ${semester.startDate || "Not set"}</p>
-                <p class="meta">End: ${semester.endDate || "Not set"}</p>
-                <div class="card-actions">
-                  <button class="edit-btn" data-edit-semester="${semester.id}" type="button">Edit</button>
-                  <button class="delete-btn" data-delete-semester="${semester.id}" type="button">Delete</button>
-                </div>
-              </div>
-            `;
-          }).join("")
-        : '<div class="empty-state">No semesters yet.</div>';
-
-      yearBox.innerHTML = `
-        <h3 class="task-title">${year.name}</h3>
-        <div class="card-actions" style="margin-bottom:12px;">
-          <button class="edit-btn" data-edit-academic-year="${year.id}" type="button">Edit</button>
-          <button class="delete-btn" data-delete-academic-year="${year.id}" type="button">Delete</button>
-        </div>
-        ${semestersHtml}
-      `;
-
-      academicYearsList.appendChild(yearBox);
-    });
-  }
-
-  function renderTasks() {
-    if (!plannerList) return;
-    plannerList.innerHTML = "";
-
-    if (!currentUser) {
-      plannerList.innerHTML = '<div class="empty-state">Please sign in to view synced tasks.</div>';
-      return;
-    }
-
-    if (tasks.length === 0) {
-      plannerList.innerHTML = '<div class="empty-state">No tasks added yet.</div>';
-      return;
-    }
-
-    tasks.forEach(function (task) {
-      const card = document.createElement("div");
-      const isDone = task.status === "Done";
-      const isPast = isPastDate(task.date);
-
-      card.className = "day-card";
-      if (isDone) card.classList.add("task-done-card");
-      if (isPast) card.classList.add("past-item");
-
-      const priorityClass =
-        task.priority === "High" ? "priority-high" :
-        task.priority === "Medium" ? "priority-medium" :
-        "priority-low";
-
-      const statusClass =
-        task.status === "To Do" ? "status-todo" :
-        task.status === "In Progress" ? "status-progress" :
-        "status-done";
-
-      card.innerHTML = `
-        <div class="task-card-summary">
-          <h3 class="task-title ${isDone ? "task-done-title" : ""}">${task.title}</h3>
-          <div class="badge-row">
-            <span class="priority-badge ${priorityClass}">${task.priority}</span>
-            <span class="status-badge ${statusClass}">${task.status}</span>
-          </div>
-          <p class="meta">Course: ${getCourseName(task.courseId)}</p>
-          <p class="meta">Due: ${task.date}</p>
-        </div>
-
-        <button class="secondary-btn task-expand-btn" data-toggle-task="${task.id}" type="button">Open Task</button>
-
-        <div class="task-card-expanded hidden" id="taskExpanded-${task.id}">
-          <p class="meta">${task.details ? String(task.details).replace(/\n/g, "<br>") : "No details added."}</p>
-
-          <div class="inline-status-controls">
-            <button class="mini-btn secondary-btn" data-task-status="${task.id}" data-status-value="To Do" type="button">To Do</button>
-            <button class="mini-btn secondary-btn" data-task-status="${task.id}" data-status-value="In Progress" type="button">In Progress</button>
-            <button class="mini-btn secondary-btn" data-task-status="${task.id}" data-status-value="Done" type="button">Done</button>
-          </div>
-
-          <div class="card-actions">
-            <button class="view-btn" data-view-task="${task.id}" type="button">View</button>
-            <button class="edit-btn" data-edit-task="${task.id}" type="button">Edit</button>
-            <button class="delete-btn" data-delete-task="${task.id}" type="button">Delete</button>
-          </div>
-        </div>
-      `;
-      plannerList.appendChild(card);
-    });
-  }
-
-  function renderExams() {
-    if (!examsList) return;
-    examsList.innerHTML = "";
-
-    if (!currentUser) {
-      examsList.innerHTML = '<div class="empty-state">Please sign in to view synced exams.</div>';
-      return;
-    }
-
-    if (exams.length === 0) {
-      examsList.innerHTML = '<div class="empty-state">No exams added yet.</div>';
-      return;
-    }
-
-    exams.forEach(function (exam) {
-      const card = document.createElement("div");
-      const isPast = isPastExam(exam);
-
-      card.className = "day-card";
-      if (isPast) card.classList.add("past-item");
-
-      card.innerHTML = `
-        <h3 class="task-title">${exam.title}</h3>
-        <div class="badge-row">
-          <span class="status-badge status-progress">${exam.course || "Exam"}</span>
-          ${exam.grade ? `<span class="priority-badge priority-low">Grade: ${exam.grade}</span>` : ""}
-          ${exam.mark !== "" && exam.mark !== null ? `<span class="priority-badge priority-medium">Mark: ${exam.mark}</span>` : ""}
-        </div>
-        <p class="meta">Date: ${exam.date || "Not set"}</p>
-        <p class="meta">Time: ${exam.time || "Not set"}</p>
-        <p class="meta">Place: ${exam.place || "Not set"}</p>
-        <p class="meta">Seat: ${exam.seatNumber || "Not set"}</p>
-        <p class="meta">${exam.notes ? String(exam.notes).replace(/\n/g, "<br>") : "No revision notes added."}</p>
-
-        <div class="card-actions">
-          <button class="view-btn" data-view-exam="${exam.id}" type="button">View</button>
-          <button class="edit-btn" data-edit-exam="${exam.id}" type="button">Edit</button>
-          <button class="delete-btn" data-delete-exam="${exam.id}" type="button">Delete</button>
-        </div>
-      `;
-      examsList.appendChild(card);
-    });
-  }
-
-  function getStartOfWeek(date) {
-    const result = new Date(date);
-    result.setHours(0, 0, 0, 0);
-    result.setDate(result.getDate() - result.getDay());
-    return result;
-  }
-
-  function getSessionsForDate(dateObj) {
-    const dateKey = formatDateKey(dateObj);
-    const dayName = dateObj.toLocaleDateString("en-US", { weekday: "long" });
-
-    return courseSessions
-      .filter(function (session) {
-        if (session.repeatType === "weekly") {
-          return session.dayOfWeek === dayName;
-        }
-        return session.specificDate === dateKey;
-      })
-      .map(function (session) {
-        const course = courses.find(function (item) {
-          return item.id === session.courseId;
-        });
-        return {
-          type: "course",
-          id: "course-session-" + session.id,
-          title: (course ? course.name : "Course") + " (" + session.sessionType + ")",
-          timeLabel: (session.startTime || "?") + " - " + (session.endTime || "?"),
-          color: course ? (course.color || "#4f5fd7") : "#4f5fd7",
-          location: session.location || "",
-          details: session.location || "",
-          isPast: false
-        };
-      });
-  }
-
-  function getDashboardItemsForDate(dateKey) {
-    const dateObj = new Date(dateKey + "T00:00:00");
-    const courseItems = getSessionsForDate(dateObj);
-
-    const examItems = exams
-      .filter(function (exam) {
-        return exam.date === dateKey;
-      })
-      .map(function (exam) {
-        return {
-          type: "exam",
-          id: "exam-" + exam.id,
-          title: "Exam: " + exam.title,
-          timeLabel: exam.time || "Time not set",
-          color: "#0f766e",
-          location: exam.place || "",
-          details: exam.notes || "",
-          isPast: isPastExam(exam)
-        };
-      });
-
-    const eventItems = events
-      .filter(function (event) {
-        return event.date === dateKey;
-      })
-      .map(function (event) {
-        return {
-          type: "event",
-          id: "event-" + event.id,
-          title: event.title,
-          timeLabel: event.startTime && event.endTime ? event.startTime + " - " + event.endTime : (event.startTime || "All day"),
-          color: "#7c3aed",
-          location: event.location || "",
-          details: event.details || "",
-          isPast: isPastEvent(event)
-        };
-      });
-
-    return courseItems.concat(examItems, eventItems);
-  }
-
-  function getCalendarItemsForDate(dateKey) {
-    const dateObj = new Date(dateKey + "T00:00:00");
-    const courseItems = getSessionsForDate(dateObj);
-
-    const taskItems = tasks
-      .filter(function (task) {
-        return task.date === dateKey;
-      })
-      .map(function (task) {
-        return {
-          type: "task",
-          id: "task-" + task.id,
-          title: "Task: " + task.title,
-          timeLabel: task.status === "Done" ? "Done" : "All day",
-          color: "#dc2626",
-          location: "",
-          details: task.details || "",
-          isPast: isPastDate(task.date) || task.status === "Done"
-        };
-      });
-
-    const examItems = exams
-      .filter(function (exam) {
-        return exam.date === dateKey;
-      })
-      .map(function (exam) {
-        return {
-          type: "exam",
-          id: "exam-" + exam.id,
-          title: "Exam: " + exam.title,
-          timeLabel: exam.time || "Time not set",
-          color: "#0f766e",
-          location: exam.place || "",
-          details: exam.notes || "",
-          isPast: isPastExam(exam)
-        };
-      });
-
-    const eventItems = events
-      .filter(function (event) {
-        return event.date === dateKey;
-      })
-      .map(function (event) {
-        return {
-          type: "event",
-          id: "event-" + event.id,
-          title: event.title,
-          timeLabel: event.startTime && event.endTime ? event.startTime + " - " + event.endTime : (event.startTime || "All day"),
-          color: "#7c3aed",
-          location: event.location || "",
-          details: event.details || "",
-          isPast: isPastEvent(event)
-        };
-      });
-
-    return courseItems.concat(taskItems, examItems, eventItems);
-  }
-
-  function renderDashboardDaySchedule(dayKey, container) {
-    if (!container) return;
-    container.innerHTML = "";
-
-    if (!currentUser) {
-      container.innerHTML = '<div class="empty-state">Sign in to load schedule.</div>';
-      return;
-    }
-
-    const items = getDashboardItemsForDate(dayKey);
-
-    if (items.length === 0) {
-      container.innerHTML = '<div class="empty-state">No items scheduled.</div>';
-      return;
-    }
-
-    items.forEach(function (item) {
-      const row = document.createElement("div");
-      row.className = "detail-item";
-      if (item.isPast) row.classList.add("past-item");
-      row.innerHTML = `
-        <strong>${item.title}</strong>
-        <div class="meta">${item.timeLabel}${item.location ? " • " + item.location : ""}</div>
-      `;
-      container.appendChild(row);
-    });
-  }
-
-  function renderDashboardUpcomingTasks() {
-    if (!dashboardUpcomingTasks) return;
-    dashboardUpcomingTasks.innerHTML = "";
-
-    if (!currentUser) {
-      dashboardUpcomingTasks.innerHTML = '<div class="empty-state">Sign in to load tasks.</div>';
-      return;
-    }
-
-    const upcoming = tasks
-      .filter(function (task) {
-        return task.date && !isPastDate(task.date) && task.status !== "Done";
-      })
-      .sort(function (a, b) {
-        return new Date(a.date) - new Date(b.date);
-      });
-
-    if (upcoming.length === 0) {
-      dashboardUpcomingTasks.innerHTML = '<div class="empty-state">No upcoming tasks.</div>';
-      return;
-    }
-
-    upcoming.forEach(function (task) {
-      const item = document.createElement("div");
-      item.className = "detail-item";
-      item.innerHTML = `
-        <strong>${task.title}</strong>
-        <div class="meta">Course: ${getCourseName(task.courseId)}</div>
-        <div class="meta">Due ${task.date} • ${task.status} • ${task.priority}</div>
-      `;
-      dashboardUpcomingTasks.appendChild(item);
-    });
-  }
-
-  function renderDashboardUpcomingExams() {
-    if (!dashboardUpcomingExams) return;
-    dashboardUpcomingExams.innerHTML = "";
-
-    if (!currentUser) {
-      dashboardUpcomingExams.innerHTML = '<div class="empty-state">Sign in to load exams.</div>';
-      return;
-    }
-
-    const upcoming = exams
-      .filter(function (exam) {
-        return exam.date && isWithinNext3Weeks(exam.date);
-      })
-      .sort(function (a, b) {
-        return new Date(a.date) - new Date(b.date);
-      });
-
-    if (upcoming.length === 0) {
-      dashboardUpcomingExams.innerHTML = '<div class="empty-state">No exams in the next 3 weeks.</div>';
-      return;
-    }
-
-    upcoming.forEach(function (exam) {
-      const item = document.createElement("div");
-      item.className = "detail-item";
-      item.innerHTML = `
-        <strong>${exam.title}</strong>
-        <div class="meta">${exam.course || "Exam"} • ${exam.date}${exam.time ? " • " + exam.time : ""}</div>
-      `;
-      dashboardUpcomingExams.appendChild(item);
-    });
-  }
-
-  function renderDashboard() {
-    renderDashboardUpcomingTasks();
-    renderDashboardUpcomingExams();
-
-    const today = new Date();
-    const tomorrow = new Date();
-    tomorrow.setDate(today.getDate() + 1);
-
-    renderDashboardDaySchedule(formatDateKey(today), dashboardToday);
-    renderDashboardDaySchedule(formatDateKey(tomorrow), dashboardTomorrow);
-  }
-
-  function showDetailModal(title, items) {
-    if (!detailTitle || !detailBody) return;
-    detailTitle.textContent = title;
-    detailBody.innerHTML = items.map(function (pair) {
-      return `
-        <div class="detail-item">
-          <div class="meta"><strong>${pair[0]}</strong></div>
-          <div>${pair[1]}</div>
-        </div>
-      `;
-    }).join("");
-    openModal("detailModal");
-  }
-
-  function openCalendarItem(itemId) {
-    if (String(itemId).startsWith("task-")) {
-      const realId = itemId.replace("task-", "");
-      const task = tasks.find(function (item) {
-        return String(item.id) === String(realId);
-      });
-      if (task) openTaskDetails(task);
-      return;
-    }
-
-    if (String(itemId).startsWith("exam-")) {
-      const realId = itemId.replace("exam-", "");
-      const exam = exams.find(function (item) {
-        return String(item.id) === String(realId);
-      });
-      if (exam) openExamDetails(exam);
-      return;
-    }
-
-    if (String(itemId).startsWith("event-")) {
-      const realId = itemId.replace("event-", "");
-      const ev = events.find(function (item) {
-        return String(item.id) === String(realId);
-      });
-      if (ev) openEventDetails(ev);
-    }
-  }
-
-  function setCalendarView(view) {
-    currentCalendarView = view;
-
-    if (monthViewBtn) monthViewBtn.classList.remove("active-view-btn");
-    if (weekViewBtn) weekViewBtn.classList.remove("active-view-btn");
-    if (dayViewBtn) dayViewBtn.classList.remove("active-view-btn");
-
-    if (monthCalendarWrap) monthCalendarWrap.classList.add("hidden");
-    if (weekCalendarWrap) weekCalendarWrap.classList.add("hidden");
-    if (dayCalendarWrap) dayCalendarWrap.classList.add("hidden");
-
-    if (view === "month") {
-      if (monthViewBtn) monthViewBtn.classList.add("active-view-btn");
-      if (monthCalendarWrap) monthCalendarWrap.classList.remove("hidden");
-    } else if (view === "week") {
-      if (weekViewBtn) weekViewBtn.classList.add("active-view-btn");
-      if (weekCalendarWrap) weekCalendarWrap.classList.remove("hidden");
-    } else {
-      if (dayViewBtn) dayViewBtn.classList.add("active-view-btn");
-      if (dayCalendarWrap) dayCalendarWrap.classList.remove("hidden");
-    }
-
-    renderCalendar();
-  }
-
-  function renderMonthView() {
-    if (!calendarMonthLabel || !calendarGrid) return;
-
-    const year = currentCalendarDate.getFullYear();
-    const month = currentCalendarDate.getMonth();
-    calendarMonthLabel.textContent = currentCalendarDate.toLocaleString("en-US", {
-      month: "long",
-      year: "numeric"
+  const eventItems = events
+    .filter(function (event) {
+      return event.date === dateKey;
+    })
+    .map(function (event) {
+      return {
+        type: "event",
+        id: "event-" + event.id,
+        title: event.title,
+        timeLabel: `${event.start_time || ""}${event.end_time ? " - " + event.end_time : ""}`.trim() || "Time not set",
+        color: "#7c3aed",
+        location: event.location || ""
+      };
     });
 
-    calendarGrid.innerHTML = "";
+  return courseItems.concat(examItems, eventItems);
+}
 
-    const firstDay = new Date(year, month, 1);
-    const startWeekday = firstDay.getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const prevMonthDays = new Date(year, month, 0).getDate();
-    const todayKey = formatDateKey(new Date());
+function renderScheduleList(container, items) {
+  if (!container) return;
 
-    for (let i = 0; i < 42; i++) {
-      const cell = document.createElement("div");
-      cell.className = "calendar-cell";
-
-      let displayDay;
-      let displayMonth = month;
-      let displayYear = year;
-      let isOtherMonth = false;
-
-      if (i < startWeekday) {
-        displayDay = prevMonthDays - startWeekday + i + 1;
-        displayMonth = month - 1;
-        if (displayMonth < 0) {
-          displayMonth = 11;
-          displayYear = year - 1;
-        }
-        isOtherMonth = true;
-      } else if (i >= startWeekday + daysInMonth) {
-        displayDay = i - (startWeekday + daysInMonth) + 1;
-        displayMonth = month + 1;
-        if (displayMonth > 11) {
-          displayMonth = 0;
-          displayYear = year + 1;
-        }
-        isOtherMonth = true;
-      } else {
-        displayDay = i - startWeekday + 1;
-      }
-
-      const cellDate = new Date(displayYear, displayMonth, displayDay);
-      const cellKey = formatDateKey(cellDate);
-
-      if (isOtherMonth) cell.classList.add("other-month");
-      if (cellKey === todayKey) cell.classList.add("today");
-
-      const dayItems = getCalendarItemsForDate(cellKey);
-
-      const itemsHtml = dayItems.map(function (item) {
-        return `
-          <button
-            type="button"
-            class="calendar-item ${item.type}"
-            data-calendar-item="${item.id}"
-            title="${item.title}"
-            style="background:${item.color}; opacity:${item.isPast ? "0.55" : "1"};"
-          >
-            <span>${item.title}</span>
-            <small>${item.timeLabel}</small>
-          </button>
-        `;
-      }).join("");
-
-      cell.innerHTML = `
-        <div class="calendar-date">${displayDay}</div>
-        <div class="calendar-items">${itemsHtml}</div>
-      `;
-
-      calendarGrid.appendChild(cell);
-    }
+  if (!items.length) {
+    container.innerHTML = '<div class="empty-state">Nothing scheduled.</div>';
+    return;
   }
 
-  function renderWeekView() {
-    if (!calendarMonthLabel || !weekCalendarGrid) return;
-
-    const start = getStartOfWeek(currentCalendarDate);
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-
-    calendarMonthLabel.textContent =
-      formatDateLabel(formatDateKey(start)) + " - " + formatDateLabel(formatDateKey(end));
-
-    weekCalendarGrid.innerHTML = "";
-
-    for (let i = 0; i < 7; i++) {
-      const dayDate = new Date(start);
-      dayDate.setDate(start.getDate() + i);
-      const dateKey = formatDateKey(dayDate);
-      const items = getCalendarItemsForDate(dateKey);
-
-      const column = document.createElement("div");
-      column.className = "week-day-column";
-
-      const itemsHtml = items.length === 0
-        ? '<div class="empty-state">No items</div>'
-        : items.map(function (item) {
-            return `
-              <button
-                type="button"
-                class="calendar-item ${item.type}"
-                data-calendar-item="${item.id}"
-                title="${item.title}"
-                style="background:${item.color}; opacity:${item.isPast ? "0.55" : "1"};"
-              >
-                <span>${item.timeLabel} • ${item.title}</span>
-              </button>
-            `;
-          }).join("");
-
-      column.innerHTML = `
-        <div class="week-day-title">
-          ${dayDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
-        </div>
-        <div class="week-items">${itemsHtml}</div>
-      `;
-
-      weekCalendarGrid.appendChild(column);
-    }
-  }
-
-  function renderDayView() {
-    if (!calendarMonthLabel || !dayCalendarGrid) return;
-
-    const dateKey = formatDateKey(currentCalendarDate);
-    const items = getCalendarItemsForDate(dateKey);
-
-    const label = currentCalendarDate.toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric"
-    });
-
-    calendarMonthLabel.textContent = label;
-
-    const itemsHtml = items.length === 0
-      ? '<div class="empty-state">No items for this day.</div>'
-      : items.map(function (item) {
-          return `
-            <button
-              type="button"
-              class="calendar-item ${item.type}"
-              data-calendar-item="${item.id}"
-              title="${item.title}"
-              style="background:${item.color}; opacity:${item.isPast ? "0.55" : "1"};"
-            >
-              <span>${item.timeLabel} • ${item.title}</span>
-            </button>
-          `;
-        }).join("");
-
-    dayCalendarGrid.innerHTML = `
-      <div class="day-view-card">
-        <div class="day-view-title">${label}</div>
-        <div class="day-items">${itemsHtml}</div>
+  container.innerHTML = items.map(function (item) {
+    return `
+      <div class="day-card ${item.isPast ? "past-item" : ""}">
+        <h4 class="task-title">${escapeHtml(item.title)}</h4>
+        <p class="meta">${escapeHtml(item.timeLabel || "")}</p>
+        <p class="meta">${escapeHtml(item.location || "")}</p>
       </div>
     `;
+  }).join("");
+}
+
+function renderDashboard() {
+  const today = new Date();
+  const tomorrow = new Date();
+  tomorrow.setDate(today.getDate() + 1);
+
+  renderScheduleList(dashboardToday, getItemsForDate(toDateKey(today)));
+  renderScheduleList(dashboardTomorrow, getItemsForDate(toDateKey(tomorrow)));
+
+  const upcomingTasks = tasks
+    .filter(function (task) {
+      return task.status !== "Done";
+    })
+    .sort(function (a, b) {
+      return (a.due_date || "").localeCompare(b.due_date || "");
+    })
+    .slice(0, 5);
+
+  if (!dashboardUpcomingTasks) return;
+  dashboardUpcomingTasks.innerHTML = upcomingTasks.length
+    ? upcomingTasks.map(function (task) {
+        return `
+          <div class="day-card">
+            <h4 class="task-title">${escapeHtml(task.title)}</h4>
+            <p class="meta">${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
+          </div>
+        `;
+      }).join("")
+    : '<div class="empty-state">No upcoming tasks.</div>';
+
+  dashboardUpcomingExams.innerHTML = exams.length
+    ? exams
+        .slice()
+        .sort(function (a, b) {
+          return `${a.date || ""} ${a.time || ""}`.localeCompare(`${b.date || ""} ${b.time || ""}`);
+        })
+        .slice(0, 5)
+        .map(function (exam) {
+          return `
+            <div class="day-card ${isPastExam(exam) ? "past-item" : ""}">
+              <h4 class="task-title">${escapeHtml(exam.title)}</h4>
+              <p class="meta">${escapeHtml(exam.date ? formatDate(exam.date) : "No date")}</p>
+              <p class="meta">${escapeHtml(exam.time ? formatTime(exam.time) : "No time")}</p>
+            </div>
+          `;
+        })
+        .join("")
+    : '<div class="empty-state">No upcoming exams.</div>';
+}
+
+function renderCourses() {
+  if (!coursesList) return;
+
+  if (!courses.length) {
+    coursesList.innerHTML = '<div class="empty-state">No courses yet.</div>';
+    return;
   }
 
-  function renderCalendar() {
-    if (currentCalendarView === "month") renderMonthView();
-    else if (currentCalendarView === "week") renderWeekView();
-    else renderDayView();
+  coursesList.innerHTML = courses.map(function (course) {
+    const sessions = Array.isArray(course.sessions) ? course.sessions : [];
+
+    return `
+      <div class="course-card">
+        <div class="badge-row">
+          <span class="course-badge" style="background:${escapeHtml(course.color || "#5666dd")}">${escapeHtml(course.name)}</span>
+        </div>
+        <p class="meta">${escapeHtml(course.code || "No code")}</p>
+        <p class="meta">${escapeHtml(course.instructor || "No instructor")}</p>
+        <div class="task-card-expanded">
+          ${
+            sessions.length
+              ? sessions.map(function (session) {
+                  return `
+                    <div class="detail-item">
+                      <strong>${escapeHtml(session.sessionType)}</strong>
+                      <p class="meta">
+                        ${session.repeatType === "weekly"
+                          ? `Weekly on ${escapeHtml(session.dayOfWeek)}`
+                          : `Specific date: ${escapeHtml(session.specificDate)}`}
+                      </p>
+                      <p class="meta">${escapeHtml(formatTime(session.startTime))} - ${escapeHtml(formatTime(session.endTime))}</p>
+                      <p class="meta">${escapeHtml(session.location || "No location")}</p>
+                    </div>
+                  `;
+                }).join("")
+              : '<div class="empty-state">No sessions added.</div>'
+          }
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderTasks() {
+  if (!plannerList) return;
+
+  if (!tasks.length) {
+    plannerList.innerHTML = '<div class="empty-state">No tasks yet.</div>';
+    return;
   }
 
-  function moveCalendar(direction) {
-    if (currentCalendarView === "month") {
-      currentCalendarDate = new Date(
-        currentCalendarDate.getFullYear(),
-        currentCalendarDate.getMonth() + direction,
-        1
-      );
-    } else if (currentCalendarView === "week") {
-      currentCalendarDate = new Date(
-        currentCalendarDate.getFullYear(),
-        currentCalendarDate.getMonth(),
-        currentCalendarDate.getDate() + (7 * direction)
-      );
-    } else {
-      currentCalendarDate = new Date(
-        currentCalendarDate.getFullYear(),
-        currentCalendarDate.getMonth(),
-        currentCalendarDate.getDate() + direction
-      );
-    }
+  plannerList.innerHTML = tasks.map(function (task) {
+    const course = getCourseById(task.course_id);
+    const priorityClass =
+      task.priority === "High" ? "priority-high" :
+      task.priority === "Medium" ? "priority-medium" :
+      "priority-low";
+
+    const statusClass =
+      task.status === "Done" ? "status-done" :
+      task.status === "In Progress" ? "status-progress" :
+      "status-todo";
+
+    return `
+      <div class="course-card">
+        <div class="badge-row">
+          <span class="priority-badge ${priorityClass}">${escapeHtml(task.priority || "No priority")}</span>
+          <span class="status-badge ${statusClass}">${escapeHtml(task.status || "To Do")}</span>
+        </div>
+        <h4 class="task-title ${task.status === "Done" ? "task-done-title" : ""}">${escapeHtml(task.title)}</h4>
+        <p class="meta">${escapeHtml(task.details || "No details")}</p>
+        <p class="meta">Course: ${escapeHtml(course ? course.name : "No course")}</p>
+        <p class="meta">Due: ${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderNotes() {
+  if (!notesList) return;
+
+  notesList.innerHTML = notes.length
+    ? notes.map(function (note) {
+        return `
+          <div class="note-card">
+            <h4 class="task-title">${escapeHtml(note.title)}</h4>
+            <p class="meta">${escapeHtml(note.content || "No content")}</p>
+          </div>
+        `;
+      }).join("")
+    : '<div class="empty-state">No notes yet.</div>';
+}
+
+function renderExams() {
+  if (!examsList) return;
+
+  examsList.innerHTML = exams.length
+    ? exams.map(function (exam) {
+        return `
+          <div class="course-card ${isPastExam(exam) ? "past-item" : ""}">
+            <h4 class="task-title">${escapeHtml(exam.title)}</h4>
+            <p class="meta">Course: ${escapeHtml(exam.course_name || "No course")}</p>
+            <p class="meta">Date: ${escapeHtml(exam.date ? formatDate(exam.date) : "No date")}</p>
+            <p class="meta">Time: ${escapeHtml(exam.time ? formatTime(exam.time) : "No time")}</p>
+            <p class="meta">Place: ${escapeHtml(exam.place || "No place")}</p>
+            <p class="meta">Seat: ${escapeHtml(exam.seat_number || "No seat number")}</p>
+            <p class="meta">Grade: ${escapeHtml(exam.grade || "No grade")}</p>
+            <p class="meta">Mark: ${escapeHtml(exam.mark ?? "No mark")}</p>
+            <p class="meta">Notes: ${escapeHtml(exam.notes || "No notes")}</p>
+          </div>
+        `;
+      }).join("")
+    : '<div class="empty-state">No exams yet.</div>';
+}
+
+function renderAcademicYears() {
+  if (!academicYearsList) return;
+
+  if (!academicYears.length) {
+    academicYearsList.innerHTML = '<div class="empty-state">No academic years yet.</div>';
+    return;
+  }
+
+  academicYearsList.innerHTML = academicYears.map(function (year) {
+    const yearSemesters = semesters.filter(function (semester) {
+      return semester.academic_year_id === year.id;
+    });
+
+    return `
+      <div class="academic-card">
+        <h4 class="task-title">${escapeHtml(year.name)}</h4>
+        <div class="task-card-expanded">
+          ${
+            yearSemesters.length
+              ? yearSemesters.map(function (semester) {
+                  return `
+                    <div class="semester-box">
+                      <strong>${escapeHtml(semester.name)}</strong>
+                      <p class="meta">${escapeHtml(semester.start_date ? formatDate(semester.start_date) : "No start")} - ${escapeHtml(semester.end_date ? formatDate(semester.end_date) : "No end")}</p>
+                    </div>
+                  `;
+                }).join("")
+              : '<div class="empty-state">No semesters yet.</div>'
+          }
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function buildCalendarItemHtml(item) {
+  let itemClass = "event";
+  if (item.type === "course") itemClass = "course";
+  if (item.type === "custom") itemClass = "exam";
+  if (item.type === "event") itemClass = "event";
+
+  return `
+    <button class="calendar-item ${itemClass}" type="button" data-calendar-item-id="${escapeHtml(item.id)}">
+      <span>${escapeHtml(item.title)}</span>
+      <small>${escapeHtml(item.timeLabel || "")}</small>
+    </button>
+  `;
+}
+
+function renderMonthView() {
+  if (!calendarGrid) return;
+
+  const year = currentCalendarDate.getFullYear();
+  const month = currentCalendarDate.getMonth();
+
+  const firstDay = new Date(year, month, 1);
+  const startDay = firstDay.getDay();
+  const startDate = new Date(year, month, 1 - startDay);
+
+  const today = new Date();
+  const cells = [];
+
+  for (let i = 0; i < 42; i += 1) {
+    const cellDate = new Date(startDate);
+    cellDate.setDate(startDate.getDate() + i);
+
+    const key = toDateKey(cellDate);
+    const items = getItemsForDate(key);
+    const isToday = isSameDate(cellDate, today);
+    const isOtherMonth = cellDate.getMonth() !== month;
+
+    cells.push(`
+      <div class="calendar-cell ${isToday ? "today" : ""} ${isOtherMonth ? "other-month" : ""}">
+        <div class="calendar-date">${cellDate.getDate()}</div>
+        <div class="calendar-items">
+          ${items.slice(0, 3).map(buildCalendarItemHtml).join("")}
+          ${items.length > 3 ? `<div class="meta">+${items.length - 3} more</div>` : ""}
+        </div>
+      </div>
+    `);
+  }
+
+  calendarGrid.innerHTML = cells.join("");
+  calendarMonthLabel.textContent = currentCalendarDate.toLocaleDateString([], {
+    month: "long",
+    year: "numeric"
+  });
+}
+
+function renderWeekView() {
+  if (!weekCalendarGrid) return;
+
+  const today = new Date(currentCalendarDate);
+  const day = today.getDay();
+  const weekStart = new Date(today);
+  weekStart.setDate(today.getDate() - day);
+
+  const columns = [];
+
+  for (let i = 0; i < 7; i += 1) {
+    const date = new Date(weekStart);
+    date.setDate(weekStart.getDate() + i);
+    const items = getItemsForDate(toDateKey(date));
+
+    columns.push(`
+      <div class="week-day-column">
+        <div class="week-day-title">${escapeHtml(
+          date.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })
+        )}</div>
+        <div class="week-items">
+          ${items.length ? items.map(buildCalendarItemHtml).join("") : '<div class="empty-state">No items</div>'}
+        </div>
+      </div>
+    `);
+  }
+
+  weekCalendarGrid.innerHTML = columns.join("");
+  calendarMonthLabel.textContent = currentCalendarDate.toLocaleDateString([], {
+    month: "long",
+    day: "numeric",
+    year: "numeric"
+  });
+}
+
+function renderDayView() {
+  if (!dayCalendarGrid) return;
+
+  const items = getItemsForDate(toDateKey(currentCalendarDate));
+
+  dayCalendarGrid.innerHTML = `
+    <div class="day-view-card">
+      <div class="day-view-title">${escapeHtml(
+        currentCalendarDate.toLocaleDateString([], {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+          year: "numeric"
+        })
+      )}</div>
+      <div class="day-items">
+        ${items.length ? items.map(buildCalendarItemHtml).join("") : '<div class="empty-state">No items</div>'}
+      </div>
+    </div>
+  `;
+
+  calendarMonthLabel.textContent = currentCalendarDate.toLocaleDateString([], {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric"
+  });
+}
+
+function setCalendarView(view) {
+  currentCalendarView = view;
+
+  monthViewBtn.classList.toggle("active-view-btn", view === "month");
+  weekViewBtn.classList.toggle("active-view-btn", view === "week");
+  dayViewBtn.classList.toggle("active-view-btn", view === "day");
+
+  monthCalendarWrap.classList.toggle("hidden", view !== "month");
+  weekCalendarWrap.classList.toggle("hidden", view !== "week");
+  dayCalendarWrap.classList.toggle("hidden", view !== "day");
+
+  renderCalendar();
+}
+
+function renderCalendar() {
+  if (currentCalendarView === "month") renderMonthView();
+  if (currentCalendarView === "week") renderWeekView();
+  if (currentCalendarView === "day") renderDayView();
+}
+
+if (monthViewBtn) monthViewBtn.addEventListener("click", function () { setCalendarView("month"); });
+if (weekViewBtn) weekViewBtn.addEventListener("click", function () { setCalendarView("week"); });
+if (dayViewBtn) dayViewBtn.addEventListener("click", function () { setCalendarView("day"); });
+
+if (prevPeriodBtn) {
+  prevPeriodBtn.addEventListener("click", function () {
+    if (currentCalendarView === "month") currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+    if (currentCalendarView === "week") currentCalendarDate.setDate(currentCalendarDate.getDate() - 7);
+    if (currentCalendarView === "day") currentCalendarDate.setDate(currentCalendarDate.getDate() - 1);
+    currentCalendarDate = new Date(currentCalendarDate);
     renderCalendar();
-  }
-
-  if (pendingSessionsList) {
-    pendingSessionsList.addEventListener("click", function (e) {
-      const removeIndex = e.target.getAttribute("data-remove-pending-session");
-      if (removeIndex !== null) {
-        pendingSessions.splice(Number(removeIndex), 1);
-        renderPendingSessions();
-      }
-    });
-  }
-
-  if (coursesList) {
-    coursesList.addEventListener("click", async function (e) {
-      const editId = e.target.getAttribute("data-edit-course");
-      const deleteId = e.target.getAttribute("data-delete-course");
-      if (editId) editCourse(editId);
-      if (deleteId) await deleteCourse(deleteId);
-    });
-  }
-
-  if (notesList) {
-    notesList.addEventListener("click", async function (e) {
-      const editId = e.target.getAttribute("data-edit-note");
-      const deleteId = e.target.getAttribute("data-delete-note");
-      if (editId) editNote(editId);
-      if (deleteId) await deleteNote(deleteId);
-    });
-  }
-
-  if (academicYearsList) {
-    academicYearsList.addEventListener("click", async function (e) {
-      const editYearId = e.target.getAttribute("data-edit-academic-year");
-      const deleteYearId = e.target.getAttribute("data-delete-academic-year");
-      const editSemesterId = e.target.getAttribute("data-edit-semester");
-      const deleteSemesterId = e.target.getAttribute("data-delete-semester");
-
-      if (editYearId) editAcademicYear(editYearId);
-      if (deleteYearId) await deleteAcademicYear(deleteYearId);
-      if (editSemesterId) editSemester(editSemesterId);
-      if (deleteSemesterId) await deleteSemester(deleteSemesterId);
-    });
-  }
-
-  if (plannerList) {
-    plannerList.addEventListener("click", async function (e) {
-      const toggleId = e.target.getAttribute("data-toggle-task");
-      const editId = e.target.getAttribute("data-edit-task");
-      const deleteId = e.target.getAttribute("data-delete-task");
-      const viewId = e.target.getAttribute("data-view-task");
-      const taskStatusId = e.target.getAttribute("data-task-status");
-      const nextStatus = e.target.getAttribute("data-status-value");
-
-      if (toggleId !== null) {
-        const box = $("taskExpanded-" + toggleId);
-        if (box) box.classList.toggle("hidden");
-        return;
-      }
-
-      if (viewId !== null) {
-        const task = tasks.find(function (item) {
-          return String(item.id) === String(viewId);
-        });
-        if (task) openTaskDetails(task);
-      }
-
-      if (editId !== null) editTask(editId);
-      if (deleteId !== null) await deleteTaskFromSupabase(deleteId);
-      if (taskStatusId !== null && nextStatus) await updateTaskStatus(taskStatusId, nextStatus);
-    });
-  }
-
-  if (examsList) {
-    examsList.addEventListener("click", async function (e) {
-      const viewId = e.target.getAttribute("data-view-exam");
-      const editId = e.target.getAttribute("data-edit-exam");
-      const deleteId = e.target.getAttribute("data-delete-exam");
-
-      if (viewId !== null) {
-        const exam = exams.find(function (item) {
-          return String(item.id) === String(viewId);
-        });
-        if (exam) openExamDetails(exam);
-      }
-
-      if (editId !== null) editExam(editId);
-      if (deleteId !== null) await deleteExamFromSupabase(deleteId);
-    });
-  }
-
-  if (menuToggleBtn) {
-    menuToggleBtn.addEventListener("click", function () {
-      if (!tabNav) return;
-      if (window.innerWidth <= 640) {
-        tabNav.classList.toggle("menu-open");
-      }
-    });
-  }
-
-  if (monthViewBtn) monthViewBtn.addEventListener("click", function () { setCalendarView("month"); });
-  if (weekViewBtn) weekViewBtn.addEventListener("click", function () { setCalendarView("week"); });
-  if (dayViewBtn) dayViewBtn.addEventListener("click", function () { setCalendarView("day"); });
-  if (prevPeriodBtn) prevPeriodBtn.addEventListener("click", function () { moveCalendar(-1); });
-  if (nextPeriodBtn) nextPeriodBtn.addEventListener("click", function () { moveCalendar(1); });
-
-  if (saveAcademicYearBtn) saveAcademicYearBtn.addEventListener("click", saveAcademicYear);
-  if (saveSemesterBtn) saveSemesterBtn.addEventListener("click", saveSemester);
-  if (addSessionBtn) addSessionBtn.addEventListener("click", addPendingSession);
-  if (saveCourseBtn) saveCourseBtn.addEventListener("click", saveCourse);
-  if (saveNoteBtn) saveNoteBtn.addEventListener("click", saveNote);
-  if (addTaskBtn) addTaskBtn.addEventListener("click", saveTask);
-  if (saveExamBtn) saveExamBtn.addEventListener("click", saveExam);
-  if (saveEventBtn) saveEventBtn.addEventListener("click", saveEvent);
-
-  if (signUpBtn) signUpBtn.addEventListener("click", signUp);
-  if (signInBtn) signInBtn.addEventListener("click", signIn);
-  if (signOutBtn) signOutBtn.addEventListener("click", signOut);
-
-  document.addEventListener("click", function (e) {
-    const direct = e.target.getAttribute("data-calendar-item");
-    const parent = e.target.closest("[data-calendar-item]");
-    const itemId = direct || (parent ? parent.getAttribute("data-calendar-item") : null);
-    if (itemId) openCalendarItem(itemId);
   });
+}
 
-  supabase.auth.onAuthStateChange(async function (_event, session) {
-    setAuthUI(session ? session.user : null);
-
-    await loadAcademicYears();
-    await loadSemesters();
-    await loadCourses();
-    await loadCourseSessions();
-    await loadNotes();
-    await loadTasks();
-    await loadExams();
-    await loadEvents();
-
-    refreshAcademicYearOptions();
-    refreshSemesterOptions();
-    refreshTaskCourseOptions();
+if (nextPeriodBtn) {
+  nextPeriodBtn.addEventListener("click", function () {
+    if (currentCalendarView === "month") currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+    if (currentCalendarView === "week") currentCalendarDate.setDate(currentCalendarDate.getDate() + 7);
+    if (currentCalendarView === "day") currentCalendarDate.setDate(currentCalendarDate.getDate() + 1);
+    currentCalendarDate = new Date(currentCalendarDate);
+    renderCalendar();
   });
+}
 
-  async function init() {
-    const user = await getCurrentUser();
-    setAuthUI(user);
-
-    await loadAcademicYears();
-    await loadSemesters();
-    await loadCourses();
-    await loadCourseSessions();
-    await loadNotes();
-    await loadTasks();
-    await loadExams();
-    await loadEvents();
-
-    refreshAcademicYearOptions();
-    refreshSemesterOptions();
-    refreshTaskCourseOptions();
+document.addEventListener("click", function (e) {
+  const removeSessionBtn = e.target.closest("[data-remove-session]");
+  if (removeSessionBtn) {
+    const index = Number(removeSessionBtn.dataset.removeSession);
+    pendingSessions.splice(index, 1);
     renderPendingSessions();
-    renderDashboard();
-    showTab("dashboard");
-    setCalendarView("month");
+    return;
   }
 
-  init();
+  const removeDateBtn = e.target.closest("[data-remove-specific-date]");
+  if (removeDateBtn) {
+    const index = Number(removeDateBtn.dataset.removeSpecificDate);
+    pendingSpecificDates.splice(index, 1);
+    renderSpecificDatesList();
+  }
 });
+
+function renderAll() {
+  populateSemesterOptions();
+  populateCourseOptions();
+  renderPendingSessions();
+  renderSpecificDatesList();
+  renderDashboard();
+  renderCourses();
+  renderTasks();
+  renderNotes();
+  renderExams();
+  renderAcademicYears();
+  renderCalendar();
+}
+
+resetCourseModal();
+getCurrentSession();
+showTab("dashboard");
