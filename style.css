@@ -81,7 +81,6 @@ body {
   background: rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   padding: 10px 12px;
-  margin-top: 14px;
 }
 
 .brand-signed-in {
@@ -202,12 +201,9 @@ body {
 
 .topbar h2 {
   margin: 0;
+  font-size: 42px;
   line-height: 1.1;
   color: #1f2a44;
-}
-
-.page-title-sm {
-  font-size: 28px;
 }
 
 .tab-content {
@@ -235,7 +231,7 @@ body {
 }
 
 .section-header {
-  justify-content: flex-end;
+  justify-content: space-between;
   margin-bottom: 20px;
 }
 
@@ -519,10 +515,9 @@ hr {
 
 .calendar-weekdays {
   display: grid;
-  grid-template-columns: repeat(7, minmax(110px, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 12px;
-  overflow-x: auto;
 }
 
 .calendar-weekdays div {
@@ -537,9 +532,8 @@ hr {
 
 .calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(110px, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 12px;
-  overflow-x: auto;
 }
 
 .calendar-cell {
@@ -667,12 +661,6 @@ hr {
   gap: 12px;
 }
 
-#specificDatesList {
-  display: grid;
-  gap: 10px;
-  margin-top: 12px;
-}
-
 .semester-box,
 .detail-item,
 .pending-session-item {
@@ -699,6 +687,12 @@ hr {
     justify-content: flex-end;
     flex-wrap: wrap;
   }
+
+  .calendar-grid,
+  .calendar-weekdays,
+  .week-calendar-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
@@ -714,41 +708,40 @@ hr {
   .sidebar {
     width: 100%;
     padding: 14px;
-    display: flex;
-    flex-direction: column;
   }
 
   .sidebar-top {
     display: grid;
     grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "brand menu"
+      "user user";
     align-items: center;
     gap: 10px;
   }
 
+  .brand {
+    grid-area: brand;
+  }
+
   .menu-toggle-btn {
+    grid-area: menu;
     display: inline-flex;
     align-items: center;
     justify-content: center;
   }
 
+  .brand-user-area {
+    grid-area: user;
+  }
+
   .tab-nav {
     display: none;
     margin-top: 14px;
-    order: 1;
   }
 
   .tab-nav.menu-open {
     display: flex;
-  }
-
-  #signOutBtn {
-    order: 2;
-    margin-top: 18px;
-  }
-
-  .brand-user-area {
-    order: 3;
-    margin-top: 12px;
   }
 
   .main-content {
@@ -797,30 +790,16 @@ hr {
   }
 
   .calendar-weekdays {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(90px, 1fr));
-    gap: 8px;
-    overflow-x: auto;
+    display: none;
   }
 
-  .calendar-grid {
-    grid-template-columns: repeat(7, minmax(90px, 1fr));
-    gap: 8px;
-    overflow-x: auto;
-  }
-
-  .calendar-cell {
-    min-width: 90px;
-    min-height: 120px;
-  }
-
+  .calendar-grid,
   .week-calendar-grid {
-    grid-template-columns: repeat(7, minmax(90px, 1fr));
-    overflow-x: auto;
+    grid-template-columns: 1fr;
   }
 
+  .calendar-cell,
   .week-day-column {
-    min-width: 90px;
-    min-height: 180px;
+    min-height: auto;
   }
 }
