@@ -788,6 +788,18 @@ hr {
     display: flex;
   }
 
+  #signOutBtn,
+  .brand-signout-btn {
+    display: none;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .tab-nav.menu-open + #signOutBtn,
+  .tab-nav.menu-open + .brand-signout-btn {
+    display: block;
+  }
+
   .main-content {
     padding: 14px;
   }
