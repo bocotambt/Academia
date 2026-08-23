@@ -12,7 +12,6 @@ const menuToggleBtn = $("menuToggleBtn");
 const tabNav = $("tabNav");
 const signOutBtn = $("signOutBtn");
 
-const authBox = $("authBox");
 const authSignedOut = $("authSignedOut");
 const authSignedIn = $("authSignedIn");
 const authEmail = $("authEmail");
@@ -54,8 +53,6 @@ const sessionEndTimeInput = $("sessionEndTime");
 const sessionLocationInput = $("sessionLocation");
 const addSessionBtn = $("addSessionBtn");
 const pendingSessionsList = $("pendingSessionsList");
-const addSessionDateBtn = $("addSessionDateBtn");
-const specificDatesList = $("specificDatesList");
 
 const taskTitleInput = $("taskTitle");
 const taskDetailsInput = $("taskDetails");
@@ -97,9 +94,6 @@ const semesterStartDateInput = $("semesterStartDate");
 const semesterEndDateInput = $("semesterEndDate");
 const saveSemesterBtn = $("saveSemesterBtn");
 
-const detailTitle = $("detailTitle");
-const detailBody = $("detailBody");
-
 const monthViewBtn = $("monthViewBtn");
 const weekViewBtn = $("weekViewBtn");
 const dayViewBtn = $("dayViewBtn");
@@ -124,8 +118,6 @@ let exams = [];
 let events = [];
 
 let pendingSessions = [];
-let pendingSpecificDates = [];
-
 let editingCourseId = null;
 let currentCalendarView = "month";
 let currentCalendarDate = new Date();
@@ -152,7 +144,12 @@ function setMessage(el, message, isError) {
 function formatDate(dateString) {
   if (!dateString) return "No date";
   const date = new Date(dateString + "T00:00:00");
-  return date.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+  return date.toLocaleDateString([], {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  });
 }
 
 function formatTime(timeString) {
@@ -291,12 +288,9 @@ async function signUp() {
       return;
     }
 
-    const { error } = await supabaseClient.auth.signUp({
-      email,
-      password
-    });
-
+    const { error } = await supabaseClient.auth.signUp({ email, password });
     if (error) throw error;
+
     setMessage(authMessage, "Sign-up successful. Check your email if confirmation is enabled.", false);
   } catch (error) {
     setMessage(authMessage, error.message || "Sign-up failed.", true);
@@ -313,11 +307,7 @@ async function signIn() {
       return;
     }
 
-    const { data, error } = await supabaseClient.auth.signInWithPassword({
-      email,
-      password
-    });
-
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
     if (error) throw error;
 
     currentUser = data.user || null;
@@ -344,7 +334,6 @@ async function signOut() {
     exams = [];
     events = [];
     pendingSessions = [];
-    pendingSpecificDates = [];
     updateAuthUI();
     renderAll();
     showTab("dashboard");
@@ -361,17 +350,18 @@ async function getCurrentSession() {
   const { data } = await supabaseClient.auth.getSession();
   currentUser = data.session?.user || null;
   updateAuthUI();
+
   if (currentUser) {
     await loadAllData();
-    renderAll();
-  } else {
-    renderAll();
   }
+
+  renderAll();
 }
 
 supabaseClient.auth.onAuthStateChange(async function (_event, session) {
   currentUser = session?.user || null;
   updateAuthUI();
+
   if (currentUser) {
     await loadAllData();
   } else {
@@ -383,11 +373,13 @@ supabaseClient.auth.onAuthStateChange(async function (_event, session) {
     exams = [];
     events = [];
   }
+
   renderAll();
 });
 
 async function loadTable(tableName) {
   if (!currentUser) return [];
+
   const { data, error } = await supabaseClient
     .from(tableName)
     .select("*")
@@ -398,6 +390,7 @@ async function loadTable(tableName) {
     console.error(error);
     return [];
   }
+
   return data || [];
 }
 
@@ -438,21 +431,6 @@ async function upsertRecord(tableName, payload) {
   return data;
 }
 
-async function deleteRecord(tableName, id) {
-  const { error } = await supabaseClient
-    .from(tableName)
-    .delete()
-    .eq("id", id)
-    .eq("user_id", currentUser.id);
-
-  if (error) {
-    alert(error.message || "Delete failed.");
-    return false;
-  }
-
-  return true;
-}
-
 function populateSemesterOptions() {
   if (courseSemesterInput) {
     courseSemesterInput.innerHTML = `<option value="">Choose semester</option>`;
@@ -477,6 +455,7 @@ function populateSemesterOptions() {
 
 function populateCourseOptions() {
   if (!taskCourseInput) return;
+
   taskCourseInput.innerHTML = `<option value="">No course</option>`;
   courses.forEach(function (course) {
     const option = document.createElement("option");
@@ -487,36 +466,13 @@ function populateCourseOptions() {
 }
 
 function resetCourseSessionInputs() {
-  sessionTypeInput.value = "";
-  sessionRepeatInput.value = "";
-  sessionDayInput.value = "";
-  sessionDateInput.value = "";
-  sessionStartTimeInput.value = "";
-  sessionEndTimeInput.value = "";
-  sessionLocationInput.value = "";
-}
-
-function renderSpecificDatesList() {
-  if (!specificDatesList) return;
-
-  specificDatesList.innerHTML = "";
-
-  if (pendingSpecificDates.length === 0) {
-    specificDatesList.innerHTML = '<div class="empty-state">No extra dates added yet.</div>';
-    return;
-  }
-
-  pendingSpecificDates.forEach(function (date, index) {
-    const item = document.createElement("div");
-    item.className = "pending-session-item";
-    item.innerHTML = `
-      <strong>${escapeHtml(date)}</strong>
-      <div class="card-actions" style="margin-top:10px;">
-        <button class="delete-btn" data-remove-specific-date="${index}" type="button">Remove</button>
-      </div>
-    `;
-    specificDatesList.appendChild(item);
-  });
+  if (sessionTypeInput) sessionTypeInput.value = "";
+  if (sessionRepeatInput) sessionRepeatInput.value = "";
+  if (sessionDayInput) sessionDayInput.value = "";
+  if (sessionDateInput) sessionDateInput.value = "";
+  if (sessionStartTimeInput) sessionStartTimeInput.value = "";
+  if (sessionEndTimeInput) sessionEndTimeInput.value = "";
+  if (sessionLocationInput) sessionLocationInput.value = "";
 }
 
 function renderPendingSessions() {
@@ -568,39 +524,20 @@ function addPendingSession() {
     return;
   }
 
-  if (repeatType === "specific" && pendingSpecificDates.length === 0 && !specificDate) {
-    alert("Please add at least one specific date.");
+  if (repeatType === "specific" && !specificDate) {
+    alert("Please choose a specific date.");
     return;
   }
 
-  if (repeatType === "specific") {
-    const dates = pendingSpecificDates.length ? pendingSpecificDates.slice() : [specificDate];
-
-    dates.forEach(function (dateValue) {
-      pendingSessions.push({
-        sessionType,
-        repeatType,
-        dayOfWeek: "",
-        specificDate: dateValue,
-        startTime,
-        endTime,
-        location
-      });
-    });
-
-    pendingSpecificDates = [];
-    renderSpecificDatesList();
-  } else {
-    pendingSessions.push({
-      sessionType,
-      repeatType,
-      dayOfWeek,
-      specificDate: "",
-      startTime,
-      endTime,
-      location
-    });
-  }
+  pendingSessions.push({
+    sessionType,
+    repeatType,
+    dayOfWeek: repeatType === "weekly" ? dayOfWeek : "",
+    specificDate: repeatType === "specific" ? specificDate : "",
+    startTime,
+    endTime,
+    location
+  });
 
   resetCourseSessionInputs();
   renderPendingSessions();
@@ -610,35 +547,17 @@ if (addSessionBtn) {
   addSessionBtn.addEventListener("click", addPendingSession);
 }
 
-if (addSessionDateBtn) {
-  addSessionDateBtn.addEventListener("click", function () {
-    const date = sessionDateInput.value;
-    if (!date) {
-      alert("Please choose a specific date first.");
-      return;
-    }
-    if (!pendingSpecificDates.includes(date)) {
-      pendingSpecificDates.push(date);
-      pendingSpecificDates.sort();
-      renderSpecificDatesList();
-    }
-    sessionDateInput.value = "";
-  });
-}
-
 function resetCourseModal() {
-  courseNameInput.value = "";
-  courseCodeInput.value = "";
-  courseInstructorInput.value = "";
-  courseColorInput.value = "#2563eb";
-  courseSemesterInput.value = "";
+  if (courseNameInput) courseNameInput.value = "";
+  if (courseCodeInput) courseCodeInput.value = "";
+  if (courseInstructorInput) courseInstructorInput.value = "";
+  if (courseColorInput) courseColorInput.value = "#2563eb";
+  if (courseSemesterInput) courseSemesterInput.value = "";
   editingCourseId = null;
   pendingSessions = [];
-  pendingSpecificDates = [];
   renderPendingSessions();
-  renderSpecificDatesList();
   resetCourseSessionInputs();
-  saveCourseBtn.textContent = "Save Course";
+  if (saveCourseBtn) saveCourseBtn.textContent = "Save Course";
 }
 
 async function saveCourse() {
@@ -679,6 +598,7 @@ if (saveCourseBtn) {
 
 async function saveTask() {
   const title = taskTitleInput.value.trim();
+
   if (!title) {
     alert("Please enter a task title.");
     return;
@@ -713,6 +633,7 @@ if (addTaskBtn) addTaskBtn.addEventListener("click", saveTask);
 
 async function saveNote() {
   const title = noteTitleInput.value.trim();
+
   if (!title) {
     alert("Please enter a note title.");
     return;
@@ -739,6 +660,7 @@ if (saveNoteBtn) saveNoteBtn.addEventListener("click", saveNote);
 
 async function saveExam() {
   const title = examTitleInput.value.trim();
+
   if (!title) {
     alert("Please enter an exam title.");
     return;
@@ -779,6 +701,7 @@ if (saveExamBtn) saveExamBtn.addEventListener("click", saveExam);
 
 async function saveEvent() {
   const title = eventTitleInput.value.trim();
+
   if (!title) {
     alert("Please enter an event title.");
     return;
@@ -813,6 +736,7 @@ if (saveEventBtn) saveEventBtn.addEventListener("click", saveEvent);
 
 async function saveAcademicYear() {
   const name = academicYearNameInput.value.trim();
+
   if (!name) {
     alert("Please enter an academic year.");
     return;
@@ -832,7 +756,9 @@ async function saveAcademicYear() {
   closeModal("academicYearModal");
 }
 
-if (saveAcademicYearBtn) saveAcademicYearBtn.addEventListener("click", saveAcademicYear);
+if (saveAcademicYearBtn) {
+  saveAcademicYearBtn.addEventListener("click", saveAcademicYear);
+}
 
 async function saveSemester() {
   const academic_year_id = semesterAcademicYearInput.value;
@@ -987,36 +913,39 @@ function renderDashboard() {
     })
     .slice(0, 5);
 
-  if (!dashboardUpcomingTasks) return;
-  dashboardUpcomingTasks.innerHTML = upcomingTasks.length
-    ? upcomingTasks.map(function (task) {
-        return `
-          <div class="day-card">
-            <h4 class="task-title">${escapeHtml(task.title)}</h4>
-            <p class="meta">${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
-          </div>
-        `;
-      }).join("")
-    : '<div class="empty-state">No upcoming tasks.</div>';
-
-  dashboardUpcomingExams.innerHTML = exams.length
-    ? exams
-        .slice()
-        .sort(function (a, b) {
-          return `${a.date || ""} ${a.time || ""}`.localeCompare(`${b.date || ""} ${b.time || ""}`);
-        })
-        .slice(0, 5)
-        .map(function (exam) {
+  if (dashboardUpcomingTasks) {
+    dashboardUpcomingTasks.innerHTML = upcomingTasks.length
+      ? upcomingTasks.map(function (task) {
           return `
-            <div class="day-card ${isPastExam(exam) ? "past-item" : ""}">
-              <h4 class="task-title">${escapeHtml(exam.title)}</h4>
-              <p class="meta">${escapeHtml(exam.date ? formatDate(exam.date) : "No date")}</p>
-              <p class="meta">${escapeHtml(exam.time ? formatTime(exam.time) : "No time")}</p>
+            <div class="day-card">
+              <h4 class="task-title">${escapeHtml(task.title)}</h4>
+              <p class="meta">${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
             </div>
           `;
-        })
-        .join("")
-    : '<div class="empty-state">No upcoming exams.</div>';
+        }).join("")
+      : '<div class="empty-state">No upcoming tasks.</div>';
+  }
+
+  if (dashboardUpcomingExams) {
+    dashboardUpcomingExams.innerHTML = exams.length
+      ? exams
+          .slice()
+          .sort(function (a, b) {
+            return `${a.date || ""} ${a.time || ""}`.localeCompare(`${b.date || ""} ${b.time || ""}`);
+          })
+          .slice(0, 5)
+          .map(function (exam) {
+            return `
+              <div class="day-card ${isPastExam(exam) ? "past-item" : ""}">
+                <h4 class="task-title">${escapeHtml(exam.title)}</h4>
+                <p class="meta">${escapeHtml(exam.date ? formatDate(exam.date) : "No date")}</p>
+                <p class="meta">${escapeHtml(exam.time ? formatTime(exam.time) : "No time")}</p>
+              </div>
+            `;
+          })
+          .join("")
+      : '<div class="empty-state">No upcoming exams.</div>';
+  }
 }
 
 function renderCourses() {
@@ -1176,7 +1105,7 @@ function buildCalendarItemHtml(item) {
   if (item.type === "event") itemClass = "event";
 
   return `
-    <button class="calendar-item ${itemClass}" type="button" data-calendar-item-id="${escapeHtml(item.id)}">
+    <button class="calendar-item ${itemClass}" type="button">
       <span>${escapeHtml(item.title)}</span>
       <small>${escapeHtml(item.timeLabel || "")}</small>
     </button>
@@ -1184,7 +1113,7 @@ function buildCalendarItemHtml(item) {
 }
 
 function renderMonthView() {
-  if (!calendarGrid) return;
+  if (!calendarGrid || !calendarMonthLabel) return;
 
   const year = currentCalendarDate.getFullYear();
   const month = currentCalendarDate.getMonth();
@@ -1224,7 +1153,7 @@ function renderMonthView() {
 }
 
 function renderWeekView() {
-  if (!weekCalendarGrid) return;
+  if (!weekCalendarGrid || !calendarMonthLabel) return;
 
   const today = new Date(currentCalendarDate);
   const day = today.getDay();
@@ -1259,7 +1188,7 @@ function renderWeekView() {
 }
 
 function renderDayView() {
-  if (!dayCalendarGrid) return;
+  if (!dayCalendarGrid || !calendarMonthLabel) return;
 
   const items = getItemsForDate(toDateKey(currentCalendarDate));
 
@@ -1290,13 +1219,13 @@ function renderDayView() {
 function setCalendarView(view) {
   currentCalendarView = view;
 
-  monthViewBtn.classList.toggle("active-view-btn", view === "month");
-  weekViewBtn.classList.toggle("active-view-btn", view === "week");
-  dayViewBtn.classList.toggle("active-view-btn", view === "day");
+  if (monthViewBtn) monthViewBtn.classList.toggle("active-view-btn", view === "month");
+  if (weekViewBtn) weekViewBtn.classList.toggle("active-view-btn", view === "week");
+  if (dayViewBtn) dayViewBtn.classList.toggle("active-view-btn", view === "day");
 
-  monthCalendarWrap.classList.toggle("hidden", view !== "month");
-  weekCalendarWrap.classList.toggle("hidden", view !== "week");
-  dayCalendarWrap.classList.toggle("hidden", view !== "day");
+  if (monthCalendarWrap) monthCalendarWrap.classList.toggle("hidden", view !== "month");
+  if (weekCalendarWrap) weekCalendarWrap.classList.toggle("hidden", view !== "week");
+  if (dayCalendarWrap) dayCalendarWrap.classList.toggle("hidden", view !== "day");
 
   renderCalendar();
 }
@@ -1337,14 +1266,6 @@ document.addEventListener("click", function (e) {
     const index = Number(removeSessionBtn.dataset.removeSession);
     pendingSessions.splice(index, 1);
     renderPendingSessions();
-    return;
-  }
-
-  const removeDateBtn = e.target.closest("[data-remove-specific-date]");
-  if (removeDateBtn) {
-    const index = Number(removeDateBtn.dataset.removeSpecificDate);
-    pendingSpecificDates.splice(index, 1);
-    renderSpecificDatesList();
   }
 });
 
@@ -1352,7 +1273,6 @@ function renderAll() {
   populateSemesterOptions();
   populateCourseOptions();
   renderPendingSessions();
-  renderSpecificDatesList();
   renderDashboard();
   renderCourses();
   renderTasks();
