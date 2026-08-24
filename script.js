@@ -12,13 +12,11 @@ const tabNav = $("tabNav");
 const signOutBtn = $("signOutBtn");
 
 const authSignedOut = $("authSignedOut");
-const authSignedIn = $("authSignedIn");
 const authEmail = $("authEmail");
 const authPassword = $("authPassword");
 const signUpBtn = $("signUpBtn");
 const signInBtn = $("signInBtn");
 const authMessage = $("authMessage");
-const authMessageSignedIn = $("authMessageSignedIn");
 const brandUserArea = $("brandUserArea");
 const brandSignedInText = $("brandSignedInText");
 
@@ -29,6 +27,7 @@ const coursesList = $("coursesList");
 const plannerList = $("plannerList");
 const notesList = $("notesList");
 const examsList = $("examsList");
+const holidaysList = $("holidaysList");
 const academicYearsList = $("academicYearsList");
 
 const dashboardToday = $("dashboardToday");
@@ -76,6 +75,11 @@ const examMarkInput = $("examMark");
 const examNotesInput = $("examNotes");
 const saveExamBtn = $("saveExamBtn");
 
+const holidayTitleInput = $("holidayTitle");
+const holidayDateInput = $("holidayDate");
+const holidayTypeInput = $("holidayType");
+const saveHolidayBtn = $("saveHolidayBtn");
+
 const eventTitleInput = $("eventTitle");
 const eventDateInput = $("eventDate");
 const eventStartTimeInput = $("eventStartTime");
@@ -114,6 +118,7 @@ let courses = [];
 let tasks = [];
 let notes = [];
 let exams = [];
+let holidays = [];
 let events = [];
 
 let pendingSessions = [];
@@ -178,6 +183,18 @@ function dayNameFromDate(date) {
   return date.toLocaleDateString([], { weekday: "long" });
 }
 
+function isHolidayDate(dateKey) {
+  return holidays.some(function (holiday) {
+    return holiday.date === dateKey;
+  });
+}
+
+function getHolidayForDate(dateKey) {
+  return holidays.find(function (holiday) {
+    return holiday.date === dateKey;
+  }) || null;
+}
+
 function openModal(modalId) {
   const modal = $(modalId);
   if (modal) modal.classList.remove("hidden");
@@ -229,6 +246,7 @@ function showTab(tabId) {
     planner: "Tasks",
     notes: "Notes",
     exams: "Exams",
+    holidays: "Holidays",
     academic: "Academic Settings",
     calendar: "Calendar"
   };
@@ -263,17 +281,14 @@ function updateAuthUI() {
   const signedIn = !!currentUser;
 
   if (authSignedOut) authSignedOut.classList.toggle("hidden", signedIn);
-  if (authSignedIn) authSignedIn.classList.toggle("hidden", !signedIn);
   if (signOutBtn) signOutBtn.classList.toggle("hidden", !signedIn);
   if (brandUserArea) brandUserArea.classList.toggle("hidden", !signedIn);
 
   if (currentUser) {
     const email = currentUser.email || "Signed in";
     if (brandSignedInText) brandSignedInText.textContent = `Signed in as ${email}`;
-    setMessage(authMessageSignedIn, `Signed in as ${email}`, false);
   } else {
     if (brandSignedInText) brandSignedInText.textContent = "";
-    setMessage(authMessageSignedIn, "", false);
   }
 }
 
@@ -331,6 +346,7 @@ async function signOut() {
     tasks = [];
     notes = [];
     exams = [];
+    holidays = [];
     events = [];
     pendingSessions = [];
     updateAuthUI();
@@ -370,6 +386,7 @@ supabaseClient.auth.onAuthStateChange(async function (_event, session) {
     tasks = [];
     notes = [];
     exams = [];
+    holidays = [];
     events = [];
   }
 
@@ -402,6 +419,7 @@ async function loadAllData() {
   tasks = await loadTable("tasks");
   notes = await loadTable("notes");
   exams = await loadTable("exams");
+  holidays = await loadTable("holidays");
   events = await loadTable("events");
 }
 
@@ -698,6 +716,37 @@ async function saveExam() {
 
 if (saveExamBtn) saveExamBtn.addEventListener("click", saveExam);
 
+async function saveHoliday() {
+  const title = holidayTitleInput.value.trim();
+  const date = holidayDateInput.value || null;
+  const type = holidayTypeInput.value || "";
+
+  if (!title || !date) {
+    alert("Please enter a holiday name and date.");
+    return;
+  }
+
+  const payload = {
+    id: generateId("holiday"),
+    title,
+    date,
+    type
+  };
+
+  const saved = await upsertRecord("holidays", payload);
+  if (!saved) return;
+
+  holidayTitleInput.value = "";
+  holidayDateInput.value = "";
+  holidayTypeInput.value = "";
+
+  await loadAllData();
+  renderAll();
+  closeModal("holidayModal");
+}
+
+if (saveHolidayBtn) saveHolidayBtn.addEventListener("click", saveHoliday);
+
 async function saveEvent() {
   const title = eventTitleInput.value.trim();
 
@@ -784,7 +833,6 @@ async function saveSemester() {
   semesterNameInput.value = "";
   semesterStartDateInput.value = "";
   semesterEndDateInput.value = "";
-
   await loadAllData();
   populateSemesterOptions();
   renderAll();
@@ -802,6 +850,10 @@ function getCourseById(courseId) {
 function getSessionsForDate(date) {
   const dateKey = toDateKey(date);
   const dayName = dayNameFromDate(date);
+
+  if (isHolidayDate(dateKey)) {
+    return [];
+  }
 
   const items = [];
 
@@ -851,7 +903,7 @@ function getItemsForDate(dateKey) {
         type: "custom",
         id: "exam-" + exam.id,
         title: "Exam: " + exam.title,
-        timeLabel: exam.time || "Time not set",
+        timeLabel: exam.time ? formatTime(exam.time) : "Time not set",
         color: "#0f766e",
         location: exam.place || "",
         isPast: isPastExam(exam)
@@ -867,13 +919,28 @@ function getItemsForDate(dateKey) {
         type: "event",
         id: "event-" + event.id,
         title: event.title,
-        timeLabel: `${event.start_time || ""}${event.end_time ? " - " + event.end_time : ""}`.trim() || "Time not set",
+        timeLabel: `${event.start_time ? formatTime(event.start_time) : ""}${event.end_time ? " - " + formatTime(event.end_time) : ""}`.trim() || "Time not set",
         color: "#7c3aed",
         location: event.location || ""
       };
     });
 
-  return courseItems.concat(examItems, eventItems);
+  const holidayItems = holidays
+    .filter(function (holiday) {
+      return holiday.date === dateKey;
+    })
+    .map(function (holiday) {
+      return {
+        type: "holiday",
+        id: "holiday-" + holiday.id,
+        title: "Holiday: " + holiday.title,
+        timeLabel: holiday.type || "Holiday",
+        color: "#dc2626",
+        location: ""
+      };
+    });
+
+  return courseItems.concat(examItems, eventItems, holidayItems);
 }
 
 function renderScheduleList(container, items) {
@@ -1062,6 +1129,29 @@ function renderExams() {
     : '<div class="empty-state">No exams yet.</div>';
 }
 
+function renderHolidays() {
+  if (!holidaysList) return;
+
+  holidaysList.innerHTML = holidays.length
+    ? holidays
+        .slice()
+        .sort(function (a, b) {
+          return (a.date || "").localeCompare(b.date || "");
+        })
+        .map(function (holiday) {
+          return `
+            <div class="course-card">
+              <h4 class="task-title">${escapeHtml(holiday.title)}</h4>
+              <p class="meta">Date: ${escapeHtml(holiday.date ? formatDate(holiday.date) : "No date")}</p>
+              <p class="meta">Type: ${escapeHtml(holiday.type || "Holiday")}</p>
+              <p class="meta">Courses will not appear on this date.</p>
+            </div>
+          `;
+        })
+        .join("")
+    : '<div class="empty-state">No holidays yet.</div>';
+}
+
 function renderAcademicYears() {
   if (!academicYearsList) return;
 
@@ -1102,6 +1192,7 @@ function buildCalendarItemHtml(item) {
   if (item.type === "course") itemClass = "course";
   if (item.type === "custom") itemClass = "exam";
   if (item.type === "event") itemClass = "event";
+  if (item.type === "holiday") itemClass = "holiday";
 
   return `
     <button class="calendar-item ${itemClass}" type="button">
@@ -1132,10 +1223,12 @@ function renderMonthView() {
     const items = getItemsForDate(key);
     const isToday = isSameDate(cellDate, today);
     const isOtherMonth = cellDate.getMonth() !== month;
+    const holiday = getHolidayForDate(key);
 
     cells.push(`
-      <div class="calendar-cell ${isToday ? "today" : ""} ${isOtherMonth ? "other-month" : ""}">
+      <div class="calendar-cell ${isToday ? "today" : ""} ${isOtherMonth ? "other-month" : ""} ${holiday ? "holiday-cell" : ""}">
         <div class="calendar-date">${cellDate.getDate()}</div>
+        ${holiday ? `<div class="meta">${escapeHtml(holiday.title)}</div>` : ""}
         <div class="calendar-items">
           ${items.slice(0, 3).map(buildCalendarItemHtml).join("")}
           ${items.length > 3 ? `<div class="meta">+${items.length - 3} more</div>` : ""}
@@ -1164,13 +1257,16 @@ function renderWeekView() {
   for (let i = 0; i < 7; i += 1) {
     const date = new Date(weekStart);
     date.setDate(weekStart.getDate() + i);
-    const items = getItemsForDate(toDateKey(date));
+    const key = toDateKey(date);
+    const items = getItemsForDate(key);
+    const holiday = getHolidayForDate(key);
 
     columns.push(`
-      <div class="week-day-column">
+      <div class="week-day-column ${holiday ? "holiday-cell" : ""}">
         <div class="week-day-title">${escapeHtml(
           date.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })
         )}</div>
+        ${holiday ? `<div class="meta">${escapeHtml(holiday.title)}</div>` : ""}
         <div class="week-items">
           ${items.length ? items.map(buildCalendarItemHtml).join("") : '<div class="empty-state">No items</div>'}
         </div>
@@ -1189,10 +1285,12 @@ function renderWeekView() {
 function renderDayView() {
   if (!dayCalendarGrid || !calendarMonthLabel) return;
 
-  const items = getItemsForDate(toDateKey(currentCalendarDate));
+  const key = toDateKey(currentCalendarDate);
+  const items = getItemsForDate(key);
+  const holiday = getHolidayForDate(key);
 
   dayCalendarGrid.innerHTML = `
-    <div class="day-view-card">
+    <div class="day-view-card ${holiday ? "holiday-cell" : ""}">
       <div class="day-view-title">${escapeHtml(
         currentCalendarDate.toLocaleDateString([], {
           weekday: "long",
@@ -1201,6 +1299,7 @@ function renderDayView() {
           year: "numeric"
         })
       )}</div>
+      ${holiday ? `<p class="meta">${escapeHtml(holiday.title)}${holiday.type ? " · " + escapeHtml(holiday.type) : ""}</p>` : ""}
       <div class="day-items">
         ${items.length ? items.map(buildCalendarItemHtml).join("") : '<div class="empty-state">No items</div>'}
       </div>
@@ -1277,6 +1376,7 @@ function renderAll() {
   renderTasks();
   renderNotes();
   renderExams();
+  renderHolidays();
   renderAcademicYears();
   renderCalendar();
 }
