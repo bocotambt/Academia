@@ -726,3 +726,11 @@ textarea {
     flex: 1;
   }
 }
+/* TAB SCREEN FIX */
+main.main-content > .tab-content {
+  display: none !important;
+}
+
+main.main-content > .tab-content.active {
+  display: block !important;
+}
