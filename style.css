@@ -48,6 +48,14 @@ button {
   display: none !important;
 }
 
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
 .app-shell {
   display: grid;
   grid-template-columns: 280px 1fr;
