@@ -35,6 +35,9 @@ const dashboardTomorrow = $("dashboardTomorrow");
 const dashboardUpcomingTasks = $("dashboardUpcomingTasks");
 const dashboardUpcomingExams = $("dashboardUpcomingExams");
 
+const detailTitle = $("detailTitle");
+const detailBody = $("detailBody");
+
 const courseNameInput = $("courseName");
 const courseCodeInput = $("courseCode");
 const courseInstructorInput = $("courseInstructor");
@@ -49,6 +52,10 @@ const sessionDateInput = $("sessionDate");
 const sessionStartTimeInput = $("sessionStartTime");
 const sessionEndTimeInput = $("sessionEndTime");
 const sessionLocationInput = $("sessionLocation");
+const sessionDayWrap = $("sessionDayWrap");
+const sessionDatesWrap = $("sessionDatesWrap");
+const addSpecificDateBtn = $("addSpecificDateBtn");
+const pendingSpecificDates = $("pendingSpecificDates");
 const addSessionBtn = $("addSessionBtn");
 const pendingSessionsList = $("pendingSessionsList");
 
@@ -68,6 +75,7 @@ const examTitleInput = $("examTitle");
 const examCourseInput = $("examCourse");
 const examDateInput = $("examDate");
 const examTimeInput = $("examTime");
+const examDurationInput = $("examDuration");
 const examPlaceInput = $("examPlace");
 const examSeatNumberInput = $("examSeatNumber");
 const examGradeInput = $("examGrade");
@@ -76,7 +84,8 @@ const examNotesInput = $("examNotes");
 const saveExamBtn = $("saveExamBtn");
 
 const holidayTitleInput = $("holidayTitle");
-const holidayDateInput = $("holidayDate");
+const holidayStartDateInput = $("holidayStartDate");
+const holidayEndDateInput = $("holidayEndDate");
 const holidayTypeInput = $("holidayType");
 const saveHolidayBtn = $("saveHolidayBtn");
 
@@ -115,6 +124,7 @@ let currentUser = null;
 let academicYears = [];
 let semesters = [];
 let courses = [];
+let courseSessions = [];
 let tasks = [];
 let notes = [];
 let exams = [];
@@ -122,13 +132,9 @@ let holidays = [];
 let events = [];
 
 let pendingSessions = [];
-let editingCourseId = null;
+let pendingSpecificDateList = [];
 let currentCalendarView = "month";
 let currentCalendarDate = new Date();
-
-function generateId(prefix) {
-  return prefix + "-" + Date.now() + "-" + Math.floor(Math.random() * 100000);
-}
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -150,6 +156,16 @@ function formatDate(dateString) {
   const date = new Date(dateString + "T00:00:00");
   return date.toLocaleDateString([], {
     weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  });
+}
+
+function formatShortDate(dateString) {
+  if (!dateString) return "";
+  const date = new Date(dateString + "T00:00:00");
+  return date.toLocaleDateString([], {
     month: "short",
     day: "numeric",
     year: "numeric"
@@ -183,15 +199,38 @@ function dayNameFromDate(date) {
   return date.toLocaleDateString([], { weekday: "long" });
 }
 
+function calculateExamEndTime(startTime, durationMinutes) {
+  if (!startTime || !durationMinutes) return "";
+  const [hour, minute] = startTime.split(":").map(Number);
+  const totalMinutes = hour * 60 + minute + Number(durationMinutes);
+  const endHour = Math.floor((totalMinutes % (24 * 60)) / 60);
+  const endMinute = totalMinutes % 60;
+  return `${String(endHour).padStart(2, "0")}:${String(endMinute).padStart(2, "0")}`;
+}
+
+function buildHolidayDates(holiday) {
+  const start = holiday.start_date || holiday.date;
+  const end = holiday.end_date || holiday.start_date || holiday.date;
+  if (!start || !end) return [];
+  const dates = [];
+  const current = new Date(start + "T00:00:00");
+  const endDate = new Date(end + "T00:00:00");
+  while (current <= endDate) {
+    dates.push(toDateKey(current));
+    current.setDate(current.getDate() + 1);
+  }
+  return dates;
+}
+
 function isHolidayDate(dateKey) {
   return holidays.some(function (holiday) {
-    return holiday.date === dateKey;
+    return buildHolidayDates(holiday).includes(dateKey);
   });
 }
 
 function getHolidayForDate(dateKey) {
   return holidays.find(function (holiday) {
-    return holiday.date === dateKey;
+    return buildHolidayDates(holiday).includes(dateKey);
   }) || null;
 }
 
@@ -253,9 +292,7 @@ function showTab(tabId) {
 
   if (pageTitle) pageTitle.textContent = titles[tabId] || "Academia";
 
-  if (tabId === "calendar") {
-    renderCalendar();
-  }
+  if (tabId === "calendar") renderCalendar();
 
   if (window.innerWidth <= 640 && tabNav) {
     tabNav.classList.remove("menu-open");
@@ -279,7 +316,6 @@ if (menuToggleBtn) {
 
 function updateAuthUI() {
   const signedIn = !!currentUser;
-
   if (authSignedOut) authSignedOut.classList.toggle("hidden", signedIn);
   if (signOutBtn) signOutBtn.classList.toggle("hidden", !signedIn);
   if (brandUserArea) brandUserArea.classList.toggle("hidden", !signedIn);
@@ -343,12 +379,14 @@ async function signOut() {
     academicYears = [];
     semesters = [];
     courses = [];
+    courseSessions = [];
     tasks = [];
     notes = [];
     exams = [];
     holidays = [];
     events = [];
     pendingSessions = [];
+    pendingSpecificDateList = [];
     updateAuthUI();
     renderAll();
     showTab("dashboard");
@@ -383,6 +421,7 @@ supabaseClient.auth.onAuthStateChange(async function (_event, session) {
     academicYears = [];
     semesters = [];
     courses = [];
+    courseSessions = [];
     tasks = [];
     notes = [];
     exams = [];
@@ -403,7 +442,7 @@ async function loadTable(tableName) {
     .order("created_at", { ascending: true });
 
   if (error) {
-    console.error(error);
+    console.error(tableName, error);
     return [];
   }
 
@@ -416,6 +455,7 @@ async function loadAllData() {
   academicYears = await loadTable("academic_years");
   semesters = await loadTable("semesters");
   courses = await loadTable("courses");
+  courseSessions = await loadTable("course_sessions");
   tasks = await loadTable("tasks");
   notes = await loadTable("notes");
   exams = await loadTable("exams");
@@ -423,7 +463,7 @@ async function loadAllData() {
   events = await loadTable("events");
 }
 
-async function upsertRecord(tableName, payload) {
+async function insertRecord(tableName, payload) {
   if (!currentUser) {
     alert("Please sign in first.");
     return null;
@@ -436,7 +476,7 @@ async function upsertRecord(tableName, payload) {
 
   const { data, error } = await supabaseClient
     .from(tableName)
-    .upsert(record)
+    .insert(record)
     .select()
     .single();
 
@@ -471,15 +511,31 @@ function populateSemesterOptions() {
 }
 
 function populateCourseOptions() {
-  if (!taskCourseInput) return;
+  if (taskCourseInput) {
+    taskCourseInput.innerHTML = `<option value="">No course</option>`;
+    courses.forEach(function (course) {
+      const option = document.createElement("option");
+      option.value = course.id;
+      option.textContent = course.name;
+      taskCourseInput.appendChild(option);
+    });
+  }
 
-  taskCourseInput.innerHTML = `<option value="">No course</option>`;
-  courses.forEach(function (course) {
-    const option = document.createElement("option");
-    option.value = course.id;
-    option.textContent = course.name;
-    taskCourseInput.appendChild(option);
-  });
+  if (examCourseInput) {
+    examCourseInput.innerHTML = `<option value="">No course</option>`;
+    courses.forEach(function (course) {
+      const option = document.createElement("option");
+      option.value = course.name;
+      option.textContent = course.name;
+      examCourseInput.appendChild(option);
+    });
+  }
+}
+
+function updateSessionRepeatUI() {
+  const repeatType = sessionRepeatInput ? sessionRepeatInput.value : "";
+  if (sessionDayWrap) sessionDayWrap.classList.toggle("hidden", repeatType !== "weekly");
+  if (sessionDatesWrap) sessionDatesWrap.classList.toggle("hidden", repeatType !== "specific");
 }
 
 function resetCourseSessionInputs() {
@@ -490,6 +546,27 @@ function resetCourseSessionInputs() {
   if (sessionStartTimeInput) sessionStartTimeInput.value = "";
   if (sessionEndTimeInput) sessionEndTimeInput.value = "";
   if (sessionLocationInput) sessionLocationInput.value = "";
+  pendingSpecificDateList = [];
+  renderPendingSpecificDates();
+  updateSessionRepeatUI();
+}
+
+function renderPendingSpecificDates() {
+  if (!pendingSpecificDates) return;
+
+  if (!pendingSpecificDateList.length) {
+    pendingSpecificDates.innerHTML = '<div class="empty-state">No specific dates added yet.</div>';
+    return;
+  }
+
+  pendingSpecificDates.innerHTML = pendingSpecificDateList.map(function (date, index) {
+    return `
+      <div class="pending-date-chip">
+        <span>${escapeHtml(formatShortDate(date))}</span>
+        <button type="button" data-remove-specific-date="${index}">✕</button>
+      </div>
+    `;
+  }).join("");
 }
 
 function renderPendingSessions() {
@@ -503,16 +580,16 @@ function renderPendingSessions() {
   }
 
   pendingSessions.forEach(function (session, index) {
+    const repeatText = session.repeat_type === "weekly"
+      ? `Weekly on ${session.day_name}`
+      : `Specific dates: ${session.session_dates.map(formatShortDate).join(", ")}`;
+
     const item = document.createElement("div");
     item.className = "pending-session-item";
     item.innerHTML = `
-      <strong>${escapeHtml(session.sessionType)}</strong>
-      <p class="meta">
-        ${session.repeatType === "weekly"
-          ? `Weekly on ${escapeHtml(session.dayOfWeek)}`
-          : `Specific date: ${escapeHtml(session.specificDate)}`}
-      </p>
-      <p class="meta">${escapeHtml(formatTime(session.startTime))} - ${escapeHtml(formatTime(session.endTime))}</p>
+      <strong>${escapeHtml(session.session_type)}</strong>
+      <p class="meta">${escapeHtml(repeatText)}</p>
+      <p class="meta">${escapeHtml(formatTime(session.start_time))} - ${escapeHtml(formatTime(session.end_time))}</p>
       <p class="meta">${escapeHtml(session.location || "No location")}</p>
       <div class="card-actions">
         <button class="delete-btn" data-remove-session="${index}" type="button">Remove</button>
@@ -522,37 +599,52 @@ function renderPendingSessions() {
   });
 }
 
+function addSpecificDate() {
+  const date = sessionDateInput.value;
+  if (!date) {
+    alert("Choose a date first.");
+    return;
+  }
+
+  if (!pendingSpecificDateList.includes(date)) {
+    pendingSpecificDateList.push(date);
+    pendingSpecificDateList.sort();
+  }
+
+  sessionDateInput.value = "";
+  renderPendingSpecificDates();
+}
+
 function addPendingSession() {
-  const sessionType = sessionTypeInput.value;
-  const repeatType = sessionRepeatInput.value;
-  const dayOfWeek = sessionDayInput.value;
-  const specificDate = sessionDateInput.value;
-  const startTime = sessionStartTimeInput.value;
-  const endTime = sessionEndTimeInput.value;
+  const session_type = sessionTypeInput.value;
+  const repeat_type = sessionRepeatInput.value;
+  const day_name = sessionDayInput.value;
+  const start_time = sessionStartTimeInput.value;
+  const end_time = sessionEndTimeInput.value;
   const location = sessionLocationInput.value.trim();
 
-  if (!sessionType || !repeatType || !startTime || !endTime) {
+  if (!session_type || !repeat_type || !start_time || !end_time) {
     alert("Please choose session type, repeat rule, start time, and end time.");
     return;
   }
 
-  if (repeatType === "weekly" && !dayOfWeek) {
+  if (repeat_type === "weekly" && !day_name) {
     alert("Please choose a weekly day.");
     return;
   }
 
-  if (repeatType === "specific" && !specificDate) {
-    alert("Please choose a specific date.");
+  if (repeat_type === "specific" && !pendingSpecificDateList.length) {
+    alert("Please add at least one specific date.");
     return;
   }
 
   pendingSessions.push({
-    sessionType,
-    repeatType,
-    dayOfWeek: repeatType === "weekly" ? dayOfWeek : "",
-    specificDate: repeatType === "specific" ? specificDate : "",
-    startTime,
-    endTime,
+    session_type,
+    repeat_type,
+    day_name: repeat_type === "weekly" ? day_name : null,
+    session_dates: repeat_type === "specific" ? pendingSpecificDateList.slice() : [],
+    start_time,
+    end_time,
     location
   });
 
@@ -560,6 +652,12 @@ function addPendingSession() {
   renderPendingSessions();
 }
 
+if (sessionRepeatInput) {
+  sessionRepeatInput.addEventListener("change", updateSessionRepeatUI);
+}
+if (addSpecificDateBtn) {
+  addSpecificDateBtn.addEventListener("click", addSpecificDate);
+}
 if (addSessionBtn) {
   addSessionBtn.addEventListener("click", addPendingSession);
 }
@@ -570,11 +668,9 @@ function resetCourseModal() {
   if (courseInstructorInput) courseInstructorInput.value = "";
   if (courseColorInput) courseColorInput.value = "#2563eb";
   if (courseSemesterInput) courseSemesterInput.value = "";
-  editingCourseId = null;
   pendingSessions = [];
   renderPendingSessions();
   resetCourseSessionInputs();
-  if (saveCourseBtn) saveCourseBtn.textContent = "Save Course";
 }
 
 async function saveCourse() {
@@ -584,23 +680,48 @@ async function saveCourse() {
   const color = courseColorInput.value;
   const semester_id = courseSemesterInput.value || null;
 
-  if (!name) {
-    alert("Please enter a course name.");
+  if (!name || !code || !semester_id) {
+    alert("Please enter course name, code, and semester.");
     return;
   }
 
-  const payload = {
-    id: editingCourseId || generateId("course"),
+  const savedCourse = await insertRecord("courses", {
     name,
     code,
     instructor,
     color,
-    semester_id,
-    sessions: pendingSessions
-  };
+    semester_id
+  });
 
-  const saved = await upsertRecord("courses", payload);
-  if (!saved) return;
+  if (!savedCourse) return;
+
+  for (const session of pendingSessions) {
+    if (session.repeat_type === "weekly") {
+      await insertRecord("course_sessions", {
+        course_id: savedCourse.id,
+        session_type: session.session_type,
+        repeat_type: "weekly",
+        day_name: session.day_name,
+        session_date: null,
+        start_time: session.start_time,
+        end_time: session.end_time,
+        location: session.location
+      });
+    } else {
+      for (const singleDate of session.session_dates) {
+        await insertRecord("course_sessions", {
+          course_id: savedCourse.id,
+          session_type: session.session_type,
+          repeat_type: "specific",
+          day_name: null,
+          session_date: singleDate,
+          start_time: session.start_time,
+          end_time: session.end_time,
+          location: session.location
+        });
+      }
+    }
+  }
 
   await loadAllData();
   populateCourseOptions();
@@ -615,23 +736,22 @@ if (saveCourseBtn) {
 
 async function saveTask() {
   const title = taskTitleInput.value.trim();
+  const due_date = taskDateInput.value || null;
 
-  if (!title) {
-    alert("Please enter a task title.");
+  if (!title || !due_date) {
+    alert("Please enter a task title and due date.");
     return;
   }
 
-  const payload = {
-    id: generateId("task"),
+  const saved = await insertRecord("tasks", {
     title,
     details: taskDetailsInput.value.trim(),
     course_id: taskCourseInput.value || null,
-    due_date: taskDateInput.value || null,
-    priority: taskPriorityInput.value || "",
+    due_date,
+    priority: taskPriorityInput.value || "High",
     status: taskStatusInput.value || "To Do"
-  };
+  });
 
-  const saved = await upsertRecord("tasks", payload);
   if (!saved) return;
 
   taskTitleInput.value = "";
@@ -650,19 +770,18 @@ if (addTaskBtn) addTaskBtn.addEventListener("click", saveTask);
 
 async function saveNote() {
   const title = noteTitleInput.value.trim();
+  const content = noteContentInput.value.trim();
 
-  if (!title) {
-    alert("Please enter a note title.");
+  if (!title || !content) {
+    alert("Please enter a note title and content.");
     return;
   }
 
-  const payload = {
-    id: generateId("note"),
+  const saved = await insertRecord("notes", {
     title,
-    content: noteContentInput.value.trim()
-  };
+    content
+  });
 
-  const saved = await upsertRecord("notes", payload);
   if (!saved) return;
 
   noteTitleInput.value = "";
@@ -677,32 +796,33 @@ if (saveNoteBtn) saveNoteBtn.addEventListener("click", saveNote);
 
 async function saveExam() {
   const title = examTitleInput.value.trim();
+  const exam_date = examDateInput.value || null;
 
-  if (!title) {
-    alert("Please enter an exam title.");
+  if (!title || !exam_date) {
+    alert("Please enter an exam title and date.");
     return;
   }
 
-  const payload = {
-    id: generateId("exam"),
+  const saved = await insertRecord("exams", {
     title,
-    course_name: examCourseInput.value.trim(),
-    date: examDateInput.value || null,
-    time: examTimeInput.value || null,
+    course: examCourseInput.value || null,
+    exam_date,
+    exam_time: examTimeInput.value || null,
+    duration_minutes: examDurationInput.value ? Number(examDurationInput.value) : null,
     place: examPlaceInput.value.trim(),
     seat_number: examSeatNumberInput.value.trim(),
     grade: examGradeInput.value.trim(),
     mark: examMarkInput.value ? Number(examMarkInput.value) : null,
     notes: examNotesInput.value.trim()
-  };
+  });
 
-  const saved = await upsertRecord("exams", payload);
   if (!saved) return;
 
   examTitleInput.value = "";
   examCourseInput.value = "";
   examDateInput.value = "";
   examTimeInput.value = "";
+  examDurationInput.value = "";
   examPlaceInput.value = "";
   examSeatNumberInput.value = "";
   examGradeInput.value = "";
@@ -718,26 +838,34 @@ if (saveExamBtn) saveExamBtn.addEventListener("click", saveExam);
 
 async function saveHoliday() {
   const title = holidayTitleInput.value.trim();
-  const date = holidayDateInput.value || null;
+  const start_date = holidayStartDateInput.value || null;
+  const end_date = holidayEndDateInput.value || null;
   const type = holidayTypeInput.value || "";
 
-  if (!title || !date) {
-    alert("Please enter a holiday name and date.");
+  if (!title || !start_date || !end_date) {
+    alert("Please enter a holiday name, start date, and end date.");
     return;
   }
 
-  const payload = {
-    id: generateId("holiday"),
-    title,
-    date,
-    type
-  };
+  if (end_date < start_date) {
+    alert("End date cannot be earlier than start date.");
+    return;
+  }
 
-  const saved = await upsertRecord("holidays", payload);
+  const saved = await insertRecord("holidays", {
+    id: `holiday-${Date.now()}-${Math.floor(Math.random() * 100000)}`,
+    title,
+    date: start_date,
+    start_date,
+    end_date,
+    type
+  });
+
   if (!saved) return;
 
   holidayTitleInput.value = "";
-  holidayDateInput.value = "";
+  holidayStartDateInput.value = "";
+  holidayEndDateInput.value = "";
   holidayTypeInput.value = "";
 
   await loadAllData();
@@ -749,23 +877,24 @@ if (saveHolidayBtn) saveHolidayBtn.addEventListener("click", saveHoliday);
 
 async function saveEvent() {
   const title = eventTitleInput.value.trim();
+  const event_date = eventDateInput.value || null;
+  const start_time = eventStartTimeInput.value || null;
+  const end_time = eventEndTimeInput.value || null;
 
-  if (!title) {
-    alert("Please enter an event title.");
+  if (!title || !event_date || !start_time || !end_time) {
+    alert("Please enter title, date, start time, and end time.");
     return;
   }
 
-  const payload = {
-    id: generateId("event"),
+  const saved = await insertRecord("events", {
     title,
-    date: eventDateInput.value || null,
-    start_time: eventStartTimeInput.value || null,
-    end_time: eventEndTimeInput.value || null,
+    event_date,
+    start_time,
+    end_time,
     location: eventLocationInput.value.trim(),
     details: eventDetailsInput.value.trim()
-  };
+  });
 
-  const saved = await upsertRecord("events", payload);
   if (!saved) return;
 
   eventTitleInput.value = "";
@@ -790,11 +919,7 @@ async function saveAcademicYear() {
     return;
   }
 
-  const saved = await upsertRecord("academic_years", {
-    id: generateId("academic-year"),
-    name
-  });
-
+  const saved = await insertRecord("academic_years", { name });
   if (!saved) return;
 
   academicYearNameInput.value = "";
@@ -814,13 +939,12 @@ async function saveSemester() {
   const start_date = semesterStartDateInput.value || null;
   const end_date = semesterEndDateInput.value || null;
 
-  if (!academic_year_id || !name) {
-    alert("Please choose an academic year and enter a semester name.");
+  if (!academic_year_id || !name || !start_date || !end_date) {
+    alert("Please choose an academic year and enter semester name, start date, and end date.");
     return;
   }
 
-  const saved = await upsertRecord("semesters", {
-    id: generateId("semester"),
+  const saved = await insertRecord("semesters", {
     academic_year_id,
     name,
     start_date,
@@ -847,6 +971,12 @@ function getCourseById(courseId) {
   }) || null;
 }
 
+function getSessionsForCourse(courseId) {
+  return courseSessions.filter(function (session) {
+    return session.course_id === courseId;
+  });
+}
+
 function getSessionsForDate(date) {
   const dateKey = toDateKey(date);
   const dayName = dayNameFromDate(date);
@@ -858,21 +988,28 @@ function getSessionsForDate(date) {
   const items = [];
 
   courses.forEach(function (course) {
-    const sessions = Array.isArray(course.sessions) ? course.sessions : [];
+    const sessions = getSessionsForCourse(course.id);
 
-    sessions.forEach(function (session, index) {
-      const weeklyMatch = session.repeatType === "weekly" && session.dayOfWeek === dayName;
-      const specificMatch = session.repeatType === "specific" && session.specificDate === dateKey;
+    sessions.forEach(function (session) {
+      const weeklyMatch = session.repeat_type === "weekly" && session.day_name === dayName;
+      const specificMatch = session.repeat_type === "specific" && session.session_date === dateKey;
 
       if (weeklyMatch || specificMatch) {
         items.push({
           type: "course",
-          id: `${course.id}-${index}-${dateKey}`,
-          title: `${course.name} - ${session.sessionType}`,
-          timeLabel: `${formatTime(session.startTime)} - ${formatTime(session.endTime)}`,
-          color: course.color || "#5666dd",
+          id: `course-session-${session.id}-${dateKey}`,
+          title: `${course.name} - ${session.session_type}`,
+          timeLabel: `${formatTime(session.start_time)} - ${formatTime(session.end_time)}`,
           location: session.location || "",
-          courseId: course.id
+          courseName: course.name,
+          detailHtml: `
+            <p class="meta">Course: ${escapeHtml(course.name)}</p>
+            <p class="meta">Code: ${escapeHtml(course.code || "No code")}</p>
+            <p class="meta">Instructor: ${escapeHtml(course.instructor || "No instructor")}</p>
+            <p class="meta">Session: ${escapeHtml(session.session_type)}</p>
+            <p class="meta">Time: ${escapeHtml(formatTime(session.start_time))} - ${escapeHtml(formatTime(session.end_time))}</p>
+            <p class="meta">Location: ${escapeHtml(session.location || "No location")}</p>
+          `
         });
       }
     });
@@ -884,9 +1021,9 @@ function getSessionsForDate(date) {
 }
 
 function isPastExam(exam) {
-  if (!exam.date) return false;
+  if (!exam.exam_date) return false;
   const now = new Date();
-  const examDateTime = new Date(`${exam.date}T${exam.time || "23:59"}`);
+  const examDateTime = new Date(`${exam.exam_date}T${exam.exam_time || "23:59"}`);
   return examDateTime < now;
 }
 
@@ -896,23 +1033,36 @@ function getItemsForDate(dateKey) {
 
   const examItems = exams
     .filter(function (exam) {
-      return exam.date === dateKey;
+      return exam.exam_date === dateKey;
     })
     .map(function (exam) {
+      const endTime = exam.duration_minutes ? calculateExamEndTime(exam.exam_time, exam.duration_minutes) : "";
       return {
-        type: "custom",
+        type: "exam",
         id: "exam-" + exam.id,
         title: "Exam: " + exam.title,
-        timeLabel: exam.time ? formatTime(exam.time) : "Time not set",
-        color: "#0f766e",
+        timeLabel: exam.exam_time
+          ? `${formatTime(exam.exam_time)}${endTime ? " - " + formatTime(endTime) : ""}`
+          : "Time not set",
         location: exam.place || "",
-        isPast: isPastExam(exam)
+        isPast: isPastExam(exam),
+        detailHtml: `
+          <p class="meta">Course: ${escapeHtml(exam.course || "No course")}</p>
+          <p class="meta">Date: ${escapeHtml(formatDate(exam.exam_date))}</p>
+          <p class="meta">Start time: ${escapeHtml(exam.exam_time ? formatTime(exam.exam_time) : "No time")}</p>
+          <p class="meta">Duration: ${escapeHtml(exam.duration_minutes ? exam.duration_minutes + " minutes" : "No duration")}</p>
+          <p class="meta">Place: ${escapeHtml(exam.place || "No place")}</p>
+          <p class="meta">Seat: ${escapeHtml(exam.seat_number || "No seat number")}</p>
+          <p class="meta">Grade: ${escapeHtml(exam.grade || "No grade")}</p>
+          <p class="meta">Mark: ${escapeHtml(exam.mark ?? "No mark")}</p>
+          <p class="meta">Notes: ${escapeHtml(exam.notes || "No notes")}</p>
+        `
       };
     });
 
   const eventItems = events
     .filter(function (event) {
-      return event.date === dateKey;
+      return event.event_date === dateKey;
     })
     .map(function (event) {
       return {
@@ -920,14 +1070,21 @@ function getItemsForDate(dateKey) {
         id: "event-" + event.id,
         title: event.title,
         timeLabel: `${event.start_time ? formatTime(event.start_time) : ""}${event.end_time ? " - " + formatTime(event.end_time) : ""}`.trim() || "Time not set",
-        color: "#7c3aed",
-        location: event.location || ""
+        location: event.location || "",
+        detailHtml: `
+          <p class="meta">Date: ${escapeHtml(formatDate(event.event_date))}</p>
+          <p class="meta">Time: ${escapeHtml(
+            `${event.start_time ? formatTime(event.start_time) : ""}${event.end_time ? " - " + formatTime(event.end_time) : ""}`.trim() || "Time not set"
+          )}</p>
+          <p class="meta">Location: ${escapeHtml(event.location || "No location")}</p>
+          <p class="meta">Details: ${escapeHtml(event.details || "No details")}</p>
+        `
       };
     });
 
   const holidayItems = holidays
     .filter(function (holiday) {
-      return holiday.date === dateKey;
+      return buildHolidayDates(holiday).includes(dateKey);
     })
     .map(function (holiday) {
       return {
@@ -935,12 +1092,23 @@ function getItemsForDate(dateKey) {
         id: "holiday-" + holiday.id,
         title: "Holiday: " + holiday.title,
         timeLabel: holiday.type || "Holiday",
-        color: "#dc2626",
-        location: ""
+        location: "",
+        detailHtml: `
+          <p class="meta">Start: ${escapeHtml(formatDate(holiday.start_date || holiday.date))}</p>
+          <p class="meta">End: ${escapeHtml(formatDate(holiday.end_date || holiday.start_date || holiday.date))}</p>
+          <p class="meta">Type: ${escapeHtml(holiday.type || "Holiday")}</p>
+          <p class="meta">Courses will not appear during this holiday.</p>
+        `
       };
     });
 
   return courseItems.concat(examItems, eventItems, holidayItems);
+}
+
+function openDetailModal(title, html) {
+  if (detailTitle) detailTitle.textContent = title || "Details";
+  if (detailBody) detailBody.innerHTML = html || "<p class='meta'>No details.</p>";
+  openModal("detailModal");
 }
 
 function renderScheduleList(container, items) {
@@ -953,11 +1121,11 @@ function renderScheduleList(container, items) {
 
   container.innerHTML = items.map(function (item) {
     return `
-      <div class="day-card ${item.isPast ? "past-item" : ""}">
+      <button class="day-card clickable-card ${item.isPast ? "past-item" : ""}" type="button" data-detail-title="${escapeHtml(item.title)}" data-detail-html="${escapeHtml(item.detailHtml || "")}">
         <h4 class="task-title">${escapeHtml(item.title)}</h4>
         <p class="meta">${escapeHtml(item.timeLabel || "")}</p>
         <p class="meta">${escapeHtml(item.location || "")}</p>
-      </div>
+      </button>
     `;
   }).join("");
 }
@@ -982,11 +1150,19 @@ function renderDashboard() {
   if (dashboardUpcomingTasks) {
     dashboardUpcomingTasks.innerHTML = upcomingTasks.length
       ? upcomingTasks.map(function (task) {
+          const course = getCourseById(task.course_id);
+          const html = `
+            <p class="meta">Details: ${escapeHtml(task.details || "No details")}</p>
+            <p class="meta">Course: ${escapeHtml(course ? course.name : "No course")}</p>
+            <p class="meta">Due: ${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
+            <p class="meta">Priority: ${escapeHtml(task.priority || "No priority")}</p>
+            <p class="meta">Status: ${escapeHtml(task.status || "To Do")}</p>
+          `;
           return `
-            <div class="day-card">
+            <button class="day-card clickable-card" type="button" data-detail-title="${escapeHtml(task.title)}" data-detail-html="${escapeHtml(html)}">
               <h4 class="task-title">${escapeHtml(task.title)}</h4>
               <p class="meta">${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
-            </div>
+            </button>
           `;
         }).join("")
       : '<div class="empty-state">No upcoming tasks.</div>';
@@ -997,16 +1173,24 @@ function renderDashboard() {
       ? exams
           .slice()
           .sort(function (a, b) {
-            return `${a.date || ""} ${a.time || ""}`.localeCompare(`${b.date || ""} ${b.time || ""}`);
+            return `${a.exam_date || ""} ${a.exam_time || ""}`.localeCompare(`${b.exam_date || ""} ${b.exam_time || ""}`);
           })
           .slice(0, 5)
           .map(function (exam) {
+            const html = `
+              <p class="meta">Course: ${escapeHtml(exam.course || "No course")}</p>
+              <p class="meta">Date: ${escapeHtml(exam.exam_date ? formatDate(exam.exam_date) : "No date")}</p>
+              <p class="meta">Start time: ${escapeHtml(exam.exam_time ? formatTime(exam.exam_time) : "No time")}</p>
+              <p class="meta">Duration: ${escapeHtml(exam.duration_minutes ? exam.duration_minutes + " minutes" : "No duration")}</p>
+              <p class="meta">Place: ${escapeHtml(exam.place || "No place")}</p>
+              <p class="meta">Notes: ${escapeHtml(exam.notes || "No notes")}</p>
+            `;
             return `
-              <div class="day-card ${isPastExam(exam) ? "past-item" : ""}">
+              <button class="day-card clickable-card ${isPastExam(exam) ? "past-item" : ""}" type="button" data-detail-title="${escapeHtml(exam.title)}" data-detail-html="${escapeHtml(html)}">
                 <h4 class="task-title">${escapeHtml(exam.title)}</h4>
-                <p class="meta">${escapeHtml(exam.date ? formatDate(exam.date) : "No date")}</p>
-                <p class="meta">${escapeHtml(exam.time ? formatTime(exam.time) : "No time")}</p>
-              </div>
+                <p class="meta">${escapeHtml(exam.exam_date ? formatDate(exam.exam_date) : "No date")}</p>
+                <p class="meta">${escapeHtml(exam.exam_time ? formatTime(exam.exam_time) : "No time")}</p>
+              </button>
             `;
           })
           .join("")
@@ -1023,7 +1207,7 @@ function renderCourses() {
   }
 
   coursesList.innerHTML = courses.map(function (course) {
-    const sessions = Array.isArray(course.sessions) ? course.sessions : [];
+    const sessions = getSessionsForCourse(course.id);
 
     return `
       <div class="course-card">
@@ -1038,13 +1222,13 @@ function renderCourses() {
               ? sessions.map(function (session) {
                   return `
                     <div class="detail-item">
-                      <strong>${escapeHtml(session.sessionType)}</strong>
+                      <strong>${escapeHtml(session.session_type)}</strong>
                       <p class="meta">
-                        ${session.repeatType === "weekly"
-                          ? `Weekly on ${escapeHtml(session.dayOfWeek)}`
-                          : `Specific date: ${escapeHtml(session.specificDate)}`}
+                        ${session.repeat_type === "weekly"
+                          ? `Weekly on ${escapeHtml(session.day_name || "")}`
+                          : `Specific date: ${escapeHtml(session.session_date || "")}`}
                       </p>
-                      <p class="meta">${escapeHtml(formatTime(session.startTime))} - ${escapeHtml(formatTime(session.endTime))}</p>
+                      <p class="meta">${escapeHtml(formatTime(session.start_time))} - ${escapeHtml(formatTime(session.end_time))}</p>
                       <p class="meta">${escapeHtml(session.location || "No location")}</p>
                     </div>
                   `;
@@ -1112,12 +1296,14 @@ function renderExams() {
 
   examsList.innerHTML = exams.length
     ? exams.map(function (exam) {
+        const endTime = exam.duration_minutes ? calculateExamEndTime(exam.exam_time, exam.duration_minutes) : "";
         return `
           <div class="course-card ${isPastExam(exam) ? "past-item" : ""}">
             <h4 class="task-title">${escapeHtml(exam.title)}</h4>
-            <p class="meta">Course: ${escapeHtml(exam.course_name || "No course")}</p>
-            <p class="meta">Date: ${escapeHtml(exam.date ? formatDate(exam.date) : "No date")}</p>
-            <p class="meta">Time: ${escapeHtml(exam.time ? formatTime(exam.time) : "No time")}</p>
+            <p class="meta">Course: ${escapeHtml(exam.course || "No course")}</p>
+            <p class="meta">Date: ${escapeHtml(exam.exam_date ? formatDate(exam.exam_date) : "No date")}</p>
+            <p class="meta">Time: ${escapeHtml(exam.exam_time ? formatTime(exam.exam_time) : "No time")}${endTime ? " - " + escapeHtml(formatTime(endTime)) : ""}</p>
+            <p class="meta">Duration: ${escapeHtml(exam.duration_minutes ? exam.duration_minutes + " minutes" : "No duration")}</p>
             <p class="meta">Place: ${escapeHtml(exam.place || "No place")}</p>
             <p class="meta">Seat: ${escapeHtml(exam.seat_number || "No seat number")}</p>
             <p class="meta">Grade: ${escapeHtml(exam.grade || "No grade")}</p>
@@ -1136,15 +1322,16 @@ function renderHolidays() {
     ? holidays
         .slice()
         .sort(function (a, b) {
-          return (a.date || "").localeCompare(b.date || "");
+          return (a.start_date || a.date || "").localeCompare(b.start_date || b.date || "");
         })
         .map(function (holiday) {
           return `
             <div class="course-card">
               <h4 class="task-title">${escapeHtml(holiday.title)}</h4>
-              <p class="meta">Date: ${escapeHtml(holiday.date ? formatDate(holiday.date) : "No date")}</p>
+              <p class="meta">Start: ${escapeHtml(holiday.start_date ? formatDate(holiday.start_date) : holiday.date ? formatDate(holiday.date) : "No start date")}</p>
+              <p class="meta">End: ${escapeHtml(holiday.end_date ? formatDate(holiday.end_date) : holiday.start_date ? formatDate(holiday.start_date) : holiday.date ? formatDate(holiday.date) : "No end date")}</p>
               <p class="meta">Type: ${escapeHtml(holiday.type || "Holiday")}</p>
-              <p class="meta">Courses will not appear on this date.</p>
+              <p class="meta">Courses will not appear during this holiday.</p>
             </div>
           `;
         })
@@ -1190,12 +1377,17 @@ function renderAcademicYears() {
 function buildCalendarItemHtml(item) {
   let itemClass = "event";
   if (item.type === "course") itemClass = "course";
-  if (item.type === "custom") itemClass = "exam";
+  if (item.type === "exam") itemClass = "exam";
   if (item.type === "event") itemClass = "event";
   if (item.type === "holiday") itemClass = "holiday";
 
   return `
-    <button class="calendar-item ${itemClass}" type="button">
+    <button
+      class="calendar-item ${itemClass}"
+      type="button"
+      data-detail-title="${escapeHtml(item.title)}"
+      data-detail-html="${escapeHtml(item.detailHtml || "")}"
+    >
       <span>${escapeHtml(item.title)}</span>
       <small>${escapeHtml(item.timeLabel || "")}</small>
     </button>
@@ -1364,12 +1556,29 @@ document.addEventListener("click", function (e) {
     const index = Number(removeSessionBtn.dataset.removeSession);
     pendingSessions.splice(index, 1);
     renderPendingSessions();
+    return;
+  }
+
+  const removeSpecificDateBtn = e.target.closest("[data-remove-specific-date]");
+  if (removeSpecificDateBtn) {
+    const index = Number(removeSpecificDateBtn.dataset.removeSpecificDate);
+    pendingSpecificDateList.splice(index, 1);
+    renderPendingSpecificDates();
+    return;
+  }
+
+  const detailTrigger = e.target.closest("[data-detail-title]");
+  if (detailTrigger) {
+    const title = detailTrigger.dataset.detailTitle || "Details";
+    const html = (detailTrigger.dataset.detailHtml || "").replaceAll("&lt;", "<").replaceAll("&gt;", ">").replaceAll("&amp;", "&").replaceAll("&quot;", '"').replaceAll("&#39;", "'");
+    openDetailModal(title, html);
   }
 });
 
 function renderAll() {
   populateSemesterOptions();
   populateCourseOptions();
+  renderPendingSpecificDates();
   renderPendingSessions();
   renderDashboard();
   renderCourses();
