@@ -304,28 +304,6 @@ function getTaskColor(task) {
   return "#2563eb";
 }
 
-function isHolidayDate(dateKey) {
-  return holidays.some(function (holiday) {
-    return buildHolidayDates(holiday).includes(dateKey);
-  });
-}
-
-function getHolidayForDate(dateKey) {
-  return holidays.find(function (holiday) {
-    return buildHolidayDates(holiday).includes(dateKey);
-  }) || null;
-}
-
-function courseColor(course) {
-  return course && course.color ? course.color : "#5666dd";
-}
-
-function getCourseById(courseId) {
-  return courses.find(function (course) {
-    return course.id === courseId;
-  }) || null;
-}
-
 function setColorPreview(input, preview) {
   if (!input || !preview) return;
   preview.style.background = input.value || "#5666dd";
@@ -1349,12 +1327,6 @@ async function saveSemester() {
 
 if (saveSemesterBtn) saveSemesterBtn.addEventListener("click", saveSemester);
 
-function getSessionsForCourse(courseId) {
-  return courseSessions.filter(function (session) {
-    return session.course_id === courseId;
-  });
-}
-
 function getSessionsForDate(date) {
   const dateKey = toDateKey(date);
   const dayName = dayNameFromDate(date);
@@ -1366,8 +1338,14 @@ function getSessionsForDate(date) {
   courses.forEach(function (course) {
     const sessions = getSessionsForCourse(course.id);
     sessions.forEach(function (session) {
-      const weeklyMatch = session.repeat_type === "weekly" && session.day_name === dayName;
-      const specificMatch = session.repeat_type === "specific" && session.session_date === dateKey;
+      const weeklyMatch =
+        session.repeat_type === "weekly" &&
+        session.day_name === dayName &&
+        isDateWithinSemester(dateKey, course.semester_id);
+
+      const specificMatch =
+        session.repeat_type === "specific" &&
+        session.session_date === dateKey;
 
       if (weeklyMatch || specificMatch) {
         items.push({
@@ -1383,6 +1361,7 @@ function getSessionsForDate(date) {
             <p class="meta">Course: ${escapeHtml(course.name)}</p>
             <p class="meta">Code: ${escapeHtml(course.code || "No code")}</p>
             <p class="meta">Instructor: ${escapeHtml(course.instructor || "No instructor")}</p>
+            <p class="meta">Semester: ${escapeHtml((getSemesterById(course.semester_id) || {}).name || "No semester")}</p>
             <p class="meta">Session: ${escapeHtml(session.session_type)}</p>
             <p class="meta">Time: ${escapeHtml(formatTime(session.start_time))} - ${escapeHtml(formatTime(session.end_time))}</p>
             <p class="meta">Location: ${escapeHtml(session.location || "No location")}</p>
@@ -1514,6 +1493,7 @@ function renderScheduleList(container, items) {
         type="button"
         data-detail-title="${escapeHtml(item.title)}"
         data-detail-html="${escapeHtml(item.detailHtml)}"
+        style="border-left: 4px solid ${escapeHtml(item.color || "#64748b")};"
       >
         <h4 class="task-title">${escapeHtml(item.title)}</h4>
         <p class="meta">${escapeHtml(item.timeLabel || "")}</p>
@@ -1532,7 +1512,9 @@ function renderDashboard() {
   renderScheduleList(dashboardTomorrow, getItemsForDate(toDateKey(tomorrow)));
 
   const upcomingTasks = tasks
-    .filter(function (task) { return task.status !== "Done"; })
+    .filter(function (task) {
+      return !isTaskArchived(task) && task.status !== "Done";
+    })
     .sort(function (a, b) { return (a.due_date || "").localeCompare(b.due_date || ""); })
     .slice(0, 5);
 
@@ -1540,6 +1522,7 @@ function renderDashboard() {
     dashboardUpcomingTasks.innerHTML = upcomingTasks.length
       ? upcomingTasks.map(function (task) {
           const course = getCourseById(task.course_id);
+          const cardColor = getTaskColor(task);
           const html = `
             <p class="meta">Details: ${escapeHtml(task.details || "No details")}</p>
             <p class="meta">Course: ${escapeHtml(course ? course.name : "No course")}</p>
@@ -1553,6 +1536,7 @@ function renderDashboard() {
               type="button"
               data-detail-title="${escapeHtml(task.title)}"
               data-detail-html="${escapeHtml(html)}"
+              style="border-left: 4px solid ${escapeHtml(cardColor)};"
             >
               <h4 class="task-title">${escapeHtml(task.title)}</h4>
               <p class="meta">${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
@@ -1585,6 +1569,7 @@ function renderDashboard() {
                 type="button"
                 data-detail-title="${escapeHtml(exam.title)}"
                 data-detail-html="${escapeHtml(html)}"
+                style="border-left: 4px solid #dc2626;"
               >
                 <h4 class="task-title">${escapeHtml(exam.title)}</h4>
                 <p class="meta">${escapeHtml(exam.exam_date ? formatDate(exam.exam_date) : "No date")}</p>
@@ -1664,12 +1649,17 @@ function renderCourses() {
 
 function renderTasks() {
   if (!plannerList) return;
-  if (!tasks.length) {
-    plannerList.innerHTML = '<div class="empty-state">No tasks yet.</div>';
+
+  const visibleTasks = tasks.filter(function (task) {
+    return !isTaskArchived(task);
+  });
+
+  if (!visibleTasks.length) {
+    plannerList.innerHTML = '<div class="empty-state">No active tasks yet.</div>';
     return;
   }
 
-  plannerList.innerHTML = tasks.map(function (task) {
+  plannerList.innerHTML = visibleTasks.map(function (task) {
     const course = getCourseById(task.course_id);
     const priorityClass = task.priority === "High"
       ? "priority-high"
@@ -1683,6 +1673,8 @@ function renderTasks() {
       ? "status-progress"
       : "status-todo";
 
+    const taskAccent = getTaskColor(task);
+
     const detailHtml = `
       <p class="meta">Details: ${escapeHtml(task.details || "No details")}</p>
       <p class="meta">Course: ${escapeHtml(course ? course.name : "No course")}</p>
@@ -1692,7 +1684,7 @@ function renderTasks() {
     `;
 
     return `
-      <div class="course-card">
+      <div class="course-card" style="border-left: 4px solid ${escapeHtml(taskAccent)};">
         <div class="card-head">
           <div>
             <div class="badge-row">
@@ -1768,7 +1760,7 @@ function renderExams() {
           <p class="meta">Notes: ${escapeHtml(exam.notes || "No notes")}</p>
         `;
         return `
-          <div class="course-card ${isPastExam(exam) ? "past-item" : ""}">
+          <div class="course-card ${isPastExam(exam) ? "past-item" : ""}" style="border-left: 4px solid #dc2626;">
             <div class="card-head">
               <div>
                 <h4 class="task-title">${escapeHtml(exam.title)}</h4>
@@ -1810,7 +1802,7 @@ function renderHolidays() {
             <p class="meta">Courses will not appear during this holiday.</p>
           `;
           return `
-            <div class="course-card">
+            <div class="course-card" style="border-left: 4px solid #d97706;">
               <div class="card-head">
                 <div>
                   <h4 class="task-title">${escapeHtml(holiday.title)}</h4>
