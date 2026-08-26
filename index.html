@@ -143,10 +143,13 @@
       <section id="calendar" class="tab-content">
         <div class="section-header">
           <h3>Calendar</h3>
-          <div class="calendar-controls">
-            <button id="monthViewBtn" class="secondary-btn small-btn active-view-btn" type="button">Month</button>
-            <button id="weekViewBtn" class="secondary-btn small-btn" type="button">Week</button>
-            <button id="dayViewBtn" class="secondary-btn small-btn" type="button">Day</button>
+          <div class="header-actions">
+            <button class="primary-btn small-btn" data-open-modal="eventModal" type="button">Add Event</button>
+            <div class="calendar-controls">
+              <button id="monthViewBtn" class="secondary-btn small-btn active-view-btn" type="button">Month</button>
+              <button id="weekViewBtn" class="secondary-btn small-btn" type="button">Week</button>
+              <button id="dayViewBtn" class="secondary-btn small-btn" type="button">Day</button>
+            </div>
           </div>
         </div>
 
@@ -184,7 +187,6 @@
           <div class="header-actions">
             <button class="primary-btn" data-open-modal="academicYearModal" type="button">Add Academic Year</button>
             <button class="secondary-btn" data-open-modal="semesterModal" type="button">Add Semester</button>
-            <button class="secondary-btn" data-open-modal="eventModal" type="button">Add Event</button>
           </div>
         </div>
         <div id="academicYearsList" class="card-grid"></div>
@@ -195,7 +197,7 @@
   <div id="courseModal" class="modal hidden">
     <div class="modal-content">
       <div class="modal-head">
-        <h2>Add Course</h2>
+        <h2 id="courseModalTitle">Add Course</h2>
         <button class="icon-btn" data-close-modal="courseModal" type="button">✕</button>
       </div>
 
@@ -209,7 +211,10 @@
       <input id="courseInstructor" type="text" placeholder="Dr. Smith" />
 
       <label for="courseColor">Color</label>
-      <input id="courseColor" type="color" value="#2563eb" />
+      <div class="color-field-row">
+        <input id="courseColor" type="color" value="#2563eb" />
+        <span id="courseColorPreview" class="color-preview-chip"></span>
+      </div>
 
       <label for="courseSemester">Semester</label>
       <select id="courseSemester">
@@ -277,7 +282,7 @@
   <div id="taskModal" class="modal hidden">
     <div class="modal-content">
       <div class="modal-head">
-        <h2>Add Task</h2>
+        <h2 id="taskModalTitle">Add Task</h2>
         <button class="icon-btn" data-close-modal="taskModal" type="button">✕</button>
       </div>
 
@@ -317,7 +322,7 @@
   <div id="noteModal" class="modal hidden">
     <div class="modal-content">
       <div class="modal-head">
-        <h2>Add Note</h2>
+        <h2 id="noteModalTitle">Add Note</h2>
         <button class="icon-btn" data-close-modal="noteModal" type="button">✕</button>
       </div>
 
@@ -334,7 +339,7 @@
   <div id="examModal" class="modal hidden">
     <div class="modal-content">
       <div class="modal-head">
-        <h2>Add Exam</h2>
+        <h2 id="examModalTitle">Add Exam</h2>
         <button class="icon-btn" data-close-modal="examModal" type="button">✕</button>
       </div>
 
@@ -377,7 +382,7 @@
   <div id="holidayModal" class="modal hidden">
     <div class="modal-content">
       <div class="modal-head">
-        <h2>Add Holiday</h2>
+        <h2 id="holidayModalTitle">Add Holiday</h2>
         <button class="icon-btn" data-close-modal="holidayModal" type="button">✕</button>
       </div>
 
@@ -404,7 +409,7 @@
   <div id="eventModal" class="modal hidden">
     <div class="modal-content">
       <div class="modal-head">
-        <h2>Add Event</h2>
+        <h2 id="eventModalTitle">Add Event</h2>
         <button class="icon-btn" data-close-modal="eventModal" type="button">✕</button>
       </div>
 
@@ -423,6 +428,12 @@
       <label for="eventLocation">Location</label>
       <input id="eventLocation" type="text" placeholder="Library" />
 
+      <label for="eventColor">Color</label>
+      <div class="color-field-row">
+        <input id="eventColor" type="color" value="#7c3aed" />
+        <span id="eventColorPreview" class="color-preview-chip"></span>
+      </div>
+
       <label for="eventDetails">Details</label>
       <textarea id="eventDetails" placeholder="Add event details"></textarea>
 
@@ -433,7 +444,7 @@
   <div id="academicYearModal" class="modal hidden">
     <div class="modal-content">
       <div class="modal-head">
-        <h2>Add Academic Year</h2>
+        <h2 id="academicYearModalTitle">Add Academic Year</h2>
         <button class="icon-btn" data-close-modal="academicYearModal" type="button">✕</button>
       </div>
 
@@ -447,7 +458,7 @@
   <div id="semesterModal" class="modal hidden">
     <div class="modal-content">
       <div class="modal-head">
-        <h2>Add Semester</h2>
+        <h2 id="semesterModalTitle">Add Semester</h2>
         <button class="icon-btn" data-close-modal="semesterModal" type="button">✕</button>
       </div>
 
