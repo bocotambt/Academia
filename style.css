@@ -726,3 +726,143 @@ textarea {
     flex: 1;
   }
 }
+.item-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.item-title-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-tools {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.item-menu-btn {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  border-radius: 10px;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.item-menu {
+  position: absolute;
+  right: 0;
+  top: 44px;
+  min-width: 130px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 6px;
+  display: none;
+  z-index: 20;
+}
+
+.item-menu.show {
+  display: block;
+}
+
+.item-menu button {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--text);
+}
+
+.item-menu button:hover {
+  background: var(--primary-soft);
+}
+
+.item-menu .menu-delete {
+  color: var(--danger);
+}
+
+.color-field-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.color-preview-chip {
+  display: inline-block;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #2563eb;
+  flex-shrink: 0;
+}
+
+.course-color-line {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+}
+
+.course-link-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+}
+
+.calendar-item {
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+
+.calendar-item span {
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.calendar-item small {
+  font-size: 10px;
+  line-height: 1.2;
+  opacity: 0.95;
+  margin-top: 2px;
+}
+
+.calendar-cell {
+  min-height: 128px;
+}
+
+.calendar-date {
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.calendar-items,
+.week-items,
+.day-items {
+  gap: 6px;
+}
+
+@media (max-width: 960px) {
+  .calendar-item span {
+    font-size: 12px;
+  }
+
+  .calendar-item small {
+    font-size: 11px;
+  }
+}
