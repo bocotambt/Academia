@@ -579,3 +579,122 @@ textarea {
   padding: 4px 8px;
   min-height: auto;
 }
+.cards-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.cards-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.course-card,
+.note-card,
+.task-card,
+.holiday-card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+  border: 1px solid #e2e8f0;
+}
+
+.course-card.compact-card,
+.note-card.compact-card,
+.task-card.compact-card,
+.holiday-card.compact-card {
+  padding: 14px;
+  margin-bottom: 0;
+  min-height: 100%;
+}
+
+.course-header-line,
+.note-header-line,
+.task-header-line,
+.holiday-header-line {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.course-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.course-code-chip {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.course-name-strong {
+  font-weight: 800;
+  color: #0f172a;
+  margin: 8px 0 4px;
+  font-size: 17px;
+}
+
+.note-course-label,
+.calendar-course-code {
+  font-weight: 800;
+}
+
+.note-color-line,
+.holiday-color-line,
+.task-color-line {
+  height: 8px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+}
+
+.note-card.course-note .note-color-line {
+  background: var(--note-color, #7c3aed);
+}
+
+.calendar-item-title {
+  display: block;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.calendar-item-subtitle {
+  display: block;
+  opacity: 0.95;
+  margin-top: 3px;
+  font-size: 11px;
+}
+
+.holiday-accent {
+  background: #dc2626 !important;
+}
+
+.holiday-soft {
+  background: #fef2f2 !important;
+}
+
+@media (max-width: 1100px) {
+  .cards-grid-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .cards-grid-3,
+  .cards-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
