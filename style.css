@@ -13,6 +13,7 @@
   gap: 6px;
   overflow: hidden;
   flex: 1;
+  margin-top: 6px;
 }
 
 .calendar-item-compact {
@@ -20,6 +21,7 @@
   border-radius: 8px;
   min-height: 0;
   text-align: left;
+  width: 100%;
 }
 
 .calendar-item-compact span {
@@ -40,9 +42,28 @@
   font-weight: 700;
   padding: 2px 0 0;
   text-align: left;
+  cursor: pointer;
 }
 
 .calendar-more-btn:hover {
   color: var(--primary);
   text-decoration: underline;
+}
+
+.calendar-more-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@media (max-width: 640px) {
+  .calendar-cell-fixed {
+    height: 140px;
+    min-height: 140px;
+    max-height: 140px;
+  }
+
+  .calendar-item-compact span {
+    font-size: 10px;
+  }
 }
