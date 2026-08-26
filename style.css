@@ -522,3 +522,10 @@ textarea {
     padding: 16px;
   }
 }
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
