@@ -914,3 +914,73 @@ textarea {
   color: var(--primary);
   text-decoration: underline;
 }
+
+.calendar-cell-fixed {
+  height: 170px;
+  min-height: 170px;
+  max-height: 170px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-items-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+  flex: 1;
+  margin-top: 6px;
+}
+
+.calendar-item-compact {
+  padding: 5px 8px;
+  border-radius: 8px;
+  min-height: 0;
+  text-align: left;
+  width: 100%;
+}
+
+.calendar-item-compact span {
+  display: block;
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar-more-btn {
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 0 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.calendar-more-btn:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.calendar-more-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@media (max-width: 640px) {
+  .calendar-cell-fixed {
+    height: 140px;
+    min-height: 140px;
+    max-height: 140px;
+  }
+
+  .calendar-item-compact span {
+    font-size: 10px;
+  }
+}
