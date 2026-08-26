@@ -529,3 +529,53 @@ textarea {
 .tab-content.active {
   display: block;
 }
+.course-card,
+.note-card {
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+}
+
+.card-head {
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.task-card-expanded {
+  margin-top: 8px;
+  gap: 8px;
+}
+
+.detail-item {
+  padding: 8px 10px;
+  margin-top: 6px;
+}
+
+.task-title {
+  margin: 2px 0 4px;
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.meta {
+  margin: 2px 0;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.badge-row {
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.priority-badge,
+.status-badge,
+.course-badge {
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+.edit-menu-btn {
+  padding: 4px 8px;
+  min-height: auto;
+}
