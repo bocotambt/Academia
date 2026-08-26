@@ -261,6 +261,61 @@ function getHolidayForDate(dateKey) {
   }) || null;
 }
 
+function getSessionsForCourse(courseId) {
+  return courseSessions.filter(function (session) {
+    return session.course_id === courseId;
+  });
+}
+
+function courseColor(course) {
+  return course && course.color ? course.color : "#5666dd";
+}
+
+function getCourseById(courseId) {
+  return courses.find(function (course) {
+    return course.id === courseId;
+  }) || null;
+}
+
+function getSemesterById(semesterId) {
+  return semesters.find(function (semester) {
+    return semester.id === semesterId;
+  }) || null;
+}
+
+function isDateWithinSemester(dateKey, semesterId) {
+  if (!semesterId || !dateKey) return true;
+  const semester = getSemesterById(semesterId);
+  if (!semester || !semester.start_date || !semester.end_date) return true;
+  return dateKey >= semester.start_date && dateKey <= semester.end_date;
+}
+
+function isTaskArchived(task) {
+  if (!task || task.status !== "Done" || !task.due_date) return false;
+  const todayKey = toDateKey(new Date());
+  return task.due_date < todayKey;
+}
+
+function getTaskColor(task) {
+  const course = getCourseById(task.course_id);
+  if (course && course.color) return course.color;
+  if (task.priority === "High") return "#dc2626";
+  if (task.priority === "Medium") return "#d97706";
+  return "#2563eb";
+}
+
+function isHolidayDate(dateKey) {
+  return holidays.some(function (holiday) {
+    return buildHolidayDates(holiday).includes(dateKey);
+  });
+}
+
+function getHolidayForDate(dateKey) {
+  return holidays.find(function (holiday) {
+    return buildHolidayDates(holiday).includes(dateKey);
+  }) || null;
+}
+
 function courseColor(course) {
   return course && course.color ? course.color : "#5666dd";
 }
