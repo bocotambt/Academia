@@ -2,738 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Academia</title>
-
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
-    :root {
-      --bg: #f3f6fb;
-      --surface: #ffffff;
-      --surface-2: #eef4ff;
-      --text: #1f2937;
-      --muted: #6b7280;
-      --border: #dbe4f0;
-      --primary: #355cde;
-      --primary-soft: #e8eeff;
-      --danger: #dc2626;
-      --danger-soft: #fee2e2;
-      --success: #0f766e;
-      --success-soft: #dff7f3;
-      --warning: #d97706;
-      --warning-soft: #fff1db;
-      --shadow: 0 12px 30px rgba(38, 58, 124, 0.10);
-      --radius: 18px;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
-
-    button,
-    input,
-    select,
-    textarea {
-      font: inherit;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .app-shell {
-      display: grid;
-      grid-template-columns: 280px 1fr;
-      min-height: 100vh;
-    }
-
-    .sidebar {
-      background: #172554;
-      color: #fff;
-      padding: 20px;
-      position: sticky;
-      top: 0;
-      height: 100vh;
-      overflow-y: auto;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-
-    .brand h1 {
-      margin: 0;
-      font-size: 24px;
-    }
-
-    .brand p {
-      margin: 4px 0 0;
-      color: #c7d2fe;
-      font-size: 14px;
-    }
-
-    .menu-toggle {
-      display: none;
-      background: rgba(255,255,255,0.14);
-      color: #fff;
-      border: none;
-      border-radius: 12px;
-      width: 42px;
-      height: 42px;
-      cursor: pointer;
-    }
-
-    .auth-box {
-      background: rgba(255,255,255,0.10);
-      border: 1px solid rgba(255,255,255,0.16);
-      border-radius: 16px;
-      padding: 14px;
-      margin-bottom: 18px;
-    }
-
-    .auth-box h2 {
-      margin: 0 0 12px;
-      font-size: 16px;
-    }
-
-    .auth-box label {
-      display: block;
-      font-size: 13px;
-      margin-bottom: 6px;
-      color: #dbeafe;
-    }
-
-    .auth-box input {
-      width: 100%;
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 12px;
-      padding: 10px 12px;
-      background: rgba(255,255,255,0.08);
-      color: #fff;
-      margin-bottom: 12px;
-    }
-
-    .auth-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .auth-message {
-      margin-top: 10px;
-      font-size: 13px;
-      color: #dbeafe;
-    }
-
-    .brand-user {
-      background: rgba(255,255,255,0.10);
-      border: 1px solid rgba(255,255,255,0.16);
-      border-radius: 16px;
-      padding: 12px 14px;
-      margin-bottom: 18px;
-      color: #dbeafe;
-      font-size: 13px;
-    }
-
-    .tab-nav {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .tab-btn {
-      width: 100%;
-      text-align: left;
-      border: none;
-      border-radius: 14px;
-      padding: 12px 14px;
-      background: transparent;
-      color: #dbeafe;
-      cursor: pointer;
-    }
-
-    .tab-btn:hover,
-    .tab-btn.active {
-      background: rgba(255,255,255,0.14);
-      color: #fff;
-    }
-
-    .main {
-      padding: 26px;
-    }
-
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 22px;
-    }
-
-    .topbar h2 {
-      margin: 0;
-      font-size: 28px;
-    }
-
-    .topbar-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .tab-content {
-      display: none;
-    }
-
-    .tab-content.active {
-      display: block;
-    }
-
-    .grid-2 {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 18px;
-    }
-
-    .grid-3 {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 18px;
-    }
-
-    .panel {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 18px;
-      box-shadow: var(--shadow);
-    }
-
-    .panel h3 {
-      margin: 0 0 12px;
-      font-size: 18px;
-    }
-
-    .panel-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-
-    .primary-btn,
-    .secondary-btn,
-    .delete-btn,
-    .ghost-btn {
-      border: none;
-      border-radius: 12px;
-      padding: 10px 14px;
-      cursor: pointer;
-    }
-
-    .primary-btn {
-      background: var(--primary);
-      color: #fff;
-    }
-
-    .secondary-btn {
-      background: var(--primary-soft);
-      color: var(--primary);
-    }
-
-    .delete-btn {
-      background: var(--danger-soft);
-      color: var(--danger);
-    }
-
-    .ghost-btn {
-      background: #edf2f7;
-      color: var(--text);
-    }
-
-    .mini-btn {
-      border: none;
-      border-radius: 10px;
-      padding: 8px 12px;
-      cursor: pointer;
-      background: var(--surface-2);
-      color: var(--text);
-    }
-
-    .empty-state {
-      padding: 16px;
-      border: 1px dashed var(--border);
-      border-radius: 14px;
-      color: var(--muted);
-      text-align: center;
-      background: #fafcff;
-    }
-
-    .day-card,
-    .course-card,
-    .note-card,
-    .academic-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px;
-      box-shadow: var(--shadow);
-    }
-
-    .day-card {
-      width: 100%;
-      text-align: left;
-      cursor: pointer;
-    }
-
-    .clickable-card {
-      border: 1px solid var(--border);
-      background: var(--surface);
-    }
-
-    .task-title {
-      margin: 0 0 8px;
-      font-size: 18px;
-      color: var(--text);
-    }
-
-    .task-done-title {
-      text-decoration: line-through;
-      color: var(--muted);
-    }
-
-    .meta {
-      margin: 6px 0 0;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    .badge-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-
-    .course-badge,
-    .priority-badge,
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      border-radius: 999px;
-      padding: 6px 10px;
-      font-size: 12px;
-      font-weight: bold;
-      color: #fff;
-    }
-
-    .priority-high {
-      background: #dc2626;
-    }
-
-    .priority-medium {
-      background: #d97706;
-    }
-
-    .priority-low {
-      background: #2563eb;
-    }
-
-    .status-done {
-      background: #0f766e;
-    }
-
-    .status-progress {
-      background: #7c3aed;
-    }
-
-    .status-todo {
-      background: #64748b;
-    }
-
-    .task-card-expanded {
-      margin-top: 14px;
-      display: grid;
-      gap: 10px;
-    }
-
-    .detail-item,
-    .semester-box,
-    .pending-session-item {
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 12px;
-      background: #fafcff;
-    }
-
-    .form-grid {
-      display: grid;
-      gap: 12px;
-    }
-
-    .form-grid.two {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .field label {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 14px;
-      color: var(--muted);
-    }
-
-    .field input,
-    .field select,
-    .field textarea {
-      width: 100%;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 11px 12px;
-      background: #fff;
-      color: var(--text);
-    }
-
-    .field textarea {
-      min-height: 110px;
-      resize: vertical;
-    }
-
-    .color-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .color-preview {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: #2563eb;
-      flex-shrink: 0;
-    }
-
-    .pending-date-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .pending-date-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--primary-soft);
-      color: var(--primary);
-      border-radius: 999px;
-      padding: 8px 10px;
-      font-size: 13px;
-    }
-
-    .pending-date-chip button {
-      border: none;
-      background: transparent;
-      color: var(--primary);
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .card-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 12px;
-      flex-wrap: wrap;
-    }
-
-    .detail-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 18px;
-      flex-wrap: wrap;
-    }
-
-    .detail-actions.hidden {
-      display: none !important;
-    }
-
-    .card-head {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .edit-menu-btn {
-      width: 40px;
-      height: 40px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: var(--surface);
-      color: var(--text);
-      font-size: 20px;
-      line-height: 1;
-      flex-shrink: 0;
-      cursor: pointer;
-    }
-
-    .edit-menu-btn:hover {
-      background: var(--primary-soft);
-      color: var(--primary);
-    }
-
-    .course-color-line {
-      height: 9px;
-      width: 100%;
-      border-radius: 999px;
-      margin-bottom: 12px;
-    }
-
-    .past-item {
-      opacity: 0.7;
-    }
-
-    .calendar-toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 16px;
-    }
-
-    .calendar-view-actions,
-    .calendar-nav-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .active-view-btn {
-      background: var(--primary);
-      color: #fff;
-    }
-
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, minmax(0, 1fr));
-      gap: 10px;
-    }
-
-    .calendar-cell {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 10px;
-      min-height: 150px;
-    }
-
-    .calendar-cell-fixed {
-      min-height: 170px;
-    }
-
-    .calendar-date {
-      font-weight: bold;
-      margin-bottom: 8px;
-    }
-
-    .calendar-items,
-    .calendar-items-compact,
-    .week-items,
-    .day-items {
-      display: grid;
-      gap: 6px;
-    }
-
-    .calendar-item {
-      border: none;
-      border-radius: 10px;
-      padding: 8px 10px;
-      color: #fff;
-      text-align: left;
-      cursor: pointer;
-    }
-
-    .calendar-item span,
-    .calendar-item small {
-      display: block;
-      color: #fff;
-    }
-
-    .calendar-item small {
-      opacity: 0.92;
-      margin-top: 2px;
-      font-size: 12px;
-    }
-
-    .calendar-item-compact {
-      font-size: 10px;
-      line-height: 1.15;
-      overflow: hidden;
-    }
-
-    .calendar-item-compact span {
-      font-size: 10px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .calendar-item-compact small {
-      font-size: 9px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .calendar-more-btn {
-      border: none;
-      border-radius: 10px;
-      padding: 8px 10px;
-      background: #e5edff;
-      color: var(--primary);
-      cursor: pointer;
-      text-align: left;
-    }
-
-    .holiday-cell {
-      background: #fff8f8;
-    }
-
-    .today {
-      outline: 2px solid var(--primary);
-    }
-
-    .other-month {
-      opacity: 0.65;
-    }
-
-    .week-grid {
-      display: grid;
-      grid-template-columns: repeat(7, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .week-day-column,
-    .day-view-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 14px;
-      min-height: 260px;
-    }
-
-    .week-day-title,
-    .day-view-title {
-      font-weight: bold;
-      margin-bottom: 12px;
-    }
-
-    .modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      z-index: 1000;
-    }
-
-    .modal-content {
-      width: min(760px, 100%);
-      max-height: 90vh;
-      overflow-y: auto;
-      background: var(--surface);
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      padding: 20px;
-      box-shadow: var(--shadow);
-    }
-
-    .modal-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .modal-head h2 {
-      margin: 0;
-      font-size: 22px;
-    }
-
-    .icon-btn {
-      width: 40px;
-      height: 40px;
-      border: none;
-      border-radius: 12px;
-      background: #eef2ff;
-      color: var(--text);
-      cursor: pointer;
-    }
-
-    .detail-body {
-      display: grid;
-      gap: 8px;
-    }
-
-    .save-disabled {
-      opacity: 0.6;
-      pointer-events: none;
-    }
-
-    @media (max-width: 980px) {
-      .app-shell {
-        grid-template-columns: 1fr;
-      }
-
-      .sidebar {
-        position: relative;
-        height: auto;
-      }
-
-      .menu-toggle {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .tab-nav {
-        display: none;
-        margin-top: 12px;
-      }
-
-      .tab-nav.menu-open {
-        display: flex;
-      }
-
-      .grid-2,
-      .grid-3,
-      .calendar-grid,
-      .week-grid,
-      .form-grid.two {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
+  <script src="script.js" defer></script>
 </head>
 <body>
   <div class="app-shell">
@@ -741,33 +17,12 @@
       <div class="brand">
         <div>
           <h1>Academia</h1>
-          <p>Your study companion</p>
+          <p id="brandSignedInText" class="muted small"></p>
         </div>
-        <button id="menuToggleBtn" class="menu-toggle" type="button" aria-label="Open menu">
-          ☰
-        </button>
+        <div id="brandUserArea" class="hidden"></div>
       </div>
 
-      <div id="authSignedOut" class="auth-box">
-        <h2>Sign in</h2>
-
-        <label for="authEmail">Email</label>
-        <input id="authEmail" type="email" placeholder="you@example.com" />
-
-        <label for="authPassword">Password</label>
-        <input id="authPassword" type="password" placeholder="Password" />
-
-        <div class="auth-actions">
-          <button id="signInBtn" class="primary-btn" type="button">Sign In</button>
-          <button id="signUpBtn" class="secondary-btn" type="button">Sign Up</button>
-        </div>
-
-        <div id="authMessage" class="auth-message"></div>
-      </div>
-
-      <div id="brandUserArea" class="brand-user hidden">
-        <div id="brandSignedInText"></div>
-      </div>
+      <button id="menuToggleBtn" class="menu-toggle" type="button">Menu</button>
 
       <nav id="tabNav" class="tab-nav">
         <button class="tab-btn active" data-tab="dashboard" type="button">Dashboard</button>
@@ -779,141 +34,140 @@
         <button class="tab-btn" data-tab="academic" type="button">Academic Settings</button>
         <button class="tab-btn" data-tab="calendar" type="button">Calendar</button>
       </nav>
+
+      <div class="auth-card">
+        <div id="authSignedOut">
+          <h3>Sign in</h3>
+          <input id="authEmail" type="email" placeholder="Email" />
+          <input id="authPassword" type="password" placeholder="Password" />
+          <div class="row">
+            <button id="signUpBtn" class="secondary-btn" type="button">Sign Up</button>
+            <button id="signInBtn" class="primary-btn" type="button">Sign In</button>
+          </div>
+          <p id="authMessage" class="muted small"></p>
+        </div>
+
+        <button id="signOutBtn" class="danger-btn hidden" type="button">Sign Out</button>
+      </div>
     </aside>
 
-    <main class="main">
-      <div class="topbar">
+    <main class="main-content">
+      <header class="topbar">
         <h2 id="pageTitle">Dashboard</h2>
-
-        <div class="topbar-actions">
-          <button id="signOutBtn" class="delete-btn hidden" type="button">Sign Out</button>
-        </div>
-      </div>
+      </header>
 
       <section id="dashboard" class="tab-content active">
         <div class="grid-2">
           <div class="panel">
-            <h3>Today</h3>
+            <div class="panel-head">
+              <h3>Today</h3>
+            </div>
             <div id="dashboardToday"></div>
           </div>
 
           <div class="panel">
-            <h3>Tomorrow</h3>
+            <div class="panel-head">
+              <h3>Tomorrow</h3>
+            </div>
             <div id="dashboardTomorrow"></div>
           </div>
+        </div>
 
+        <div class="grid-2">
           <div class="panel">
-            <h3>Upcoming Tasks</h3>
+            <div class="panel-head">
+              <h3>Upcoming Tasks</h3>
+            </div>
             <div id="dashboardUpcomingTasks"></div>
           </div>
 
           <div class="panel">
-            <h3>Upcoming Exams</h3>
+            <div class="panel-head">
+              <h3>Upcoming Exams</h3>
+            </div>
             <div id="dashboardUpcomingExams"></div>
           </div>
         </div>
       </section>
 
       <section id="courses" class="tab-content">
-        <div class="panel">
-          <div class="panel-head">
-            <h3>Courses</h3>
-            <button class="primary-btn" data-open-modal="courseModal" type="button">Add Course</button>
-          </div>
-          <div id="coursesList" class="task-card-expanded"></div>
+        <div class="section-toolbar">
+          <button class="primary-btn" data-open-modal="courseModal" type="button">Add Course</button>
         </div>
+        <div id="coursesList" class="stack-list"></div>
       </section>
 
       <section id="planner" class="tab-content">
-        <div class="panel">
-          <div class="panel-head">
-            <h3>Tasks</h3>
-            <button class="primary-btn" data-open-modal="taskModal" type="button">Add Task</button>
-          </div>
-          <div id="plannerList" class="task-card-expanded"></div>
+        <div class="section-toolbar">
+          <button class="primary-btn" data-open-modal="taskModal" type="button">Add Task</button>
         </div>
+        <div id="plannerList" class="stack-list"></div>
       </section>
 
       <section id="notes" class="tab-content">
-        <div class="panel">
-          <div class="panel-head">
-            <h3>Notes</h3>
-            <button class="primary-btn" data-open-modal="noteModal" type="button">Add Note</button>
-          </div>
-          <div id="notesList" class="task-card-expanded"></div>
+        <div class="section-toolbar">
+          <button class="primary-btn" data-open-modal="noteModal" type="button">Add Note</button>
         </div>
+        <div id="notesList" class="stack-list"></div>
       </section>
 
       <section id="exams" class="tab-content">
-        <div class="panel">
-          <div class="panel-head">
-            <h3>Exams</h3>
-            <button class="primary-btn" data-open-modal="examModal" type="button">Add Exam</button>
-          </div>
-          <div id="examsList" class="task-card-expanded"></div>
+        <div class="section-toolbar">
+          <button class="primary-btn" data-open-modal="examModal" type="button">Add Exam</button>
         </div>
+        <div id="examsList" class="stack-list"></div>
       </section>
 
       <section id="holidays" class="tab-content">
-        <div class="panel">
-          <div class="panel-head">
-            <h3>Holidays</h3>
-            <button class="primary-btn" data-open-modal="holidayModal" type="button">Add Holiday</button>
-          </div>
-          <div id="holidaysList" class="task-card-expanded"></div>
+        <div class="section-toolbar">
+          <button class="primary-btn" data-open-modal="holidayModal" type="button">Add Holiday</button>
         </div>
+        <div id="holidaysList" class="stack-list"></div>
       </section>
 
       <section id="academic" class="tab-content">
-        <div class="grid-2">
-          <div class="panel">
-            <div class="panel-head">
-              <h3>Academic Years & Semesters</h3>
-              <div class="topbar-actions">
-                <button class="secondary-btn" data-open-modal="academicYearModal" type="button">Add Academic Year</button>
-                <button class="primary-btn" data-open-modal="semesterModal" type="button">Add Semester</button>
-              </div>
-            </div>
-            <div id="academicYearsList" class="task-card-expanded"></div>
-          </div>
-
-          <div class="panel">
-            <div class="panel-head">
-              <h3>Events</h3>
-              <button class="primary-btn" data-open-modal="eventModal" type="button">Add Event</button>
-            </div>
-            <p class="meta">Add personal events that should appear in the calendar.</p>
-          </div>
+        <div class="section-toolbar">
+          <button class="primary-btn" data-open-modal="academicYearModal" type="button">Add Academic Year</button>
+          <button class="secondary-btn" data-open-modal="semesterModal" type="button">Add Semester</button>
         </div>
+        <div id="academicYearsList" class="stack-list"></div>
       </section>
 
       <section id="calendar" class="tab-content">
         <div class="panel">
           <div class="calendar-toolbar">
-            <div class="calendar-view-actions">
-              <button id="monthViewBtn" class="mini-btn active-view-btn" type="button">Month</button>
-              <button id="weekViewBtn" class="mini-btn" type="button">Week</button>
-              <button id="dayViewBtn" class="mini-btn" type="button">Day</button>
+            <div class="row wrap">
+              <button id="prevPeriodBtn" class="secondary-btn" type="button">Previous</button>
+              <h3 id="calendarMonthLabel">Calendar</h3>
+              <button id="nextPeriodBtn" class="secondary-btn" type="button">Next</button>
             </div>
-
-            <h3 id="calendarMonthLabel">Calendar</h3>
-
-            <div class="calendar-nav-actions">
-              <button id="prevPeriodBtn" class="mini-btn" type="button">← Prev</button>
-              <button id="nextPeriodBtn" class="mini-btn" type="button">Next →</button>
+            <div class="row wrap">
+              <button id="monthViewBtn" class="secondary-btn active-view-btn" type="button">Month</button>
+              <button id="weekViewBtn" class="secondary-btn" type="button">Week</button>
+              <button id="dayViewBtn" class="secondary-btn" type="button">Day</button>
+              <button class="primary-btn" data-open-modal="eventModal" type="button">Add Event</button>
             </div>
           </div>
 
           <div id="monthCalendarWrap">
+            <div class="calendar-weekdays">
+              <div>Sun</div>
+              <div>Mon</div>
+              <div>Tue</div>
+              <div>Wed</div>
+              <div>Thu</div>
+              <div>Fri</div>
+              <div>Sat</div>
+            </div>
             <div id="calendarGrid" class="calendar-grid"></div>
           </div>
 
           <div id="weekCalendarWrap" class="hidden">
-            <div id="weekCalendarGrid" class="week-grid"></div>
+            <div id="weekCalendarGrid" class="week-calendar-grid"></div>
           </div>
 
           <div id="dayCalendarWrap" class="hidden">
-            <div id="dayCalendarGrid"></div>
+            <div id="dayCalendarGrid" class="day-calendar-grid"></div>
           </div>
         </div>
       </section>
@@ -921,414 +175,207 @@
   </div>
 
   <div id="detailModal" class="modal hidden">
-    <div class="modal-content">
+    <div class="modal-card">
       <div class="modal-head">
-        <h2 id="detailTitle">Details</h2>
-        <button class="icon-btn" data-close-modal="detailModal" type="button" aria-label="Close details">✕</button>
+        <h3 id="detailTitle">Details</h3>
+        <button class="icon-btn" data-close-modal="detailModal" type="button">×</button>
       </div>
-
-      <div id="detailBody" class="detail-body"></div>
-
-      <div id="detailActions" class="detail-actions hidden">
-        <button id="detailEditBtn" class="secondary-btn" type="button">✎ Edit</button>
-        <button id="detailDeleteBtn" class="delete-btn" type="button">Delete</button>
+      <div id="detailBody" class="modal-body"></div>
+      <div id="detailActions" class="modal-actions hidden">
+        <button id="detailEditBtn" class="secondary-btn" type="button">Edit</button>
+        <button id="detailDeleteBtn" class="danger-btn" type="button">Delete</button>
       </div>
     </div>
   </div>
 
   <div id="courseModal" class="modal hidden">
-    <div class="modal-content">
+    <div class="modal-card large">
       <div class="modal-head">
-        <h2>Add Course</h2>
-        <button class="icon-btn" data-close-modal="courseModal" type="button">✕</button>
+        <h3>Course</h3>
+        <button class="icon-btn" data-close-modal="courseModal" type="button">×</button>
       </div>
-
-      <div class="form-grid">
-        <div class="field">
-          <label for="courseName">Course Name</label>
-          <input id="courseName" type="text" placeholder="Biochemistry" />
+      <div class="modal-body form-grid">
+        <input id="courseName" type="text" placeholder="Course name" />
+        <input id="courseCode" type="text" placeholder="Course code" />
+        <input id="courseInstructor" type="text" placeholder="Instructor name" />
+        <div class="color-row">
+          <input id="courseColor" type="color" value="#2563eb" />
+          <span id="courseColorPreview" class="color-preview"></span>
         </div>
+        <select id="courseSemester"></select>
 
-        <div class="field">
-          <label for="courseCode">Course Code</label>
-          <input id="courseCode" type="text" placeholder="BMS1001" />
-        </div>
+        <div class="subpanel">
+          <h4>Add Session</h4>
+          <input id="sessionType" type="text" placeholder="Session type (Lecture, Lab...)" />
+          <select id="sessionRepeat">
+            <option value="">Choose repeat rule</option>
+            <option value="weekly">Weekly</option>
+            <option value="specific">Specific dates</option>
+          </select>
 
-        <div class="field">
-          <label for="courseInstructor">Instructor</label>
-          <input id="courseInstructor" type="text" placeholder="Dr. Lee" />
-        </div>
-
-        <div class="field">
-          <label for="courseSemester">Semester</label>
-          <select id="courseSemester"></select>
-        </div>
-
-        <div class="field">
-          <label for="courseColor">Course Color</label>
-          <div class="color-row">
-            <input id="courseColor" type="color" value="#2563eb" />
-            <div id="courseColorPreview" class="color-preview"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel" style="margin-top:16px;">
-        <h3>Course Sessions</h3>
-
-        <div class="form-grid two">
-          <div class="field">
-            <label for="sessionType">Session Type</label>
-            <input id="sessionType" type="text" placeholder="Lecture / Lab / Tutorial" />
-          </div>
-
-          <div class="field">
-            <label for="sessionRepeat">Repeat Rule</label>
-            <select id="sessionRepeat">
-              <option value="">Choose repeat rule</option>
-              <option value="weekly">Weekly</option>
-              <option value="specific">Specific Dates</option>
-            </select>
-          </div>
-
-          <div id="sessionDayWrap" class="field hidden">
-            <label for="sessionDay">Day</label>
+          <div id="sessionDayWrap" class="hidden">
             <select id="sessionDay">
               <option value="">Choose day</option>
-              <option>Monday</option>
-              <option>Tuesday</option>
-              <option>Wednesday</option>
-              <option>Thursday</option>
-              <option>Friday</option>
-              <option>Saturday</option>
-              <option>Sunday</option>
+              <option value="Sunday">Sunday</option>
+              <option value="Monday">Monday</option>
+              <option value="Tuesday">Tuesday</option>
+              <option value="Wednesday">Wednesday</option>
+              <option value="Thursday">Thursday</option>
+              <option value="Friday">Friday</option>
+              <option value="Saturday">Saturday</option>
             </select>
           </div>
 
-          <div id="sessionDatesWrap" class="field hidden">
-            <label for="sessionDate">Specific Date</label>
-            <div class="card-actions">
+          <div id="sessionDatesWrap" class="hidden">
+            <div class="row">
               <input id="sessionDate" type="date" />
               <button id="addSpecificDateBtn" class="secondary-btn" type="button">Add Date</button>
             </div>
-            <div id="pendingSpecificDates" class="pending-date-list" style="margin-top:10px;"></div>
+            <div id="pendingSpecificDates"></div>
           </div>
 
-          <div class="field">
-            <label for="sessionStartTime">Start Time</label>
+          <div class="row">
             <input id="sessionStartTime" type="time" />
-          </div>
-
-          <div class="field">
-            <label for="sessionEndTime">End Time</label>
             <input id="sessionEndTime" type="time" />
           </div>
 
-          <div class="field" style="grid-column: 1 / -1;">
-            <label for="sessionLocation">Location</label>
-            <input id="sessionLocation" type="text" placeholder="Room 301" />
-          </div>
-        </div>
-
-        <div class="card-actions">
+          <input id="sessionLocation" type="text" placeholder="Location" />
           <button id="addSessionBtn" class="secondary-btn" type="button">Add Session</button>
+          <div id="pendingSessionsList"></div>
         </div>
 
-        <div id="pendingSessionsList" class="task-card-expanded" style="margin-top:14px;"></div>
-      </div>
-
-      <div class="card-actions">
         <button id="saveCourseBtn" class="primary-btn" type="button">Save Course</button>
       </div>
     </div>
   </div>
 
   <div id="taskModal" class="modal hidden">
-    <div class="modal-content">
+    <div class="modal-card">
       <div class="modal-head">
-        <h2>Add Task</h2>
-        <button class="icon-btn" data-close-modal="taskModal" type="button">✕</button>
+        <h3>Task</h3>
+        <button class="icon-btn" data-close-modal="taskModal" type="button">×</button>
       </div>
-
-      <div class="form-grid two">
-        <div class="field">
-          <label for="taskTitle">Task Title</label>
-          <input id="taskTitle" type="text" placeholder="Finish worksheet" />
-        </div>
-
-        <div class="field">
-          <label for="taskCourse">Course</label>
-          <select id="taskCourse"></select>
-        </div>
-
-        <div class="field" style="grid-column: 1 / -1;">
-          <label for="taskDetails">Details</label>
-          <textarea id="taskDetails" placeholder="Task details"></textarea>
-        </div>
-
-        <div class="field">
-          <label for="taskDate">Due Date</label>
-          <input id="taskDate" type="date" />
-        </div>
-
-        <div class="field">
-          <label for="taskPriority">Priority</label>
-          <select id="taskPriority">
-            <option value="High">High</option>
-            <option value="Medium">Medium</option>
-            <option value="Low">Low</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="taskStatus">Status</label>
-          <select id="taskStatus">
-            <option value="To Do">To Do</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Done">Done</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="card-actions">
+      <div class="modal-body form-grid">
+        <input id="taskTitle" type="text" placeholder="Task title" />
+        <textarea id="taskDetails" placeholder="Task details"></textarea>
+        <select id="taskCourse"></select>
+        <input id="taskDate" type="date" />
+        <select id="taskPriority">
+          <option>High</option>
+          <option>Medium</option>
+          <option>Low</option>
+        </select>
+        <select id="taskStatus">
+          <option>To Do</option>
+          <option>In Progress</option>
+          <option>Done</option>
+        </select>
         <button id="addTaskBtn" class="primary-btn" type="button">Save Task</button>
       </div>
     </div>
   </div>
 
   <div id="noteModal" class="modal hidden">
-    <div class="modal-content">
+    <div class="modal-card">
       <div class="modal-head">
-        <h2>Add Note</h2>
-        <button class="icon-btn" data-close-modal="noteModal" type="button">✕</button>
+        <h3>Note</h3>
+        <button class="icon-btn" data-close-modal="noteModal" type="button">×</button>
       </div>
-
-      <div class="form-grid">
-        <div class="field">
-          <label for="noteTitle">Title</label>
-          <input id="noteTitle" type="text" placeholder="Chapter 3 summary" />
-        </div>
-
-        <div class="field">
-          <label for="noteContent">Content</label>
-          <textarea id="noteContent" placeholder="Write your notes here"></textarea>
-        </div>
-      </div>
-
-      <div class="card-actions">
+      <div class="modal-body form-grid">
+        <input id="noteTitle" type="text" placeholder="Note title" />
+        <textarea id="noteContent" placeholder="Write your note"></textarea>
         <button id="saveNoteBtn" class="primary-btn" type="button">Save Note</button>
       </div>
     </div>
   </div>
 
   <div id="examModal" class="modal hidden">
-    <div class="modal-content">
+    <div class="modal-card">
       <div class="modal-head">
-        <h2>Add Exam</h2>
-        <button class="icon-btn" data-close-modal="examModal" type="button">✕</button>
+        <h3>Exam</h3>
+        <button class="icon-btn" data-close-modal="examModal" type="button">×</button>
       </div>
-
-      <div class="form-grid two">
-        <div class="field">
-          <label for="examTitle">Exam Title</label>
-          <input id="examTitle" type="text" placeholder="Midterm" />
-        </div>
-
-        <div class="field">
-          <label for="examCourse">Course</label>
-          <select id="examCourse"></select>
-        </div>
-
-        <div class="field">
-          <label for="examDate">Date</label>
-          <input id="examDate" type="date" />
-        </div>
-
-        <div class="field">
-          <label for="examTime">Start Time</label>
-          <input id="examTime" type="time" />
-        </div>
-
-        <div class="field">
-          <label for="examDuration">Duration (minutes)</label>
-          <input id="examDuration" type="number" min="0" placeholder="120" />
-        </div>
-
-        <div class="field">
-          <label for="examPlace">Place</label>
-          <input id="examPlace" type="text" placeholder="Hall A" />
-        </div>
-
-        <div class="field">
-          <label for="examSeatNumber">Seat Number</label>
-          <input id="examSeatNumber" type="text" placeholder="A12" />
-        </div>
-
-        <div class="field">
-          <label for="examGrade">Grade</label>
-          <input id="examGrade" type="text" placeholder="A" />
-        </div>
-
-        <div class="field">
-          <label for="examMark">Mark</label>
-          <input id="examMark" type="number" min="0" placeholder="85" />
-        </div>
-
-        <div class="field" style="grid-column: 1 / -1;">
-          <label for="examNotes">Notes</label>
-          <textarea id="examNotes" placeholder="Extra exam notes"></textarea>
-        </div>
-      </div>
-
-      <div class="card-actions">
+      <div class="modal-body form-grid">
+        <input id="examTitle" type="text" placeholder="Exam title" />
+        <select id="examCourse"></select>
+        <input id="examDate" type="date" />
+        <input id="examTime" type="time" />
+        <input id="examDuration" type="number" placeholder="Duration in minutes" />
+        <input id="examPlace" type="text" placeholder="Place" />
+        <input id="examSeatNumber" type="text" placeholder="Seat number" />
+        <input id="examGrade" type="text" placeholder="Grade" />
+        <input id="examMark" type="number" placeholder="Mark" />
+        <textarea id="examNotes" placeholder="Exam notes"></textarea>
         <button id="saveExamBtn" class="primary-btn" type="button">Save Exam</button>
       </div>
     </div>
   </div>
 
   <div id="holidayModal" class="modal hidden">
-    <div class="modal-content">
+    <div class="modal-card">
       <div class="modal-head">
-        <h2>Add Holiday</h2>
-        <button class="icon-btn" data-close-modal="holidayModal" type="button">✕</button>
+        <h3>Holiday</h3>
+        <button class="icon-btn" data-close-modal="holidayModal" type="button">×</button>
       </div>
-
-      <div class="form-grid two">
-        <div class="field">
-          <label for="holidayTitle">Holiday Name</label>
-          <input id="holidayTitle" type="text" placeholder="Reading Week" />
-        </div>
-
-        <div class="field">
-          <label for="holidayType">Holiday Type</label>
-          <input id="holidayType" type="text" placeholder="School Holiday" />
-        </div>
-
-        <div class="field">
-          <label for="holidayStartDate">Start Date</label>
-          <input id="holidayStartDate" type="date" />
-        </div>
-
-        <div class="field">
-          <label for="holidayEndDate">End Date</label>
-          <input id="holidayEndDate" type="date" />
-        </div>
-      </div>
-
-      <div class="card-actions">
+      <div class="modal-body form-grid">
+        <input id="holidayTitle" type="text" placeholder="Holiday name" />
+        <input id="holidayStartDate" type="date" />
+        <input id="holidayEndDate" type="date" />
+        <input id="holidayType" type="text" placeholder="Holiday type" />
         <button id="saveHolidayBtn" class="primary-btn" type="button">Save Holiday</button>
       </div>
     </div>
   </div>
 
   <div id="eventModal" class="modal hidden">
-    <div class="modal-content">
+    <div class="modal-card">
       <div class="modal-head">
-        <h2>Add Event</h2>
-        <button class="icon-btn" data-close-modal="eventModal" type="button">✕</button>
+        <h3>Event</h3>
+        <button class="icon-btn" data-close-modal="eventModal" type="button">×</button>
       </div>
-
-      <div class="form-grid two">
-        <div class="field">
-          <label for="eventTitle">Event Title</label>
-          <input id="eventTitle" type="text" placeholder="Study group" />
+      <div class="modal-body form-grid">
+        <input id="eventTitle" type="text" placeholder="Event title" />
+        <input id="eventDate" type="date" />
+        <input id="eventStartTime" type="time" />
+        <input id="eventEndTime" type="time" />
+        <input id="eventLocation" type="text" placeholder="Location" />
+        <textarea id="eventDetails" placeholder="Event details"></textarea>
+        <div class="color-row">
+          <input id="eventColor" type="color" value="#7c3aed" />
+          <span id="eventColorPreview" class="color-preview"></span>
         </div>
-
-        <div class="field">
-          <label for="eventDate">Date</label>
-          <input id="eventDate" type="date" />
-        </div>
-
-        <div class="field">
-          <label for="eventStartTime">Start Time</label>
-          <input id="eventStartTime" type="time" />
-        </div>
-
-        <div class="field">
-          <label for="eventEndTime">End Time</label>
-          <input id="eventEndTime" type="time" />
-        </div>
-
-        <div class="field">
-          <label for="eventLocation">Location</label>
-          <input id="eventLocation" type="text" placeholder="Library" />
-        </div>
-
-        <div class="field">
-          <label for="eventColor">Event Color</label>
-          <div class="color-row">
-            <input id="eventColor" type="color" value="#7c3aed" />
-            <div id="eventColorPreview" class="color-preview" style="background:#7c3aed;"></div>
-          </div>
-        </div>
-
-        <div class="field" style="grid-column: 1 / -1;">
-          <label for="eventDetails">Details</label>
-          <textarea id="eventDetails" placeholder="Extra details"></textarea>
-        </div>
-      </div>
-
-      <div class="card-actions">
         <button id="saveEventBtn" class="primary-btn" type="button">Save Event</button>
       </div>
     </div>
   </div>
 
   <div id="academicYearModal" class="modal hidden">
-    <div class="modal-content">
+    <div class="modal-card">
       <div class="modal-head">
-        <h2>Add Academic Year</h2>
-        <button class="icon-btn" data-close-modal="academicYearModal" type="button">✕</button>
+        <h3>Academic Year</h3>
+        <button class="icon-btn" data-close-modal="academicYearModal" type="button">×</button>
       </div>
-
-      <div class="form-grid">
-        <div class="field">
-          <label for="academicYearName">Academic Year</label>
-          <input id="academicYearName" type="text" placeholder="2026 / 2027" />
-        </div>
-      </div>
-
-      <div class="card-actions">
+      <div class="modal-body form-grid">
+        <input id="academicYearName" type="text" placeholder="Academic year name" />
         <button id="saveAcademicYearBtn" class="primary-btn" type="button">Save Academic Year</button>
       </div>
     </div>
   </div>
 
   <div id="semesterModal" class="modal hidden">
-    <div class="modal-content">
+    <div class="modal-card">
       <div class="modal-head">
-        <h2>Add Semester</h2>
-        <button class="icon-btn" data-close-modal="semesterModal" type="button">✕</button>
+        <h3>Semester</h3>
+        <button class="icon-btn" data-close-modal="semesterModal" type="button">×</button>
       </div>
-
-      <div class="form-grid two">
-        <div class="field">
-          <label for="semesterAcademicYear">Academic Year</label>
-          <select id="semesterAcademicYear"></select>
-        </div>
-
-        <div class="field">
-          <label for="semesterName">Semester Name</label>
-          <input id="semesterName" type="text" placeholder="Semester 1" />
-        </div>
-
-        <div class="field">
-          <label for="semesterStartDate">Start Date</label>
-          <input id="semesterStartDate" type="date" />
-        </div>
-
-        <div class="field">
-          <label for="semesterEndDate">End Date</label>
-          <input id="semesterEndDate" type="date" />
-        </div>
-      </div>
-
-      <div class="card-actions">
+      <div class="modal-body form-grid">
+        <select id="semesterAcademicYear"></select>
+        <input id="semesterName" type="text" placeholder="Semester name" />
+        <input id="semesterStartDate" type="date" />
+        <input id="semesterEndDate" type="date" />
         <button id="saveSemesterBtn" class="primary-btn" type="button">Save Semester</button>
       </div>
     </div>
   </div>
-
-  <script src="script.js"></script>
 </body>
 </html>
