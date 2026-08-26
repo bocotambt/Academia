@@ -914,3 +914,69 @@ textarea {
     font-size: 10px;
   }
 }
+.detail-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+.detail-actions.hidden {
+  display: none !important;
+}
+
+.card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.edit-menu-btn {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.edit-menu-btn:hover {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.course-color-line {
+  height: 9px;
+  width: 100%;
+  border-radius: 999px;
+  margin-bottom: 12px;
+}
+
+.calendar-item-compact {
+  font-size: 10px;
+  line-height: 1.15;
+  overflow: hidden;
+}
+
+.calendar-item-compact span {
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar-item-compact small {
+  font-size: 9px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.save-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
