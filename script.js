@@ -2385,7 +2385,9 @@ if (noteColorInput) {
     setColorPreview(noteColorInput, noteColorPreview);
   });
 }
-
+if (noteCourseInput) {
+  noteCourseInput.addEventListener("change", syncNoteColorToSelectedCourse);
+}
 document.querySelector('[data-open-modal="courseModal"]')?.addEventListener("click", resetCourseModal);
 document.querySelector('[data-open-modal="taskModal"]')?.addEventListener("click", resetTaskModal);
 document.querySelector('[data-open-modal="noteModal"]')?.addEventListener("click", resetNoteModal);
