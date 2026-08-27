@@ -1471,32 +1471,35 @@ function getItemsForDate(dateKey) {
   const dateObj = new Date(dateKey + "T00:00:00");
   const courseItems = getSessionsForDate(dateObj);
 
-  const examItems = exams
-    .filter(function (exam) { return exam.exam_date === dateKey; })
-    .map(function (exam) {
-      const endTime = exam.duration_minutes ? calculateExamEndTime(exam.exam_time, exam.duration_minutes) : "";
-      return {
-        type: "exam",
-        id: `exam-${exam.id}`,
-        title: `Exam: ${exam.title}`,
-        shortTitle: `Exam: ${exam.title}`,
-        timeLabel: exam.exam_time ? `${formatTime(exam.exam_time)}${endTime ? " - " + formatTime(endTime) : ""}` : "Time not set",
-        startTimeSort: exam.exam_time || "99:99",
-        location: exam.place || "",
-        color: "#dc2626",
-        detailHtml: `
-          <p class="meta">Course: ${escapeHtml(exam.course || "No course")}</p>
-          <p class="meta">Date: ${escapeHtml(formatDate(exam.exam_date))}</p>
-          <p class="meta">Start time: ${escapeHtml(exam.exam_time ? formatTime(exam.exam_time) : "No time")}</p>
-          <p class="meta">Duration: ${escapeHtml(exam.duration_minutes ? exam.duration_minutes + " minutes" : "No duration")}</p>
-          <p class="meta">Place: ${escapeHtml(exam.place || "No place")}</p>
-          <p class="meta">Seat: ${escapeHtml(exam.seat_number || "No seat number")}</p>
-          <p class="meta">Grade: ${escapeHtml(exam.grade || "No grade")}</p>
-          <p class="meta">Mark: ${escapeHtml(exam.mark ?? "No mark")}</p>
-          <p class="meta">Notes: ${escapeHtml(exam.notes || "No notes")}</p>
-        `
-      };
-    });
+ const examItems = exams
+  .filter(function (exam) {
+    return exam.exam_date === dateKey && !isExamArchived(exam);
+  })
+  .map(function (exam) {
+    const course = getCourseByExam(exam);
+    const endTime = exam.duration_minutes ? calculateExamEndTime(exam.exam_time, exam.duration_minutes) : "";
+    return {
+      type: "exam",
+      id: "exam-" + exam.id,
+      title: exam.title,
+      shortTitle: exam.title,
+      timeLabel: exam.exam_time ? `${formatTime(exam.exam_time)}${endTime ? " - " + formatTime(endTime) : ""}` : "Time not set",
+      startTimeSort: exam.exam_time || "99:99",
+      location: exam.place || "",
+      color: getExamColor(exam),
+      detailHtml: `
+        <p class="meta">Course: ${escapeHtml(formatCourseLabel(course))}</p>
+        <p class="meta">Date: ${escapeHtml(formatDate(exam.exam_date))}</p>
+        <p class="meta">Start time: ${escapeHtml(exam.exam_time ? formatTime(exam.exam_time) : "No time")}</p>
+        <p class="meta">Duration: ${escapeHtml(exam.duration_minutes ? exam.duration_minutes + " minutes" : "No duration")}</p>
+        <p class="meta">Place: ${escapeHtml(exam.place || "No place")}</p>
+        <p class="meta">Seat: ${escapeHtml(exam.seat_number || "No seat number")}</p>
+        <p class="meta">Grade: ${escapeHtml(exam.grade || "No grade")}</p>
+        <p class="meta">Mark: ${escapeHtml(exam.mark ?? "No mark")}</p>
+        <p class="meta">Notes: ${escapeHtml(exam.notes || "No notes")}</p>
+      `
+    };
+  });
 
   const eventItems = events
     .filter(function (event) { return event.event_date === dateKey; })
