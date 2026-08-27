@@ -368,7 +368,19 @@ function setColorPreview(input, preview) {
   if (!input || !preview) return;
   preview.style.background = input.value || "#5666dd";
 }
+function setColorPreview(input, preview) {
+  if (!input || !preview) return;
+  preview.style.background = input.value || "#5666dd";
+}
 
+function syncNoteColorToSelectedCourse() {
+  if (!noteCourseInput || !noteColorInput) return;
+  const course = getCourseById(noteCourseInput.value);
+  if (course && course.color) {
+    noteColorInput.value = course.color;
+    setColorPreview(noteColorInput, noteColorPreview);
+  }
+}
 function setButtonBusy(button, busy, label) {
   if (!button) return;
   if (busy) {
