@@ -1034,7 +1034,6 @@ function fillHolidayModal(holiday) {
   holidayTitleInput.value = holiday.title || "";
   holidayStartDateInput.value = holiday.start_date || holiday.date || "";
   holidayEndDateInput.value = holiday.end_date || holiday.start_date || holiday.date || "";
-  holidayTypeInput.value = holiday.type || "";
   saveHolidayBtn.textContent = "Update Holiday";
 }
 
