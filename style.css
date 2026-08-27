@@ -713,3 +713,19 @@ textarea {
 .task-card {
   overflow: hidden;
 }
+.task-quick-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.task-status-btn {
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.active-status-btn {
+  background: #2563eb;
+  color: #fff;
+}
