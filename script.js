@@ -1522,26 +1522,31 @@ function getItemsForDate(dateKey) {
       };
     });
 
-  const holidayItems = holidays
-    .filter(function (holiday) { return buildHolidayDates(holiday).includes(dateKey); })
-    .map(function (holiday) {
-      return {
-        type: "holiday",
-        id: `holiday-${holiday.id}`,
-        title: `Holiday: ${holiday.title}`,
-        shortTitle: `Holiday: ${holiday.title}`,
-        timeLabel: holiday.type || "Holiday",
-        startTimeSort: "99:99",
-        location: "",
-        color: "#dc2626",
-        detailHtml: `
-          <p class="meta">Start: ${escapeHtml(formatDate(holiday.start_date || holiday.date))}</p>
-          <p class="meta">End: ${escapeHtml(formatDate(holiday.end_date || holiday.start_date || holiday.date))}</p>
-          <p class="meta">Type: ${escapeHtml(holiday.type || "Holiday")}</p>
-          <p class="meta">Courses will not appear during this holiday.</p>
-        `
-      };
-    });
+ const holidayItems = holidays
+  .filter(function (holiday) {
+    return buildHolidayDates(holiday).includes(dateKey);
+  })
+  .map(function (holiday) {
+    const start = holiday.start_date || holiday.date;
+    const end = holiday.end_date || holiday.start_date || holiday.date;
+    const isSingleDay = start === end;
+
+    return {
+      type: "holiday",
+      id: "holiday-" + holiday.id,
+      title: holiday.title,
+      shortTitle: holiday.title,
+      timeLabel: isSingleDay ? "One-day holiday" : `${formatShortDate(start)} - ${formatShortDate(end)}`,
+      startTimeSort: "99:99",
+      location: "",
+      color: "#dc2626",
+      detailHtml: `
+        <p class="meta">Start: ${escapeHtml(start ? formatDate(start) : "No start date")}</p>
+        <p class="meta">End: ${escapeHtml(end ? formatDate(end) : "No end date")}</p>
+        <p class="meta">Courses will not appear during this holiday.</p>
+      `
+    };
+  });
 
   return courseItems
     .concat(examItems, eventItems, holidayItems)
