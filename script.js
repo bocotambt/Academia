@@ -1841,47 +1841,61 @@ function renderNotes() {
 
 function renderExams() {
   if (!examsList) return;
-  examsList.innerHTML = exams.length
-    ? exams.map(function (exam) {
-        const endTime = exam.duration_minutes ? calculateExamEndTime(exam.exam_time, exam.duration_minutes) : "";
-        const detailHtml = `
-          <p class="meta">Course: ${escapeHtml(exam.course || "No course")}</p>
-          <p class="meta">Date: ${escapeHtml(exam.exam_date ? formatDate(exam.exam_date) : "No date")}</p>
-          <p class="meta">Time: ${escapeHtml(exam.exam_time ? formatTime(exam.exam_time) : "No time")}${endTime ? " - " + escapeHtml(formatTime(endTime)) : ""}</p>
-          <p class="meta">Duration: ${escapeHtml(exam.duration_minutes ? exam.duration_minutes + " minutes" : "No duration")}</p>
-          <p class="meta">Place: ${escapeHtml(exam.place || "No place")}</p>
-          <p class="meta">Seat: ${escapeHtml(exam.seat_number || "No seat number")}</p>
-          <p class="meta">Grade: ${escapeHtml(exam.grade || "No grade")}</p>
-          <p class="meta">Mark: ${escapeHtml(exam.mark ?? "No mark")}</p>
-          <p class="meta">Notes: ${escapeHtml(exam.notes || "No notes")}</p>
-        `;
-        return `
-          <div class="course-card ${isPastExam(exam) ? "past-item" : ""}">
-            <div class="card-head">
-              <div>
-                <h4 class="task-title">${escapeHtml(exam.title)}</h4>
-                <p class="meta">Course: ${escapeHtml(exam.course || "No course")}</p>
-                <p class="meta">Date: ${escapeHtml(exam.exam_date ? formatDate(exam.exam_date) : "No date")}</p>
-                <p class="meta">Time: ${escapeHtml(exam.exam_time ? formatTime(exam.exam_time) : "No time")}${endTime ? " - " + escapeHtml(formatTime(endTime)) : ""}</p>
-                <p class="meta">Place: ${escapeHtml(exam.place || "No place")}</p>
-              </div>
-              <button
-                class="edit-menu-btn"
-                type="button"
-                data-open-record-detail="1"
-                data-record-type="exam"
-                data-record-id="${escapeHtml(exam.id)}"
-                data-detail-title="${escapeHtml(exam.title)}"
-                data-detail-html="${escapeHtml(detailHtml)}"
-                aria-label="Open exam actions"
-              >⋯</button>
-            </div>
-          </div>
-        `;
-      }).join("")
-    : '<div class="empty-state">No exams yet.</div>';
-}
 
+  const visibleExams = exams
+    .filter(function (exam) { return !isExamArchived(exam); })
+    .slice()
+    .sort(sortExamsByNearestFirst);
+
+  if (!visibleExams.length) {
+    examsList.className = "stack-list";
+    examsList.innerHTML = '<div class="empty-state">No exams yet.</div>';
+    return;
+  }
+
+  examsList.className = "stack-list cards-grid-3";
+  examsList.innerHTML = visibleExams.map(function (exam) {
+    const course = getCourseByExam(exam);
+    const accent = getExamColor(exam);
+    const endTime = exam.duration_minutes ? calculateExamEndTime(exam.exam_time, exam.duration_minutes) : "";
+    const detailHtml = `
+      <p class="meta">Course: ${escapeHtml(formatCourseLabel(course))}</p>
+      <p class="meta">Date: ${escapeHtml(exam.exam_date ? formatDate(exam.exam_date) : "No date")}</p>
+      <p class="meta">Time: ${escapeHtml(exam.exam_time ? formatTime(exam.exam_time) : "No time")}${endTime ? ` - ${escapeHtml(formatTime(endTime))}` : ""}</p>
+      <p class="meta">Duration: ${escapeHtml(exam.duration_minutes ? `${exam.duration_minutes} minutes` : "No duration")}</p>
+      <p class="meta">Place: ${escapeHtml(exam.place || "No place")}</p>
+      <p class="meta">Seat: ${escapeHtml(exam.seat_number || "No seat number")}</p>
+      <p class="meta">Grade: ${escapeHtml(exam.grade || "No grade")}</p>
+      <p class="meta">Mark: ${escapeHtml(exam.mark ?? "No mark")}</p>
+      <p class="meta">Notes: ${escapeHtml(exam.notes || "No notes")}</p>
+    `;
+
+    return `
+      <div class="course-card compact-card">
+        <div class="course-color-line" style="background:${escapeHtml(accent)}"></div>
+        <div class="card-head">
+          <div>
+            <h4 class="task-title">${escapeHtml(exam.title)}</h4>
+            <p class="meta">Course: ${escapeHtml(formatCourseLabel(course))}</p>
+            <p class="meta">Date: ${escapeHtml(exam.exam_date ? formatDate(exam.exam_date) : "No date")}</p>
+            <p class="meta">Time: ${escapeHtml(exam.exam_time ? formatTime(exam.exam_time) : "No time")}${endTime ? ` - ${escapeHtml(formatTime(endTime))}` : ""}</p>
+            <p class="meta">Place: ${escapeHtml(exam.place || "No place")}</p>
+          </div>
+          <button
+            class="edit-menu-btn"
+            type="button"
+            data-open-record-detail="1"
+            data-record-type="exam"
+            data-record-id="${escapeHtml(exam.id)}"
+            data-detail-title="${escapeHtml(exam.title)}"
+            data-detail-html="${escapeHtml(detailHtml)}"
+            aria-label="Open exam actions"
+          >⋯</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
 function renderHolidays() {
   if (!holidaysList) return;
 
