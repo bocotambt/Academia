@@ -72,6 +72,9 @@ const taskStatusInput = $("taskStatus");
 const addTaskBtn = $("addTaskBtn");
 
 const noteTitleInput = $("noteTitle");
+const noteCourseInput = $("noteCourse");
+const noteColorInput = $("noteColor");
+const noteColorPreview = $("noteColorPreview");
 const noteContentInput = $("noteContent");
 const saveNoteBtn = $("saveNoteBtn");
 
@@ -647,7 +650,7 @@ function populateCourseOptions() {
     courses.forEach(function (course) {
       const option = document.createElement("option");
       option.value = course.id;
-      option.textContent = course.name;
+      option.textContent = `${course.code} — ${course.name}`;
       taskCourseInput.appendChild(option);
     });
   }
@@ -657,8 +660,18 @@ function populateCourseOptions() {
     courses.forEach(function (course) {
       const option = document.createElement("option");
       option.value = course.name;
-      option.textContent = course.name;
+      option.textContent = `${course.code} — ${course.name}`;
       examCourseInput.appendChild(option);
+    });
+  }
+
+  if (noteCourseInput) {
+    noteCourseInput.innerHTML = `<option value="">No course</option>`;
+    courses.forEach(function (course) {
+      const option = document.createElement("option");
+      option.value = course.id;
+      option.textContent = `${course.code} — ${course.name}`;
+      noteCourseInput.appendChild(option);
     });
   }
 }
@@ -813,7 +826,10 @@ function resetNoteModal() {
   editingNoteId = null;
   noteTitleInput.value = "";
   noteContentInput.value = "";
+  if (noteCourseInput) noteCourseInput.value = "";
+  if (noteColorInput) noteColorInput.value = "#7c3aed";
   saveNoteBtn.textContent = "Save Note";
+  setColorPreview(noteColorInput, noteColorPreview);
 }
 
 function resetExamModal() {
@@ -936,7 +952,10 @@ function fillNoteModal(note) {
   editingNoteId = note.id;
   noteTitleInput.value = note.title || "";
   noteContentInput.value = note.content || "";
+  if (noteCourseInput) noteCourseInput.value = note.course_id || "";
+  if (noteColorInput) noteColorInput.value = note.color || "#7c3aed";
   saveNoteBtn.textContent = "Update Note";
+  setColorPreview(noteColorInput, noteColorPreview);
 }
 
 function fillExamModal(exam) {
@@ -1129,13 +1148,23 @@ async function saveNote() {
   await withSaveLock("note-save", saveNoteBtn, editingNoteId ? "Updating..." : "Saving...", async function () {
     const title = noteTitleInput.value.trim();
     const content = noteContentInput.value.trim();
+    const course_id = noteCourseInput ? (noteCourseInput.value || null) : null;
+    const color = course_id
+      ? (getCourseById(course_id)?.color || "#7c3aed")
+      : (noteColorInput ? noteColorInput.value : "#7c3aed");
 
     if (!title || !content) {
       alert("Please enter a note title and content.");
       return;
     }
 
-    const payload = { title, content };
+    const payload = {
+      title,
+      content,
+      course_id,
+      color
+    };
+
     const saved = editingNoteId
       ? await updateRecord("notes", editingNoteId, payload)
       : await insertRecord("notes", payload);
@@ -1144,6 +1173,7 @@ async function saveNote() {
 
     resetNoteModal();
     await loadAllData();
+    populateCourseOptions();
     renderAll();
     closeModal("noteModal");
   });
@@ -1208,7 +1238,6 @@ async function saveHoliday() {
 
     const payload = {
       title,
-      date: start_date,
       start_date,
       end_date,
       type
@@ -1338,21 +1367,17 @@ function getSessionsForDate(date) {
   courses.forEach(function (course) {
     const sessions = getSessionsForCourse(course.id);
     sessions.forEach(function (session) {
-      const weeklyMatch =
-        session.repeat_type === "weekly" &&
-        session.day_name === dayName &&
-        isDateWithinSemester(dateKey, course.semester_id);
-
-      const specificMatch =
-        session.repeat_type === "specific" &&
-        session.session_date === dateKey;
+      const weeklyMatch = session.repeat_type === "weekly" && session.day_name === dayName && isDateWithinSemester(dateKey, course.semester_id);
+      const specificMatch = session.repeat_type === "specific" && session.session_date === dateKey;
 
       if (weeklyMatch || specificMatch) {
         items.push({
           type: "course",
           id: `course-session-${session.id}-${dateKey}`,
           title: `${course.name} - ${session.session_type}`,
-          shortTitle: course.name,
+          shortTitle: `${course.name}`,
+          monthSubtitle: `${session.session_type}`,
+          weekShortTitle: `${course.code || "CODE"} - ${course.name}`,
           timeLabel: `${formatTime(session.start_time)} - ${formatTime(session.end_time)}`,
           startTimeSort: session.start_time || "99:99",
           location: session.location || "",
@@ -1361,7 +1386,7 @@ function getSessionsForDate(date) {
             <p class="meta">Course: ${escapeHtml(course.name)}</p>
             <p class="meta">Code: ${escapeHtml(course.code || "No code")}</p>
             <p class="meta">Instructor: ${escapeHtml(course.instructor || "No instructor")}</p>
-            <p class="meta">Semester: ${escapeHtml((getSemesterById(course.semester_id) || {}).name || "No semester")}</p>
+            <p class="meta">Semester: ${escapeHtml(getSemesterById(course.semester_id)?.name || "No semester")}</p>
             <p class="meta">Session: ${escapeHtml(session.session_type)}</p>
             <p class="meta">Time: ${escapeHtml(formatTime(session.start_time))} - ${escapeHtml(formatTime(session.end_time))}</p>
             <p class="meta">Location: ${escapeHtml(session.location || "No location")}</p>
@@ -1446,7 +1471,7 @@ function getItemsForDate(dateKey) {
         timeLabel: holiday.type || "Holiday",
         startTimeSort: "99:99",
         location: "",
-        color: "#d97706",
+        color: "#dc2626",
         detailHtml: `
           <p class="meta">Start: ${escapeHtml(formatDate(holiday.start_date || holiday.date))}</p>
           <p class="meta">End: ${escapeHtml(formatDate(holiday.end_date || holiday.start_date || holiday.date))}</p>
@@ -1493,7 +1518,6 @@ function renderScheduleList(container, items) {
         type="button"
         data-detail-title="${escapeHtml(item.title)}"
         data-detail-html="${escapeHtml(item.detailHtml)}"
-        style="border-left: 4px solid ${escapeHtml(item.color || "#64748b")};"
       >
         <h4 class="task-title">${escapeHtml(item.title)}</h4>
         <p class="meta">${escapeHtml(item.timeLabel || "")}</p>
@@ -1512,9 +1536,7 @@ function renderDashboard() {
   renderScheduleList(dashboardTomorrow, getItemsForDate(toDateKey(tomorrow)));
 
   const upcomingTasks = tasks
-    .filter(function (task) {
-      return !isTaskArchived(task) && task.status !== "Done";
-    })
+    .filter(function (task) { return task.status !== "Done"; })
     .sort(function (a, b) { return (a.due_date || "").localeCompare(b.due_date || ""); })
     .slice(0, 5);
 
@@ -1522,10 +1544,9 @@ function renderDashboard() {
     dashboardUpcomingTasks.innerHTML = upcomingTasks.length
       ? upcomingTasks.map(function (task) {
           const course = getCourseById(task.course_id);
-          const cardColor = getTaskColor(task);
           const html = `
             <p class="meta">Details: ${escapeHtml(task.details || "No details")}</p>
-            <p class="meta">Course: ${escapeHtml(course ? course.name : "No course")}</p>
+            <p class="meta">Course: ${escapeHtml(course ? `${course.code} — ${course.name}` : "No course")}</p>
             <p class="meta">Due: ${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
             <p class="meta">Priority: ${escapeHtml(task.priority || "No priority")}</p>
             <p class="meta">Status: ${escapeHtml(task.status || "To Do")}</p>
@@ -1536,7 +1557,6 @@ function renderDashboard() {
               type="button"
               data-detail-title="${escapeHtml(task.title)}"
               data-detail-html="${escapeHtml(html)}"
-              style="border-left: 4px solid ${escapeHtml(cardColor)};"
             >
               <h4 class="task-title">${escapeHtml(task.title)}</h4>
               <p class="meta">${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
@@ -1569,7 +1589,6 @@ function renderDashboard() {
                 type="button"
                 data-detail-title="${escapeHtml(exam.title)}"
                 data-detail-html="${escapeHtml(html)}"
-                style="border-left: 4px solid #dc2626;"
               >
                 <h4 class="task-title">${escapeHtml(exam.title)}</h4>
                 <p class="meta">${escapeHtml(exam.exam_date ? formatDate(exam.exam_date) : "No date")}</p>
@@ -1583,14 +1602,19 @@ function renderDashboard() {
 
 function renderCourses() {
   if (!coursesList) return;
+
   if (!courses.length) {
+    coursesList.className = "stack-list";
     coursesList.innerHTML = '<div class="empty-state">No courses yet.</div>';
     return;
   }
 
+  coursesList.className = "stack-list cards-grid-3";
+
   coursesList.innerHTML = courses.map(function (course) {
     const sessions = getSessionsForCourse(course.id);
     const semester = semesters.find(function (s) { return s.id === course.semester_id; });
+
     const detailHtml = `
       <p class="meta">Code: ${escapeHtml(course.code || "No code")}</p>
       <p class="meta">Instructor: ${escapeHtml(course.instructor || "No instructor")}</p>
@@ -1599,14 +1623,16 @@ function renderCourses() {
     `;
 
     return `
-      <div class="course-card">
+      <div class="course-card compact-card">
         <div class="course-color-line" style="background:${escapeHtml(courseColor(course))};"></div>
-        <div class="card-head">
+        <div class="course-header-line">
           <div>
             <div class="badge-row">
-              <span class="course-badge" style="background:${escapeHtml(courseColor(course))};">${escapeHtml(course.name)}</span>
+              <span class="course-badge" style="background:${escapeHtml(courseColor(course))};">
+                <span class="course-code-chip">${escapeHtml(course.code || "CODE")}</span>
+              </span>
             </div>
-            <p class="meta">${escapeHtml(course.code || "No code")}</p>
+            <h4 class="course-name-strong">${escapeHtml(course.name)}</h4>
             <p class="meta">${escapeHtml(course.instructor || "No instructor")}</p>
             <p class="meta">Semester: ${escapeHtml(semester ? semester.name : "No semester")}</p>
           </div>
@@ -1655,37 +1681,38 @@ function renderTasks() {
   });
 
   if (!visibleTasks.length) {
+    plannerList.className = "stack-list";
     plannerList.innerHTML = '<div class="empty-state">No active tasks yet.</div>';
     return;
   }
+
+  plannerList.className = "stack-list cards-grid-3";
 
   plannerList.innerHTML = visibleTasks.map(function (task) {
     const course = getCourseById(task.course_id);
     const priorityClass = task.priority === "High"
       ? "priority-high"
       : task.priority === "Medium"
-      ? "priority-medium"
-      : "priority-low";
-
+        ? "priority-medium"
+        : "priority-low";
     const statusClass = task.status === "Done"
       ? "status-done"
       : task.status === "In Progress"
-      ? "status-progress"
-      : "status-todo";
-
+        ? "status-progress"
+        : "status-todo";
     const taskAccent = getTaskColor(task);
 
     const detailHtml = `
       <p class="meta">Details: ${escapeHtml(task.details || "No details")}</p>
-      <p class="meta">Course: ${escapeHtml(course ? course.name : "No course")}</p>
+      <p class="meta">Course: ${escapeHtml(course ? `${course.code} — ${course.name}` : "No course")}</p>
       <p class="meta">Due: ${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
       <p class="meta">Priority: ${escapeHtml(task.priority || "No priority")}</p>
       <p class="meta">Status: ${escapeHtml(task.status || "To Do")}</p>
     `;
 
     return `
-      <div class="course-card" style="border-left: 4px solid ${escapeHtml(taskAccent)};">
-        <div class="card-head">
+      <div class="task-card compact-card" style="border-left:4px solid ${escapeHtml(taskAccent)};">
+        <div class="task-header-line">
           <div>
             <div class="badge-row">
               <span class="priority-badge ${priorityClass}">${escapeHtml(task.priority || "No priority")}</span>
@@ -1693,8 +1720,8 @@ function renderTasks() {
             </div>
             <h4 class="task-title ${task.status === "Done" ? "task-done-title" : ""}">${escapeHtml(task.title)}</h4>
             <p class="meta">${escapeHtml(task.details || "No details")}</p>
-            <p class="meta">Course: ${escapeHtml(course ? course.name : "No course")}</p>
-            <p class="meta">Due: ${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
+            <p class="meta">${escapeHtml(course ? `${course.code} — ${course.name}` : "No course")}</p>
+            <p class="meta">${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
           </div>
           <button
             class="edit-menu-btn"
@@ -1714,33 +1741,47 @@ function renderTasks() {
 
 function renderNotes() {
   if (!notesList) return;
-  notesList.innerHTML = notes.length
-    ? notes.map(function (note) {
-        const detailHtml = `
-          <p class="meta">${escapeHtml(note.content || "No content")}</p>
-        `;
-        return `
-          <div class="note-card">
-            <div class="card-head">
-              <div>
-                <h4 class="task-title">${escapeHtml(note.title)}</h4>
-                <p class="meta">${escapeHtml(note.content || "No content")}</p>
-              </div>
-              <button
-                class="edit-menu-btn"
-                type="button"
-                data-open-record-detail="1"
-                data-record-type="note"
-                data-record-id="${escapeHtml(note.id)}"
-                data-detail-title="${escapeHtml(note.title)}"
-                data-detail-html="${escapeHtml(detailHtml)}"
-                aria-label="Open note actions"
-              >⋯</button>
-            </div>
+
+  if (!notes.length) {
+    notesList.className = "stack-list";
+    notesList.innerHTML = '<div class="empty-state">No notes yet.</div>';
+    return;
+  }
+
+  notesList.className = "stack-list cards-grid-3";
+
+  notesList.innerHTML = notes.map(function (note) {
+    const course = getCourseById(note.course_id);
+    const noteColor = course ? courseColor(course) : (note.color || "#7c3aed");
+
+    const detailHtml = `
+      <p class="meta">Course: ${escapeHtml(course ? `${course.code} — ${course.name}` : "No course")}</p>
+      <p class="meta">${escapeHtml(note.content || "No content")}</p>
+    `;
+
+    return `
+      <div class="note-card compact-card ${course ? "course-note" : ""}" style="--note-color:${escapeHtml(noteColor)};">
+        <div class="note-color-line" style="background:${escapeHtml(noteColor)};"></div>
+        <div class="note-header-line">
+          <div>
+            <h4 class="task-title">${escapeHtml(note.title)}</h4>
+            <p class="meta note-course-label">${escapeHtml(course ? `${course.code} — ${course.name}` : "General note")}</p>
+            <p class="meta">${escapeHtml(note.content || "No content")}</p>
           </div>
-        `;
-      }).join("")
-    : '<div class="empty-state">No notes yet.</div>';
+          <button
+            class="edit-menu-btn"
+            type="button"
+            data-open-record-detail="1"
+            data-record-type="note"
+            data-record-id="${escapeHtml(note.id)}"
+            data-detail-title="${escapeHtml(note.title)}"
+            data-detail-html="${escapeHtml(detailHtml)}"
+            aria-label="Open note actions"
+          >⋯</button>
+        </div>
+      </div>
+    `;
+  }).join("");
 }
 
 function renderExams() {
@@ -1760,7 +1801,7 @@ function renderExams() {
           <p class="meta">Notes: ${escapeHtml(exam.notes || "No notes")}</p>
         `;
         return `
-          <div class="course-card ${isPastExam(exam) ? "past-item" : ""}" style="border-left: 4px solid #dc2626;">
+          <div class="course-card ${isPastExam(exam) ? "past-item" : ""}">
             <div class="card-head">
               <div>
                 <h4 class="task-title">${escapeHtml(exam.title)}</h4>
@@ -1788,43 +1829,52 @@ function renderExams() {
 
 function renderHolidays() {
   if (!holidaysList) return;
-  holidaysList.innerHTML = holidays.length
-    ? holidays
-        .slice()
-        .sort(function (a, b) {
-          return (a.start_date || a.date || "").localeCompare(b.start_date || b.date || "");
-        })
-        .map(function (holiday) {
-          const detailHtml = `
-            <p class="meta">Start: ${escapeHtml(holiday.start_date ? formatDate(holiday.start_date) : holiday.date ? formatDate(holiday.date) : "No start date")}</p>
-            <p class="meta">End: ${escapeHtml(holiday.end_date ? formatDate(holiday.end_date) : holiday.start_date ? formatDate(holiday.start_date) : holiday.date ? formatDate(holiday.date) : "No end date")}</p>
-            <p class="meta">Type: ${escapeHtml(holiday.type || "Holiday")}</p>
-            <p class="meta">Courses will not appear during this holiday.</p>
-          `;
-          return `
-            <div class="course-card" style="border-left: 4px solid #d97706;">
-              <div class="card-head">
-                <div>
-                  <h4 class="task-title">${escapeHtml(holiday.title)}</h4>
-                  <p class="meta">Start: ${escapeHtml(holiday.start_date ? formatDate(holiday.start_date) : holiday.date ? formatDate(holiday.date) : "No start date")}</p>
-                  <p class="meta">End: ${escapeHtml(holiday.end_date ? formatDate(holiday.end_date) : holiday.start_date ? formatDate(holiday.start_date) : holiday.date ? formatDate(holiday.date) : "No end date")}</p>
-                  <p class="meta">Type: ${escapeHtml(holiday.type || "Holiday")}</p>
-                </div>
-                <button
-                  class="edit-menu-btn"
-                  type="button"
-                  data-open-record-detail="1"
-                  data-record-type="holiday"
-                  data-record-id="${escapeHtml(holiday.id)}"
-                  data-detail-title="${escapeHtml(holiday.title)}"
-                  data-detail-html="${escapeHtml(detailHtml)}"
-                  aria-label="Open holiday actions"
-                >⋯</button>
-              </div>
+
+  if (!holidays.length) {
+    holidaysList.className = "stack-list";
+    holidaysList.innerHTML = '<div class="empty-state">No holidays yet.</div>';
+    return;
+  }
+
+  holidaysList.className = "stack-list cards-grid-2";
+
+  holidaysList.innerHTML = holidays
+    .slice()
+    .sort(function (a, b) {
+      return (a.start_date || a.date || "").localeCompare(b.start_date || b.date || "");
+    })
+    .map(function (holiday) {
+      const detailHtml = `
+        <p class="meta">Start: ${escapeHtml(holiday.start_date ? formatDate(holiday.start_date) : holiday.date ? formatDate(holiday.date) : "No start date")}</p>
+        <p class="meta">End: ${escapeHtml(holiday.end_date ? formatDate(holiday.end_date) : holiday.start_date ? formatDate(holiday.start_date) : holiday.date ? formatDate(holiday.date) : "No end date")}</p>
+        <p class="meta">Type: ${escapeHtml(holiday.type || "Holiday")}</p>
+        <p class="meta">Courses will not appear during this holiday.</p>
+      `;
+
+      return `
+        <div class="holiday-card compact-card" style="border-left:4px solid #dc2626;">
+          <div class="holiday-color-line holiday-accent"></div>
+          <div class="holiday-header-line">
+            <div>
+              <h4 class="task-title">${escapeHtml(holiday.title)}</h4>
+              <p class="meta">Start: ${escapeHtml(holiday.start_date ? formatDate(holiday.start_date) : holiday.date ? formatDate(holiday.date) : "No start date")}</p>
+              <p class="meta">End: ${escapeHtml(holiday.end_date ? formatDate(holiday.end_date) : holiday.start_date ? formatDate(holiday.start_date) : holiday.date ? formatDate(holiday.date) : "No end date")}</p>
+              <p class="meta">Type: ${escapeHtml(holiday.type || "Holiday")}</p>
             </div>
-          `;
-        }).join("")
-    : '<div class="empty-state">No holidays yet.</div>';
+            <button
+              class="edit-menu-btn"
+              type="button"
+              data-open-record-detail="1"
+              data-record-type="holiday"
+              data-record-id="${escapeHtml(holiday.id)}"
+              data-detail-title="${escapeHtml(holiday.title)}"
+              data-detail-html="${escapeHtml(detailHtml)}"
+              aria-label="Open holiday actions"
+            >⋯</button>
+          </div>
+        </div>
+      `;
+    }).join("");
 }
 
 function renderAcademicYears() {
@@ -1900,36 +1950,44 @@ function renderAcademicYears() {
 
 function buildCalendarItemHtml(item, compact) {
   const style = `style="background:${escapeHtml(item.color || "#64748b")};"`;
+
   if (compact) {
-    const compactText = item.type === "holiday"
-      ? item.shortTitle || item.title
-      : item.startTimeSort && item.startTimeSort !== "99:99"
-      ? `${formatTime(item.startTimeSort)} ${item.shortTitle || item.title}`
-      : item.shortTitle || item.title;
+    const compactTitle = item.type === "course"
+      ? (item.shortTitle || item.title)
+      : (item.shortTitle || item.title);
+
+    const compactSubtitle = item.type === "course"
+      ? (item.monthSubtitle || "")
+      : (item.startTimeSort && item.startTimeSort !== "99:99" ? formatTime(item.startTimeSort) : "");
 
     return `
       <button
-        class="calendar-item calendar-item-compact"
+        class="calendar-item calendar-item-compact ${item.type === "holiday" ? "holiday-accent" : ""}"
         ${style}
         type="button"
         data-detail-title="${escapeHtml(item.title)}"
         data-detail-html="${escapeHtml(item.detailHtml)}"
         title="${escapeHtml(item.title)}"
       >
-        <span>${escapeHtml(compactText)}</span>
+        <span class="calendar-item-title">${escapeHtml(compactTitle)}</span>
+        ${compactSubtitle ? `<span class="calendar-item-subtitle">${escapeHtml(compactSubtitle)}</span>` : ""}
       </button>
     `;
   }
 
+  const fullTitle = item.type === "course"
+    ? (item.weekShortTitle || item.title)
+    : (item.title || "");
+
   return `
     <button
-      class="calendar-item"
+      class="calendar-item ${item.type === "holiday" ? "holiday-accent" : ""}"
       ${style}
       type="button"
       data-detail-title="${escapeHtml(item.title)}"
       data-detail-html="${escapeHtml(item.detailHtml)}"
     >
-      <span>${escapeHtml(item.title)}</span>
+      <span class="calendar-item-title">${escapeHtml(fullTitle)}</span>
       <small>${escapeHtml(item.timeLabel || "")}</small>
       ${item.location ? `<small>${escapeHtml(item.location)}</small>` : ""}
     </button>
@@ -2243,6 +2301,12 @@ if (eventColorInput) {
   });
 }
 
+if (noteColorInput) {
+  noteColorInput.addEventListener("input", function () {
+    setColorPreview(noteColorInput, noteColorPreview);
+  });
+}
+
 document.querySelector('[data-open-modal="courseModal"]')?.addEventListener("click", resetCourseModal);
 document.querySelector('[data-open-modal="taskModal"]')?.addEventListener("click", resetTaskModal);
 document.querySelector('[data-open-modal="noteModal"]')?.addEventListener("click", resetNoteModal);
@@ -2267,6 +2331,7 @@ function renderAll() {
   renderCalendar();
   setColorPreview(courseColorInput, courseColorPreview);
   setColorPreview(eventColorInput, eventColorPreview);
+  setColorPreview(noteColorInput, noteColorPreview);
 }
 
 getCurrentSession();
