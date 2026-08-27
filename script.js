@@ -1735,9 +1735,10 @@ function renderCourses() {
 function renderTasks() {
   if (!plannerList) return;
 
-  const visibleTasks = tasks.filter(function (task) {
-    return !isTaskArchived(task);
-  });
+  const visibleTasks = tasks
+    .filter(function (task) { return !isTaskArchived(task); })
+    .slice()
+    .sort(sortTasksByNearestFirst);
 
   if (!visibleTasks.length) {
     plannerList.className = "stack-list";
@@ -1746,59 +1747,53 @@ function renderTasks() {
   }
 
   plannerList.className = "stack-list cards-grid-3";
-
   plannerList.innerHTML = visibleTasks.map(function (task) {
     const course = getCourseById(task.course_id);
-    const priorityClass = task.priority === "High"
-      ? "priority-high"
-      : task.priority === "Medium"
-        ? "priority-medium"
-        : "priority-low";
-    const statusClass = task.status === "Done"
-      ? "status-done"
-      : task.status === "In Progress"
-        ? "status-progress"
-        : "status-todo";
+    const priorityClass = task.priority === "High" ? "priority-high" : task.priority === "Medium" ? "priority-medium" : "priority-low";
+    const statusClass = task.status === "Done" ? "status-done" : task.status === "In Progress" ? "status-progress" : "status-todo";
     const taskAccent = getTaskColor(task);
-
     const detailHtml = `
       <p class="meta">Details: ${escapeHtml(task.details || "No details")}</p>
-      <p class="meta">Course: ${escapeHtml(course ? `${course.code} — ${course.name}` : "No course")}</p>
+      <p class="meta">Course: ${escapeHtml(formatCourseLabel(course))}</p>
       <p class="meta">Due: ${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
       <p class="meta">Priority: ${escapeHtml(task.priority || "No priority")}</p>
       <p class="meta">Status: ${escapeHtml(task.status || "To Do")}</p>
     `;
 
     return `
-  <div class="task-card compact-card">
-    <div class="task-color-line" style="background:${escapeHtml(taskAccent)};"></div>
-    <div class="task-header-line">
-      <div>
-        <div class="badge-row">
-          <span class="priority-badge ${priorityClass}">${escapeHtml(task.priority || "No priority")}</span>
-          <span class="status-badge ${statusClass}">${escapeHtml(task.status || "To Do")}</span>
+      <div class="task-card compact-card">
+        <div class="task-color-line" style="background:${escapeHtml(taskAccent)}"></div>
+        <div class="task-header-line">
+          <div>
+            <div class="badge-row">
+              <span class="priority-badge ${priorityClass}">${escapeHtml(task.priority || "No priority")}</span>
+              <span class="status-badge ${statusClass}">${escapeHtml(task.status || "To Do")}</span>
+            </div>
+            <h4 class="task-title ${task.status === "Done" ? "task-done-title" : ""}">${escapeHtml(task.title)}</h4>
+            <p class="meta">${escapeHtml(task.details || "No details")}</p>
+            <p class="meta">${escapeHtml(formatCourseLabel(course))}</p>
+            <p class="meta">${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
+          </div>
+          <button
+            class="edit-menu-btn"
+            type="button"
+            data-open-record-detail="1"
+            data-record-type="task"
+            data-record-id="${escapeHtml(task.id)}"
+            data-detail-title="${escapeHtml(task.title)}"
+            data-detail-html="${escapeHtml(detailHtml)}"
+            aria-label="Open task actions"
+          >⋯</button>
         </div>
-        <h4 class="task-title ${task.status === "Done" ? "task-done-title" : ""}">${escapeHtml(task.title)}</h4>
-        <p class="meta">${escapeHtml(task.details || "No details")}</p>
-        <p class="meta">${escapeHtml(course ? `${course.code} — ${course.name}` : "No course")}</p>
-        <p class="meta">${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
+        <div class="task-quick-actions">
+          <button class="secondary-btn task-status-btn ${task.status === "To Do" ? "active-status-btn" : ""}" type="button" data-task-status-id="${escapeHtml(task.id)}" data-task-status-value="To Do">To Do</button>
+          <button class="secondary-btn task-status-btn ${task.status === "In Progress" ? "active-status-btn" : ""}" type="button" data-task-status-id="${escapeHtml(task.id)}" data-task-status-value="In Progress">In Progress</button>
+          <button class="secondary-btn task-status-btn ${task.status === "Done" ? "active-status-btn" : ""}" type="button" data-task-status-id="${escapeHtml(task.id)}" data-task-status-value="Done">Done</button>
+        </div>
       </div>
-      <button
-        class="edit-menu-btn"
-        type="button"
-        data-open-record-detail="1"
-        data-record-type="task"
-        data-record-id="${escapeHtml(task.id)}"
-        data-detail-title="${escapeHtml(task.title)}"
-        data-detail-html="${escapeHtml(detailHtml)}"
-        aria-label="Open task actions"
-      >⋯</button>
-    </div>
-  </div>
-`;
+    `;
   }).join("");
 }
-
 function renderNotes() {
   if (!notesList) return;
 
