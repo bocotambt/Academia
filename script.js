@@ -1241,6 +1241,8 @@ async function saveExam() {
   await withSaveLock("exam-save", saveExamBtn, editingExamId ? "Updating..." : "Saving...", async function () {
     const title = examTitleInput.value.trim();
     const exam_date = examDateInput.value || null;
+    const course_id = examCourseInput.value || null;
+    const selectedCourse = getCourseById(course_id);
 
     if (!title || !exam_date) {
       alert("Please enter an exam title and date.");
@@ -1249,7 +1251,8 @@ async function saveExam() {
 
     const payload = {
       title,
-      course: examCourseInput.value || null,
+      course_id,
+      course: selectedCourse ? selectedCourse.name : null,
       exam_date,
       exam_time: examTimeInput.value || null,
       duration_minutes: examDurationInput.value ? Number(examDurationInput.value) : null,
