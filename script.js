@@ -909,7 +909,6 @@ function resetHolidayModal() {
   holidayTitleInput.value = "";
   holidayStartDateInput.value = "";
   holidayEndDateInput.value = "";
-  holidayTypeInput.value = "";
   saveHolidayBtn.textContent = "Save Holiday";
 }
 
