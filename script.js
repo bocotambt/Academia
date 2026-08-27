@@ -713,14 +713,14 @@ function populateCourseOptions() {
   }
 
   if (examCourseInput) {
-    examCourseInput.innerHTML = `<option value="">No course</option>`;
-    courses.forEach(function (course) {
-      const option = document.createElement("option");
-      option.value = course.name;
-      option.textContent = `${course.code} — ${course.name}`;
-      examCourseInput.appendChild(option);
-    });
-  }
+  examCourseInput.innerHTML = `<option value="">No course</option>`;
+  courses.forEach(function (course) {
+    const option = document.createElement("option");
+    option.value = course.id;
+    option.textContent = `${course.code} — ${course.name}`;
+    examCourseInput.appendChild(option);
+  });
+}
 
   if (noteCourseInput) {
     noteCourseInput.innerHTML = `<option value="">No course</option>`;
