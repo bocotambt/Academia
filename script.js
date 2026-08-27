@@ -1021,7 +1021,10 @@ function fillNoteModal(note) {
   noteTitleInput.value = note.title || "";
   noteContentInput.value = note.content || "";
   if (noteCourseInput) noteCourseInput.value = note.course_id || "";
-  if (noteColorInput) noteColorInput.value = note.color || "#7c3aed";
+  if (noteColorInput) {
+    const course = getCourseById(note.course_id);
+    noteColorInput.value = course && course.color ? course.color : (note.color || "#7c3aed");
+  }
   saveNoteBtn.textContent = "Update Note";
   setColorPreview(noteColorInput, noteColorPreview);
 }
