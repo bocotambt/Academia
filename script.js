@@ -285,12 +285,6 @@ function getSemesterById(semesterId) {
   }) || null;
 }
 
-function findCourseByName(name) {
-  return courses.find(function (course) {
-    return course.name === name;
-  }) || null;
-}
-
 function isDateWithinSemester(dateKey, semesterId) {
   if (!semesterId || !dateKey) return true;
   const semester = getSemesterById(semesterId);
@@ -304,19 +298,42 @@ function isTaskArchived(task) {
   return task.due_date < todayKey;
 }
 
+function isCourseArchived(course) {
+  if (!course || !course.semester_id) return false;
+  const semester = getSemesterById(course.semester_id);
+  if (!semester || !semester.end_date) return false;
+  return semester.end_date < toDateKey(new Date());
+}
+
+function isExamArchived(exam) {
+  return isPastExam(exam);
+}
+
+function getExamLinkedCourse(exam) {
+  if (!exam || !exam.course) return null;
+  return findCourseByName(exam.course) || null;
+}
+
+function escapeAttribute(value) {
+  return String(value ?? "").replaceAll('"', '&quot;');
+}
+
+function formatWeekRangeLabel(startDate) {
+  const start = new Date(startDate);
+  const end = new Date(startDate);
+  end.setDate(start.getDate() + 6);
+  const sameYear = start.getFullYear() === end.getFullYear();
+  const startText = start.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+  const endText = end.toLocaleDateString([], sameYear ? { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' } : { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  return `${startText} - ${endText}`;
+}
+
 function getTaskColor(task) {
   const course = getCourseById(task.course_id);
   if (course && course.color) return course.color;
-  return "#ffffff";
-}
-
-function getNoteLinkedCourse(note) {
-  if (!note) return null;
-  if (note.course_id) return getCourseById(note.course_id);
-  if (note.course) {
-    return findCourseByName(note.course) || null;
-  }
-  return null;
+  if (task.priority === "High") return "#dc2626";
+  if (task.priority === "Medium") return "#d97706";
+  return "#2563eb";
 }
 
 function setColorPreview(input, preview) {
@@ -329,10 +346,8 @@ function syncNoteColorToSelectedCourse() {
   const course = getCourseById(noteCourseInput.value);
   if (course && course.color) {
     noteColorInput.value = course.color;
-  } else {
-    noteColorInput.value = "#7c3aed";
+    setColorPreview(noteColorInput, noteColorPreview);
   }
-  setColorPreview(noteColorInput, noteColorPreview);
 }
 
 function setButtonBusy(button, busy, label) {
@@ -351,18 +366,6 @@ function setButtonBusy(button, busy, label) {
 
 function generateId() {
   return crypto.randomUUID();
-}
-
-function replaceItemInArray(list, updatedItem) {
-  return list.map(function (item) {
-    return item.id === updatedItem.id ? updatedItem : item;
-  });
-}
-
-function removeItemFromArray(list, id) {
-  return list.filter(function (item) {
-    return item.id !== id;
-  });
 }
 
 function openModal(modalId) {
@@ -575,37 +578,15 @@ async function loadTable(tableName) {
 
 async function loadAllData() {
   if (!currentUser) return;
-  const [
-    loadedAcademicYears,
-    loadedSemesters,
-    loadedCourses,
-    loadedCourseSessions,
-    loadedTasks,
-    loadedNotes,
-    loadedExams,
-    loadedHolidays,
-    loadedEvents
-  ] = await Promise.all([
-    loadTable("academic_years"),
-    loadTable("semesters"),
-    loadTable("courses"),
-    loadTable("course_sessions"),
-    loadTable("tasks"),
-    loadTable("notes"),
-    loadTable("exams"),
-    loadTable("holidays"),
-    loadTable("events")
-  ]);
-
-  academicYears = loadedAcademicYears;
-  semesters = loadedSemesters;
-  courses = loadedCourses;
-  courseSessions = loadedCourseSessions;
-  tasks = loadedTasks;
-  notes = loadedNotes;
-  exams = loadedExams;
-  holidays = loadedHolidays;
-  events = loadedEvents;
+  academicYears = await loadTable("academic_years");
+  semesters = await loadTable("semesters");
+  courses = await loadTable("courses");
+  courseSessions = await loadTable("course_sessions");
+  tasks = await loadTable("tasks");
+  notes = await loadTable("notes");
+  exams = await loadTable("exams");
+  holidays = await loadTable("holidays");
+  events = await loadTable("events");
 }
 
 async function insertRecord(tableName, payload) {
@@ -680,17 +661,7 @@ async function deleteCourseWithSessions(courseId) {
   }
 
   const ok = await deleteRecord("courses", courseId);
-  if (!ok) return false;
-
-  courseSessions = courseSessions.filter(function (session) {
-    return session.course_id !== courseId;
-  });
-  courses = removeItemFromArray(courses, courseId);
-  tasks = tasks.map(function (task) {
-    return task.course_id === courseId ? { ...task, course_id: null } : task;
-  });
-
-  return true;
+  return ok;
 }
 
 function populateSemesterOptions() {
@@ -731,6 +702,7 @@ function populateCourseOptions() {
     courses.forEach(function (course) {
       const option = document.createElement("option");
       option.value = course.name;
+      option.dataset.courseId = course.id;
       option.textContent = `${course.code} — ${course.name}`;
       examCourseInput.appendChild(option);
     });
@@ -1022,10 +994,10 @@ function fillNoteModal(note) {
   editingNoteId = note.id;
   noteTitleInput.value = note.title || "";
   noteContentInput.value = note.content || "";
-  const linkedCourse = getNoteLinkedCourse(note);
-  if (noteCourseInput) noteCourseInput.value = linkedCourse ? linkedCourse.id : "";
+  if (noteCourseInput) noteCourseInput.value = note.course_id || "";
   if (noteColorInput) {
-    noteColorInput.value = linkedCourse && linkedCourse.color ? linkedCourse.color : (note.color || "#7c3aed");
+    const course = getCourseById(note.course_id);
+    noteColorInput.value = course && course.color ? course.color : (note.color || "#7c3aed");
   }
   saveNoteBtn.textContent = "Update Note";
   setColorPreview(noteColorInput, noteColorPreview);
@@ -1108,7 +1080,6 @@ async function saveCourse() {
     }
 
     let courseId = editingCourseId;
-    let savedCourseRecord = null;
 
     if (editingCourseId) {
       const updated = await updateRecord("courses", editingCourseId, {
@@ -1120,7 +1091,6 @@ async function saveCourse() {
       });
       if (!updated) return;
       courseId = editingCourseId;
-      savedCourseRecord = updated;
 
       const { error: deleteSessionsError } = await supabaseClient
         .from("course_sessions")
@@ -1132,10 +1102,6 @@ async function saveCourse() {
         alert(deleteSessionsError.message || "Could not update course sessions.");
         return;
       }
-
-      courseSessions = courseSessions.filter(function (session) {
-        return session.course_id !== editingCourseId;
-      });
     } else {
       const savedCourse = await insertRecord("courses", {
         name,
@@ -1146,10 +1112,7 @@ async function saveCourse() {
       });
       if (!savedCourse) return;
       courseId = savedCourse.id;
-      savedCourseRecord = savedCourse;
     }
-
-    const insertedSessions = [];
 
     for (const session of pendingSessions) {
       if (session.repeat_type === "weekly") {
@@ -1164,7 +1127,6 @@ async function saveCourse() {
           location: session.location
         });
         if (!inserted) return;
-        insertedSessions.push(inserted);
       } else {
         for (const singleDate of session.session_dates) {
           const inserted = await insertRecord("course_sessions", {
@@ -1178,18 +1140,12 @@ async function saveCourse() {
             location: session.location
           });
           if (!inserted) return;
-          insertedSessions.push(inserted);
         }
       }
     }
 
-    if (editingCourseId) {
-      courses = replaceItemInArray(courses, savedCourseRecord);
-    } else {
-      courses = [...courses, savedCourseRecord];
-    }
-
-    courseSessions = [...courseSessions, ...insertedSessions];
+    await loadAllData();
+    populateCourseOptions();
     renderAll();
     resetCourseModal();
     closeModal("courseModal");
@@ -1223,13 +1179,8 @@ async function saveTask() {
 
     if (!saved) return;
 
-    if (editingTaskId) {
-      tasks = replaceItemInArray(tasks, saved);
-    } else {
-      tasks = [...tasks, saved];
-    }
-
     resetTaskModal();
+    await loadAllData();
     renderAll();
     closeModal("taskModal");
   });
@@ -1243,22 +1194,10 @@ async function updateTaskStatus(taskId, status) {
   });
   if (!task || task.status === status) return;
 
-  const previousStatus = task.status;
-  tasks = tasks.map(function (item) {
-    return item.id === taskId ? { ...item, status } : item;
-  });
-  renderAll();
-
   const updated = await updateRecord("tasks", taskId, { status });
-  if (!updated) {
-    tasks = tasks.map(function (item) {
-      return item.id === taskId ? { ...item, status: previousStatus } : item;
-    });
-    renderAll();
-    return;
-  }
+  if (!updated) return;
 
-  tasks = replaceItemInArray(tasks, updated);
+  await loadAllData();
   renderAll();
 }
 
@@ -1266,7 +1205,7 @@ async function saveNote() {
   await withSaveLock("note-save", saveNoteBtn, editingNoteId ? "Updating..." : "Saving...", async function () {
     const title = noteTitleInput.value.trim();
     const content = noteContentInput.value.trim();
-    const linkedCourse = noteCourseInput ? getCourseById(noteCourseInput.value || "") : null;
+    const course_id = noteCourseInput ? (noteCourseInput.value || null) : null;
 
     if (!title || !content) {
       alert("Please enter a note title and content.");
@@ -1276,8 +1215,7 @@ async function saveNote() {
     const payload = {
       title,
       content,
-      course: linkedCourse ? linkedCourse.name : null,
-      color: linkedCourse && linkedCourse.color ? linkedCourse.color : (noteColorInput ? noteColorInput.value : "#7c3aed")
+      course_id
     };
 
     const saved = editingNoteId
@@ -1286,13 +1224,9 @@ async function saveNote() {
 
     if (!saved) return;
 
-    if (editingNoteId) {
-      notes = replaceItemInArray(notes, saved);
-    } else {
-      notes = [...notes, saved];
-    }
-
     resetNoteModal();
+    await loadAllData();
+    populateCourseOptions();
     renderAll();
     closeModal("noteModal");
   });
@@ -1329,13 +1263,8 @@ async function saveExam() {
 
     if (!saved) return;
 
-    if (editingExamId) {
-      exams = replaceItemInArray(exams, saved);
-    } else {
-      exams = [...exams, saved];
-    }
-
     resetExamModal();
+    await loadAllData();
     renderAll();
     closeModal("examModal");
   });
@@ -1361,7 +1290,6 @@ async function saveHoliday() {
 
     const payload = {
       title,
-      date: start_date,
       start_date,
       end_date
     };
@@ -1372,13 +1300,8 @@ async function saveHoliday() {
 
     if (!saved) return;
 
-    if (editingHolidayId) {
-      holidays = replaceItemInArray(holidays, saved);
-    } else {
-      holidays = [...holidays, saved];
-    }
-
     resetHolidayModal();
+    await loadAllData();
     renderAll();
     closeModal("holidayModal");
   });
@@ -1414,13 +1337,8 @@ async function saveEvent() {
 
     if (!saved) return;
 
-    if (editingEventId) {
-      events = replaceItemInArray(events, saved);
-    } else {
-      events = [...events, saved];
-    }
-
     resetEventModal();
+    await loadAllData();
     renderAll();
     closeModal("eventModal");
   });
@@ -1444,13 +1362,9 @@ async function saveAcademicYear() {
 
     if (!saved) return;
 
-    if (editingAcademicYearId) {
-      academicYears = replaceItemInArray(academicYears, saved);
-    } else {
-      academicYears = [...academicYears, saved];
-    }
-
     resetAcademicYearModal();
+    await loadAllData();
+    populateSemesterOptions();
     renderAll();
     closeModal("academicYearModal");
   });
@@ -1483,13 +1397,9 @@ async function saveSemester() {
 
     if (!saved) return;
 
-    if (editingSemesterId) {
-      semesters = replaceItemInArray(semesters, saved);
-    } else {
-      semesters = [...semesters, saved];
-    }
-
     resetSemesterModal();
+    await loadAllData();
+    populateSemesterOptions();
     renderAll();
     closeModal("semesterModal");
   });
@@ -1841,7 +1751,6 @@ function renderTasks() {
         ? "status-progress"
         : "status-todo";
     const taskAccent = getTaskColor(task);
-    const noCourseClass = course ? "" : "no-course-task";
 
     const detailHtml = `
       <p class="meta">Details: ${escapeHtml(task.details || "No details")}</p>
@@ -1852,7 +1761,7 @@ function renderTasks() {
     `;
 
     return `
-  <div class="task-card compact-card ${noCourseClass}">
+  <div class="task-card compact-card">
     <div class="task-color-line" style="background:${escapeHtml(taskAccent)};"></div>
     <div class="task-header-line">
       <div>
@@ -1864,10 +1773,10 @@ function renderTasks() {
         <p class="meta">${escapeHtml(task.details || "No details")}</p>
         <p class="meta">${escapeHtml(course ? `${course.code} — ${course.name}` : "No course")}</p>
         <p class="meta">${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
-        <div class="task-quick-actions">
-          <button class="task-status-btn ${task.status === "To Do" ? "active-status-btn" : ""}" type="button" data-task-status-id="${escapeHtml(task.id)}" data-task-status-value="To Do">To Do</button>
-          <button class="task-status-btn ${task.status === "In Progress" ? "active-status-btn" : ""}" type="button" data-task-status-id="${escapeHtml(task.id)}" data-task-status-value="In Progress">In Progress</button>
-          <button class="task-status-btn ${task.status === "Done" ? "active-status-btn" : ""}" type="button" data-task-status-id="${escapeHtml(task.id)}" data-task-status-value="Done">Done</button>
+        <div class="card-actions">
+          <button type="button" data-task-status-id="${escapeHtml(task.id)}" data-task-status-value="To Do">To Do</button>
+          <button type="button" data-task-status-id="${escapeHtml(task.id)}" data-task-status-value="In Progress">In Progress</button>
+          <button type="button" data-task-status-id="${escapeHtml(task.id)}" data-task-status-value="Done">Done</button>
         </div>
       </div>
       <button
@@ -1898,7 +1807,7 @@ function renderNotes() {
   notesList.className = "stack-list cards-grid-3";
 
   notesList.innerHTML = notes.map(function (note) {
-    const course = getNoteLinkedCourse(note);
+    const course = getCourseById(note.course_id);
     const noteColor = course ? courseColor(course) : (note.color || "#7c3aed");
 
     const detailHtml = `
@@ -1930,6 +1839,23 @@ function renderNotes() {
     `;
   }).join("");
 }
+
+function renderArchivedSection(container, label, itemsHtml, isOpen) {
+  if (!container) return;
+  const toggleLabel = isOpen ? `Hide archived ${label}` : `Show archived ${label}`;
+  return `
+    <div class="archived-section">
+      <div class="archived-toggle-wrap">
+        <button class="secondary-btn" type="button" data-toggle-archive="${escapeAttribute(label)}">${toggleLabel}</button>
+      </div>
+      ${isOpen && itemsHtml ? `<div class="stack-list archived-list">${itemsHtml}</div>` : ""}
+    </div>
+  `;
+}
+
+let showArchivedTasks = false;
+let showArchivedCourses = false;
+let showArchivedExams = false;
 
 function renderExams() {
   if (!examsList) return;
@@ -2094,7 +2020,7 @@ function renderAcademicYears() {
 }
 
 function buildCalendarItemHtml(item, compact) {
-  const style = `style="background:${escapeHtml(item.color || "#64748b")}; color:${item.color === "#ffffff" ? "#0f172a" : "#ffffff"};${item.color === "#ffffff" ? " border:1px solid #cbd5e1;" : ""}"`;
+  const style = `style="background:${escapeHtml(item.color || "#64748b")};"`;
 
   if (compact) {
     const compactTitle = item.type === "course"
@@ -2368,49 +2294,21 @@ async function handleDeleteRecord(record) {
   let deleted = false;
 
   if (record.type === "course") deleted = await deleteCourseWithSessions(record.id);
-  if (record.type === "task") {
-    deleted = await deleteRecord("tasks", record.id);
-    if (deleted) tasks = removeItemFromArray(tasks, record.id);
-  }
-  if (record.type === "note") {
-    deleted = await deleteRecord("notes", record.id);
-    if (deleted) notes = removeItemFromArray(notes, record.id);
-  }
-  if (record.type === "exam") {
-    deleted = await deleteRecord("exams", record.id);
-    if (deleted) exams = removeItemFromArray(exams, record.id);
-  }
-  if (record.type === "holiday") {
-    deleted = await deleteRecord("holidays", record.id);
-    if (deleted) holidays = removeItemFromArray(holidays, record.id);
-  }
-  if (record.type === "event") {
-    deleted = await deleteRecord("events", record.id);
-    if (deleted) events = removeItemFromArray(events, record.id);
-  }
-  if (record.type === "academic-year") {
-    deleted = await deleteRecord("academic_years", record.id);
-    if (deleted) {
-      academicYears = removeItemFromArray(academicYears, record.id);
-      semesters = semesters.filter(function (semester) {
-        return semester.academic_year_id !== record.id;
-      });
-    }
-  }
-  if (record.type === "semester") {
-    deleted = await deleteRecord("semesters", record.id);
-    if (deleted) {
-      semesters = removeItemFromArray(semesters, record.id);
-      courses = courses.map(function (course) {
-        return course.semester_id === record.id ? { ...course, semester_id: null } : course;
-      });
-    }
-  }
+  if (record.type === "task") deleted = await deleteRecord("tasks", record.id);
+  if (record.type === "note") deleted = await deleteRecord("notes", record.id);
+  if (record.type === "exam") deleted = await deleteRecord("exams", record.id);
+  if (record.type === "holiday") deleted = await deleteRecord("holidays", record.id);
+  if (record.type === "event") deleted = await deleteRecord("events", record.id);
+  if (record.type === "academic-year") deleted = await deleteRecord("academic_years", record.id);
+  if (record.type === "semester") deleted = await deleteRecord("semesters", record.id);
 
   if (!deleted) return;
 
   closeModal("detailModal");
   hideDetailActions();
+  await loadAllData();
+  populateSemesterOptions();
+  populateCourseOptions();
   renderAll();
 }
 
