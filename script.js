@@ -1711,31 +1711,32 @@ function renderTasks() {
     `;
 
     return `
-      <div class="task-card compact-card" style="border-left:4px solid ${escapeHtml(taskAccent)};">
-        <div class="task-header-line">
-          <div>
-            <div class="badge-row">
-              <span class="priority-badge ${priorityClass}">${escapeHtml(task.priority || "No priority")}</span>
-              <span class="status-badge ${statusClass}">${escapeHtml(task.status || "To Do")}</span>
-            </div>
-            <h4 class="task-title ${task.status === "Done" ? "task-done-title" : ""}">${escapeHtml(task.title)}</h4>
-            <p class="meta">${escapeHtml(task.details || "No details")}</p>
-            <p class="meta">${escapeHtml(course ? `${course.code} — ${course.name}` : "No course")}</p>
-            <p class="meta">${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
-          </div>
-          <button
-            class="edit-menu-btn"
-            type="button"
-            data-open-record-detail="1"
-            data-record-type="task"
-            data-record-id="${escapeHtml(task.id)}"
-            data-detail-title="${escapeHtml(task.title)}"
-            data-detail-html="${escapeHtml(detailHtml)}"
-            aria-label="Open task actions"
-          >⋯</button>
+  <div class="task-card compact-card">
+    <div class="task-color-line" style="background:${escapeHtml(taskAccent)};"></div>
+    <div class="task-header-line">
+      <div>
+        <div class="badge-row">
+          <span class="priority-badge ${priorityClass}">${escapeHtml(task.priority || "No priority")}</span>
+          <span class="status-badge ${statusClass}">${escapeHtml(task.status || "To Do")}</span>
         </div>
+        <h4 class="task-title ${task.status === "Done" ? "task-done-title" : ""}">${escapeHtml(task.title)}</h4>
+        <p class="meta">${escapeHtml(task.details || "No details")}</p>
+        <p class="meta">${escapeHtml(course ? `${course.code} — ${course.name}` : "No course")}</p>
+        <p class="meta">${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
       </div>
-    `;
+      <button
+        class="edit-menu-btn"
+        type="button"
+        data-open-record-detail="1"
+        data-record-type="task"
+        data-record-id="${escapeHtml(task.id)}"
+        data-detail-title="${escapeHtml(task.title)}"
+        data-detail-html="${escapeHtml(detailHtml)}"
+        aria-label="Open task actions"
+      >⋯</button>
+    </div>
+  </div>
+`;
   }).join("");
 }
 
