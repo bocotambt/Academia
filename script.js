@@ -1852,29 +1852,29 @@ function renderHolidays() {
         <p class="meta">Courses will not appear during this holiday.</p>
       `;
 
-      return `
-        <div class="holiday-card compact-card" style="border-left:4px solid #dc2626;">
-          <div class="holiday-color-line holiday-accent"></div>
-          <div class="holiday-header-line">
-            <div>
-              <h4 class="task-title">${escapeHtml(holiday.title)}</h4>
-              <p class="meta">Start: ${escapeHtml(holiday.start_date ? formatDate(holiday.start_date) : holiday.date ? formatDate(holiday.date) : "No start date")}</p>
-              <p class="meta">End: ${escapeHtml(holiday.end_date ? formatDate(holiday.end_date) : holiday.start_date ? formatDate(holiday.start_date) : holiday.date ? formatDate(holiday.date) : "No end date")}</p>
-              <p class="meta">Type: ${escapeHtml(holiday.type || "Holiday")}</p>
-            </div>
-            <button
-              class="edit-menu-btn"
-              type="button"
-              data-open-record-detail="1"
-              data-record-type="holiday"
-              data-record-id="${escapeHtml(holiday.id)}"
-              data-detail-title="${escapeHtml(holiday.title)}"
-              data-detail-html="${escapeHtml(detailHtml)}"
-              aria-label="Open holiday actions"
-            >⋯</button>
-          </div>
-        </div>
-      `;
+     return `
+  <div class="holiday-card compact-card">
+    <div class="holiday-color-line holiday-accent"></div>
+    <div class="holiday-header-line">
+      <div>
+        <h4 class="task-title">${escapeHtml(holiday.title)}</h4>
+        <p class="meta">Start: ${escapeHtml(holiday.start_date ? formatDate(holiday.start_date) : holiday.date ? formatDate(holiday.date) : "No start date")}</p>
+        <p class="meta">End: ${escapeHtml(holiday.end_date ? formatDate(holiday.end_date) : holiday.start_date ? formatDate(holiday.start_date) : holiday.date ? formatDate(holiday.date) : "No end date")}</p>
+        <p class="meta">Type: ${escapeHtml(holiday.type || "Holiday")}</p>
+      </div>
+      <button
+        class="edit-menu-btn"
+        type="button"
+        data-open-record-detail="1"
+        data-record-type="holiday"
+        data-record-id="${escapeHtml(holiday.id)}"
+        data-detail-title="${escapeHtml(holiday.title)}"
+        data-detail-html="${escapeHtml(detailHtml)}"
+        aria-label="Open holiday actions"
+      >⋯</button>
+    </div>
+  </div>
+`;
     }).join("");
 }
 
