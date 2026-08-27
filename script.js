@@ -1670,15 +1670,18 @@ function renderDashboard() {
 function renderCourses() {
   if (!coursesList) return;
 
-  if (!courses.length) {
-    coursesList.className = "stack-list";
-    coursesList.innerHTML = '<div class="empty-state">No courses yet.</div>';
-    return;
-  }
+  const visibleCourses = courses.filter(function (course) {
+  return !isCourseArchived(course);
+});
 
-  coursesList.className = "stack-list cards-grid-3";
+if (!visibleCourses.length) {
+  coursesList.className = "stack-list";
+  coursesList.innerHTML = '<div class="empty-state">No courses yet.</div>';
+  return;
+}
 
-  coursesList.innerHTML = courses.map(function (course) {
+coursesList.className = "stack-list cards-grid-3";
+coursesList.innerHTML = visibleCourses.map(function (course) {
     const sessions = getSessionsForCourse(course.id);
     const semester = semesters.find(function (s) { return s.id === course.semester_id; });
 
