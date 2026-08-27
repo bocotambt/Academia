@@ -1909,43 +1909,44 @@ function renderHolidays() {
   }
 
   holidaysList.className = "stack-list cards-grid-2";
-
   holidaysList.innerHTML = holidays
     .slice()
     .sort(function (a, b) {
       return (a.start_date || a.date || "").localeCompare(b.start_date || b.date || "");
     })
     .map(function (holiday) {
+      const start = holiday.start_date || holiday.date;
+      const end = holiday.end_date || holiday.start_date || holiday.date;
+      const isSingleDay = start === end;
+
       const detailHtml = `
-        <p class="meta">Start: ${escapeHtml(holiday.start_date ? formatDate(holiday.start_date) : holiday.date ? formatDate(holiday.date) : "No start date")}</p>
-        <p class="meta">End: ${escapeHtml(holiday.end_date ? formatDate(holiday.end_date) : holiday.start_date ? formatDate(holiday.start_date) : holiday.date ? formatDate(holiday.date) : "No end date")}</p>
-        <p class="meta">Type: ${escapeHtml(holiday.type || "Holiday")}</p>
+        <p class="meta">Start: ${escapeHtml(start ? formatDate(start) : "No start date")}</p>
+        <p class="meta">End: ${escapeHtml(end ? formatDate(end) : "No end date")}</p>
         <p class="meta">Courses will not appear during this holiday.</p>
       `;
 
-     return `
-  <div class="holiday-card compact-card">
-    <div class="holiday-color-line holiday-accent"></div>
-    <div class="holiday-header-line">
-      <div>
-        <h4 class="task-title">${escapeHtml(holiday.title)}</h4>
-        <p class="meta">Start: ${escapeHtml(holiday.start_date ? formatDate(holiday.start_date) : holiday.date ? formatDate(holiday.date) : "No start date")}</p>
-        <p class="meta">End: ${escapeHtml(holiday.end_date ? formatDate(holiday.end_date) : holiday.start_date ? formatDate(holiday.start_date) : holiday.date ? formatDate(holiday.date) : "No end date")}</p>
-        <p class="meta">Type: ${escapeHtml(holiday.type || "Holiday")}</p>
-      </div>
-      <button
-        class="edit-menu-btn"
-        type="button"
-        data-open-record-detail="1"
-        data-record-type="holiday"
-        data-record-id="${escapeHtml(holiday.id)}"
-        data-detail-title="${escapeHtml(holiday.title)}"
-        data-detail-html="${escapeHtml(detailHtml)}"
-        aria-label="Open holiday actions"
-      >⋯</button>
-    </div>
-  </div>
-`;
+      return `
+        <div class="holiday-card compact-card">
+          <div class="holiday-color-line holiday-accent"></div>
+          <div class="holiday-header-line">
+            <div>
+              <h4 class="task-title">${escapeHtml(holiday.title)}</h4>
+              <p class="meta">${isSingleDay ? "Date" : "Start"}: ${escapeHtml(start ? formatDate(start) : "No date")}</p>
+              ${isSingleDay ? "" : `<p class="meta">End: ${escapeHtml(end ? formatDate(end) : "No end date")}</p>`}
+            </div>
+            <button
+              class="edit-menu-btn"
+              type="button"
+              data-open-record-detail="1"
+              data-record-type="holiday"
+              data-record-id="${escapeHtml(holiday.id)}"
+              data-detail-title="${escapeHtml(holiday.title)}"
+              data-detail-html="${escapeHtml(detailHtml)}"
+              aria-label="Open holiday actions"
+            >⋯</button>
+          </div>
+        </div>
+      `;
     }).join("");
 }
 
