@@ -1960,15 +1960,25 @@ function renderHolidays() {
 
 function renderAcademicYears() {
   if (!academicYearsList) return;
-  if (!academicYears.length) {
+
+  const visibleYears = academicYears.filter(function (year) {
+    return !isAcademicYearArchived(year);
+  });
+
+  if (!visibleYears.length) {
     academicYearsList.innerHTML = '<div class="empty-state">No academic years yet.</div>';
     return;
   }
 
-  academicYearsList.innerHTML = academicYears.map(function (year) {
-    const yearSemesters = semesters.filter(function (semester) {
-      return semester.academic_year_id === year.id;
-    });
+  academicYearsList.innerHTML = visibleYears.map(function (year) {
+    const yearSemesters = semesters
+      .filter(function (semester) {
+        return semester.academic_year_id === year.id;
+      })
+      .slice()
+      .sort(function (a, b) {
+        return (a.start_date || "").localeCompare(b.start_date || "");
+      });
 
     const detailHtml = `<p class="meta">Academic year: ${escapeHtml(year.name)}</p>`;
 
@@ -1978,57 +1988,33 @@ function renderAcademicYears() {
           <div>
             <h4 class="task-title">${escapeHtml(year.name)}</h4>
           </div>
-          <button
-            class="edit-menu-btn"
-            type="button"
-            data-open-record-detail="1"
-            data-record-type="academic-year"
-            data-record-id="${escapeHtml(year.id)}"
-            data-detail-title="${escapeHtml(year.name)}"
-            data-detail-html="${escapeHtml(detailHtml)}"
-            aria-label="Open academic year actions"
-          >⋯</button>
+          <button class="edit-menu-btn" type="button" data-open-record-detail="1" data-record-type="academic-year" data-record-id="${escapeHtml(year.id)}" data-detail-title="${escapeHtml(year.name)}" data-detail-html="${escapeHtml(detailHtml)}" aria-label="Open academic year actions">⋯</button>
         </div>
-
         <div class="task-card-expanded">
-          ${
-            yearSemesters.length
-              ? yearSemesters.map(function (semester) {
-                  const semesterDetailHtml = `
-                    <p class="meta">Academic year: ${escapeHtml(year.name)}</p>
-                    <p class="meta">Semester: ${escapeHtml(semester.name)}</p>
-                    <p class="meta">Start: ${escapeHtml(semester.start_date ? formatDate(semester.start_date) : "No start")}</p>
-                    <p class="meta">End: ${escapeHtml(semester.end_date ? formatDate(semester.end_date) : "No end")}</p>
-                  `;
-                  return `
-                    <div class="semester-box">
-                      <div class="card-head">
-                        <div>
-                          <strong>${escapeHtml(semester.name)}</strong>
-                          <p class="meta">${escapeHtml(semester.start_date ? formatDate(semester.start_date) : "No start")} - ${escapeHtml(semester.end_date ? formatDate(semester.end_date) : "No end")}</p>
-                        </div>
-                        <button
-                          class="edit-menu-btn"
-                          type="button"
-                          data-open-record-detail="1"
-                          data-record-type="semester"
-                          data-record-id="${escapeHtml(semester.id)}"
-                          data-detail-title="${escapeHtml(semester.name)}"
-                          data-detail-html="${escapeHtml(semesterDetailHtml)}"
-                          aria-label="Open semester actions"
-                        >⋯</button>
-                      </div>
-                    </div>
-                  `;
-                }).join("")
-              : '<div class="empty-state">No semesters yet.</div>'
-          }
+          ${yearSemesters.length ? yearSemesters.map(function (semester) {
+            const semesterDetailHtml = `
+              <p class="meta">Academic year: ${escapeHtml(year.name)}</p>
+              <p class="meta">Semester: ${escapeHtml(semester.name)}</p>
+              <p class="meta">Start: ${escapeHtml(semester.start_date ? formatDate(semester.start_date) : "No start")}</p>
+              <p class="meta">End: ${escapeHtml(semester.end_date ? formatDate(semester.end_date) : "No end")}</p>
+            `;
+            return `
+              <div class="semester-box">
+                <div class="card-head">
+                  <div>
+                    <strong>${escapeHtml(semester.name)}</strong>
+                    <p class="meta">${escapeHtml(semester.start_date ? formatDate(semester.start_date) : "No start")} - ${escapeHtml(semester.end_date ? formatDate(semester.end_date) : "No end")}</p>
+                  </div>
+                  <button class="edit-menu-btn" type="button" data-open-record-detail="1" data-record-type="semester" data-record-id="${escapeHtml(semester.id)}" data-detail-title="${escapeHtml(semester.name)}" data-detail-html="${escapeHtml(semesterDetailHtml)}" aria-label="Open semester actions">⋯</button>
+                </div>
+              </div>
+            `;
+          }).join("") : '<div class="empty-state">No semesters yet.</div>'}
         </div>
       </div>
     `;
   }).join("");
 }
-
 function buildCalendarItemHtml(item, compact) {
   const style = `style="background:${escapeHtml(item.color || "#64748b")};"`;
 
