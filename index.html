@@ -15,14 +15,17 @@
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">
-        <div>
+        <div class="brand-text">
           <h1>Academia</h1>
           <p id="brandSignedInText" class="muted small"></p>
         </div>
+        <button id="menuToggleBtn" class="menu-toggle hamburger-btn" type="button" aria-label="Open menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
         <div id="brandUserArea" class="hidden"></div>
       </div>
-
-      <button id="menuToggleBtn" class="menu-toggle" type="button">Menu</button>
 
       <nav id="tabNav" class="tab-nav">
         <button class="tab-btn active" data-tab="dashboard" type="button">Dashboard</button>
@@ -136,16 +139,20 @@
       <section id="calendar" class="tab-content">
         <div class="panel">
           <div class="calendar-toolbar">
-            <div class="row wrap">
-              <button id="prevPeriodBtn" class="secondary-btn" type="button">Previous</button>
-              <h3 id="calendarMonthLabel">Calendar</h3>
-              <button id="nextPeriodBtn" class="secondary-btn" type="button">Next</button>
+            <div class="calendar-top-actions">
+              <button class="primary-btn calendar-add-btn" data-open-modal="eventModal" type="button">Add Event</button>
             </div>
-            <div class="row wrap">
+
+            <div class="calendar-view-actions">
               <button id="monthViewBtn" class="secondary-btn active-view-btn" type="button">Month</button>
               <button id="weekViewBtn" class="secondary-btn" type="button">Week</button>
               <button id="dayViewBtn" class="secondary-btn" type="button">Day</button>
-              <button class="primary-btn" data-open-modal="eventModal" type="button">Add Event</button>
+            </div>
+
+            <div class="calendar-nav-row">
+              <button id="prevPeriodBtn" class="secondary-btn" type="button">Previous</button>
+              <h3 id="calendarMonthLabel">Calendar</h3>
+              <button id="nextPeriodBtn" class="secondary-btn" type="button">Next</button>
             </div>
           </div>
 
