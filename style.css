@@ -698,3 +698,18 @@ textarea {
     grid-template-columns: 1fr;
   }
 }
+.task-card.compact-card,
+.holiday-card.compact-card {
+  border-left: none !important;
+}
+
+.task-card .task-color-line,
+.holiday-card .holiday-color-line {
+  height: 8px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+}
+
+.task-card {
+  overflow: hidden;
+}
