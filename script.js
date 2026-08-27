@@ -279,7 +279,64 @@ function getCourseById(courseId) {
     return course.id === courseId;
   }) || null;
 }
+function formatCourseLabel(course) {
+  if (!course) return "No course";
+  const code = (course.code || "").trim();
+  const name = (course.name || "").trim();
+  if (code && name) return `${code} — ${name}`;
+  return code || name || "No course";
+}
 
+function getCourseByExam(exam) {
+  if (!exam) return null;
+  if (exam.course_id) return getCourseById(exam.course_id);
+  return courses.find(function (course) {
+    return course.name === exam.course || `${course.code} — ${course.name}` === exam.course;
+  }) || null;
+}
+
+function getExamColor(exam) {
+  const course = getCourseByExam(exam);
+  return course && course.color ? course.color : "#dc2626";
+}
+
+function isExamArchived(exam) {
+  return isPastExam(exam);
+}
+
+function isAcademicYearArchived(year) {
+  const yearSemesters = semesters.filter(function (semester) {
+    return semester.academic_year_id === year.id;
+  });
+  if (!yearSemesters.length) return false;
+  const latestEnd = yearSemesters
+    .map(function (semester) { return semester.end_date; })
+    .filter(Boolean)
+    .sort()
+    .pop();
+  if (!latestEnd) return false;
+  return latestEnd < toDateKey(new Date());
+}
+
+function isCourseArchived(course) {
+  const semester = getSemesterById(course.semester_id);
+  if (!semester || !semester.end_date) return false;
+  return semester.end_date < toDateKey(new Date());
+}
+
+function sortTasksByNearestFirst(a, b) {
+  const dateCompare = (a.due_date || "9999-12-31").localeCompare(b.due_date || "9999-12-31");
+  if (dateCompare !== 0) return dateCompare;
+  return (a.title || "").localeCompare(b.title || "");
+}
+
+function sortExamsByNearestFirst(a, b) {
+  const aKey = `${a.exam_date || "9999-12-31"} ${a.exam_time || "23:59"}`;
+  const bKey = `${b.exam_date || "9999-12-31"} ${b.exam_time || "23:59"}`;
+  const compare = aKey.localeCompare(bKey);
+  if (compare !== 0) return compare;
+  return (a.title || "").localeCompare(b.title || "");
+}
 function getSemesterById(semesterId) {
   return semesters.find(function (semester) {
     return semester.id === semesterId;
