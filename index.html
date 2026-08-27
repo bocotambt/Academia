@@ -206,7 +206,19 @@
 
         <div class="subpanel">
           <h4>Add Session</h4>
-          <input id="sessionType" type="text" placeholder="Session type (Lecture, Lab...)" />
+
+          <select id="sessionType">
+            <option value="">Choose session type</option>
+            <option value="Lecture">Lecture</option>
+            <option value="Lab">Lab</option>
+            <option value="Tutorial">Tutorial</option>
+            <option value="Seminar">Seminar</option>
+            <option value="Workshop">Workshop</option>
+            <option value="Discussion">Discussion</option>
+            <option value="Office Hours">Office Hours</option>
+            <option value="Other">Other</option>
+          </select>
+
           <select id="sessionRepeat">
             <option value="">Choose repeat rule</option>
             <option value="weekly">Weekly</option>
@@ -283,6 +295,13 @@
       </div>
       <div class="modal-body form-grid">
         <input id="noteTitle" type="text" placeholder="Note title" />
+        <select id="noteCourse">
+          <option value="">No course</option>
+        </select>
+        <div class="color-row">
+          <input id="noteColor" type="color" value="#7c3aed" />
+          <span id="noteColorPreview" class="color-preview"></span>
+        </div>
         <textarea id="noteContent" placeholder="Write your note"></textarea>
         <button id="saveNoteBtn" class="primary-btn" type="button">Save Note</button>
       </div>
