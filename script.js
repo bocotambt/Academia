@@ -1016,8 +1016,9 @@ function fillNoteModal(note) {
 
 function fillExamModal(exam) {
   editingExamId = exam.id;
+  const examCourse = getCourseByExam(exam);
   examTitleInput.value = exam.title || "";
-  examCourseInput.value = exam.course || "";
+  examCourseInput.value = exam.course_id || (examCourse ? examCourse.id : "");
   examDateInput.value = exam.exam_date || "";
   examTimeInput.value = exam.exam_time || "";
   examDurationInput.value = exam.duration_minutes ?? "";
