@@ -93,7 +93,6 @@ const saveExamBtn = $("saveExamBtn");
 const holidayTitleInput = $("holidayTitle");
 const holidayStartDateInput = $("holidayStartDate");
 const holidayEndDateInput = $("holidayEndDate");
-const holidayTypeInput = $("holidayType");
 const saveHolidayBtn = $("saveHolidayBtn");
 
 const eventTitleInput = $("eventTitle");
@@ -279,64 +278,7 @@ function getCourseById(courseId) {
     return course.id === courseId;
   }) || null;
 }
-function formatCourseLabel(course) {
-  if (!course) return "No course";
-  const code = (course.code || "").trim();
-  const name = (course.name || "").trim();
-  if (code && name) return `${code} — ${name}`;
-  return code || name || "No course";
-}
 
-function getCourseByExam(exam) {
-  if (!exam) return null;
-  if (exam.course_id) return getCourseById(exam.course_id);
-  return courses.find(function (course) {
-    return course.name === exam.course || `${course.code} — ${course.name}` === exam.course;
-  }) || null;
-}
-
-function getExamColor(exam) {
-  const course = getCourseByExam(exam);
-  return course && course.color ? course.color : "#dc2626";
-}
-
-function isExamArchived(exam) {
-  return isPastExam(exam);
-}
-
-function isAcademicYearArchived(year) {
-  const yearSemesters = semesters.filter(function (semester) {
-    return semester.academic_year_id === year.id;
-  });
-  if (!yearSemesters.length) return false;
-  const latestEnd = yearSemesters
-    .map(function (semester) { return semester.end_date; })
-    .filter(Boolean)
-    .sort()
-    .pop();
-  if (!latestEnd) return false;
-  return latestEnd < toDateKey(new Date());
-}
-
-function isCourseArchived(course) {
-  const semester = getSemesterById(course.semester_id);
-  if (!semester || !semester.end_date) return false;
-  return semester.end_date < toDateKey(new Date());
-}
-
-function sortTasksByNearestFirst(a, b) {
-  const dateCompare = (a.due_date || "9999-12-31").localeCompare(b.due_date || "9999-12-31");
-  if (dateCompare !== 0) return dateCompare;
-  return (a.title || "").localeCompare(b.title || "");
-}
-
-function sortExamsByNearestFirst(a, b) {
-  const aKey = `${a.exam_date || "9999-12-31"} ${a.exam_time || "23:59"}`;
-  const bKey = `${b.exam_date || "9999-12-31"} ${b.exam_time || "23:59"}`;
-  const compare = aKey.localeCompare(bKey);
-  if (compare !== 0) return compare;
-  return (a.title || "").localeCompare(b.title || "");
-}
 function getSemesterById(semesterId) {
   return semesters.find(function (semester) {
     return semester.id === semesterId;
@@ -368,10 +310,6 @@ function setColorPreview(input, preview) {
   if (!input || !preview) return;
   preview.style.background = input.value || "#5666dd";
 }
-function setColorPreview(input, preview) {
-  if (!input || !preview) return;
-  preview.style.background = input.value || "#5666dd";
-}
 
 function syncNoteColorToSelectedCourse() {
   if (!noteCourseInput || !noteColorInput) return;
@@ -381,6 +319,7 @@ function syncNoteColorToSelectedCourse() {
     setColorPreview(noteColorInput, noteColorPreview);
   }
 }
+
 function setButtonBusy(button, busy, label) {
   if (!button) return;
   if (busy) {
@@ -393,6 +332,10 @@ function setButtonBusy(button, busy, label) {
     button.classList.remove("save-disabled");
     button.textContent = button.dataset.originalText || button.textContent;
   }
+}
+
+function generateId() {
+  return crypto.randomUUID();
 }
 
 function openModal(modalId) {
@@ -725,14 +668,14 @@ function populateCourseOptions() {
   }
 
   if (examCourseInput) {
-  examCourseInput.innerHTML = `<option value="">No course</option>`;
-  courses.forEach(function (course) {
-    const option = document.createElement("option");
-    option.value = course.id;
-    option.textContent = `${course.code} — ${course.name}`;
-    examCourseInput.appendChild(option);
-  });
-}
+    examCourseInput.innerHTML = `<option value="">No course</option>`;
+    courses.forEach(function (course) {
+      const option = document.createElement("option");
+      option.value = course.name;
+      option.textContent = `${course.code} — ${course.name}`;
+      examCourseInput.appendChild(option);
+    });
+  }
 
   if (noteCourseInput) {
     noteCourseInput.innerHTML = `<option value="">No course</option>`;
@@ -1031,9 +974,8 @@ function fillNoteModal(note) {
 
 function fillExamModal(exam) {
   editingExamId = exam.id;
-  const examCourse = getCourseByExam(exam);
   examTitleInput.value = exam.title || "";
-  examCourseInput.value = exam.course_id || (examCourse ? examCourse.id : "");
+  examCourseInput.value = exam.course || "";
   examDateInput.value = exam.exam_date || "";
   examTimeInput.value = exam.exam_time || "";
   examDurationInput.value = exam.duration_minutes ?? "";
@@ -1215,6 +1157,19 @@ async function saveTask() {
 
 if (addTaskBtn) addTaskBtn.addEventListener("click", saveTask);
 
+async function updateTaskStatus(taskId, status) {
+  const task = tasks.find(function (item) {
+    return item.id === taskId;
+  });
+  if (!task || task.status === status) return;
+
+  const updated = await updateRecord("tasks", taskId, { status });
+  if (!updated) return;
+
+  await loadAllData();
+  renderAll();
+}
+
 async function saveNote() {
   await withSaveLock("note-save", saveNoteBtn, editingNoteId ? "Updating..." : "Saving...", async function () {
     const title = noteTitleInput.value.trim();
@@ -1252,8 +1207,6 @@ async function saveExam() {
   await withSaveLock("exam-save", saveExamBtn, editingExamId ? "Updating..." : "Saving...", async function () {
     const title = examTitleInput.value.trim();
     const exam_date = examDateInput.value || null;
-    const course_id = examCourseInput.value || null;
-    const selectedCourse = getCourseById(course_id);
 
     if (!title || !exam_date) {
       alert("Please enter an exam title and date.");
@@ -1262,8 +1215,7 @@ async function saveExam() {
 
     const payload = {
       title,
-      course_id,
-      course: selectedCourse ? selectedCourse.name : null,
+      course: examCourseInput.value || null,
       exam_date,
       exam_time: examTimeInput.value || null,
       duration_minutes: examDurationInput.value ? Number(examDurationInput.value) : null,
@@ -1293,11 +1245,10 @@ async function saveHoliday() {
   await withSaveLock("holiday-save", saveHolidayBtn, editingHolidayId ? "Updating..." : "Saving...", async function () {
     const title = holidayTitleInput.value.trim();
     const start_date = holidayStartDateInput.value || null;
-    const end_date = holidayEndDateInput.value || null;
-    const type = holidayTypeInput.value.trim();
+    const end_date = holidayEndDateInput.value || start_date || null;
 
-    if (!title || !start_date || !end_date) {
-      alert("Please enter a holiday name, start date, and end date.");
+    if (!title || !start_date) {
+      alert("Please enter a holiday name and start date.");
       return;
     }
 
@@ -1309,13 +1260,12 @@ async function saveHoliday() {
     const payload = {
       title,
       start_date,
-      end_date,
-      type
+      end_date
     };
 
     const saved = editingHolidayId
       ? await updateRecord("holidays", editingHolidayId, payload)
-      : await insertRecord("holidays", payload);
+      : await insertRecord("holidays", { id: generateId(), ...payload });
 
     if (!saved) return;
 
@@ -1482,35 +1432,32 @@ function getItemsForDate(dateKey) {
   const dateObj = new Date(dateKey + "T00:00:00");
   const courseItems = getSessionsForDate(dateObj);
 
- const examItems = exams
-  .filter(function (exam) {
-    return exam.exam_date === dateKey && !isExamArchived(exam);
-  })
-  .map(function (exam) {
-    const course = getCourseByExam(exam);
-    const endTime = exam.duration_minutes ? calculateExamEndTime(exam.exam_time, exam.duration_minutes) : "";
-    return {
-      type: "exam",
-      id: "exam-" + exam.id,
-      title: exam.title,
-      shortTitle: exam.title,
-      timeLabel: exam.exam_time ? `${formatTime(exam.exam_time)}${endTime ? " - " + formatTime(endTime) : ""}` : "Time not set",
-      startTimeSort: exam.exam_time || "99:99",
-      location: exam.place || "",
-      color: getExamColor(exam),
-      detailHtml: `
-        <p class="meta">Course: ${escapeHtml(formatCourseLabel(course))}</p>
-        <p class="meta">Date: ${escapeHtml(formatDate(exam.exam_date))}</p>
-        <p class="meta">Start time: ${escapeHtml(exam.exam_time ? formatTime(exam.exam_time) : "No time")}</p>
-        <p class="meta">Duration: ${escapeHtml(exam.duration_minutes ? exam.duration_minutes + " minutes" : "No duration")}</p>
-        <p class="meta">Place: ${escapeHtml(exam.place || "No place")}</p>
-        <p class="meta">Seat: ${escapeHtml(exam.seat_number || "No seat number")}</p>
-        <p class="meta">Grade: ${escapeHtml(exam.grade || "No grade")}</p>
-        <p class="meta">Mark: ${escapeHtml(exam.mark ?? "No mark")}</p>
-        <p class="meta">Notes: ${escapeHtml(exam.notes || "No notes")}</p>
-      `
-    };
-  });
+  const examItems = exams
+    .filter(function (exam) { return exam.exam_date === dateKey; })
+    .map(function (exam) {
+      const endTime = exam.duration_minutes ? calculateExamEndTime(exam.exam_time, exam.duration_minutes) : "";
+      return {
+        type: "exam",
+        id: `exam-${exam.id}`,
+        title: `Exam: ${exam.title}`,
+        shortTitle: `Exam: ${exam.title}`,
+        timeLabel: exam.exam_time ? `${formatTime(exam.exam_time)}${endTime ? " - " + formatTime(endTime) : ""}` : "Time not set",
+        startTimeSort: exam.exam_time || "99:99",
+        location: exam.place || "",
+        color: "#dc2626",
+        detailHtml: `
+          <p class="meta">Course: ${escapeHtml(exam.course || "No course")}</p>
+          <p class="meta">Date: ${escapeHtml(formatDate(exam.exam_date))}</p>
+          <p class="meta">Start time: ${escapeHtml(exam.exam_time ? formatTime(exam.exam_time) : "No time")}</p>
+          <p class="meta">Duration: ${escapeHtml(exam.duration_minutes ? exam.duration_minutes + " minutes" : "No duration")}</p>
+          <p class="meta">Place: ${escapeHtml(exam.place || "No place")}</p>
+          <p class="meta">Seat: ${escapeHtml(exam.seat_number || "No seat number")}</p>
+          <p class="meta">Grade: ${escapeHtml(exam.grade || "No grade")}</p>
+          <p class="meta">Mark: ${escapeHtml(exam.mark ?? "No mark")}</p>
+          <p class="meta">Notes: ${escapeHtml(exam.notes || "No notes")}</p>
+        `
+      };
+    });
 
   const eventItems = events
     .filter(function (event) { return event.event_date === dateKey; })
@@ -1533,31 +1480,25 @@ function getItemsForDate(dateKey) {
       };
     });
 
- const holidayItems = holidays
-  .filter(function (holiday) {
-    return buildHolidayDates(holiday).includes(dateKey);
-  })
-  .map(function (holiday) {
-    const start = holiday.start_date || holiday.date;
-    const end = holiday.end_date || holiday.start_date || holiday.date;
-    const isSingleDay = start === end;
-
-    return {
-      type: "holiday",
-      id: "holiday-" + holiday.id,
-      title: holiday.title,
-      shortTitle: holiday.title,
-      timeLabel: isSingleDay ? "One-day holiday" : `${formatShortDate(start)} - ${formatShortDate(end)}`,
-      startTimeSort: "99:99",
-      location: "",
-      color: "#dc2626",
-      detailHtml: `
-        <p class="meta">Start: ${escapeHtml(start ? formatDate(start) : "No start date")}</p>
-        <p class="meta">End: ${escapeHtml(end ? formatDate(end) : "No end date")}</p>
-        <p class="meta">Courses will not appear during this holiday.</p>
-      `
-    };
-  });
+  const holidayItems = holidays
+    .filter(function (holiday) { return buildHolidayDates(holiday).includes(dateKey); })
+    .map(function (holiday) {
+      return {
+        type: "holiday",
+        id: `holiday-${holiday.id}`,
+        title: `Holiday: ${holiday.title}`,
+        shortTitle: `Holiday: ${holiday.title}`,
+        timeLabel: "Holiday",
+        startTimeSort: "99:99",
+        location: "",
+        color: "#dc2626",
+        detailHtml: `
+          <p class="meta">Start: ${escapeHtml(formatDate(holiday.start_date || holiday.date))}</p>
+          <p class="meta">End: ${escapeHtml(formatDate(holiday.end_date || holiday.start_date || holiday.date))}</p>
+          <p class="meta">Courses will not appear during this holiday.</p>
+        `
+      };
+    });
 
   return courseItems
     .concat(examItems, eventItems, holidayItems)
@@ -1681,18 +1622,15 @@ function renderDashboard() {
 function renderCourses() {
   if (!coursesList) return;
 
-  const visibleCourses = courses.filter(function (course) {
-  return !isCourseArchived(course);
-});
+  if (!courses.length) {
+    coursesList.className = "stack-list";
+    coursesList.innerHTML = '<div class="empty-state">No courses yet.</div>';
+    return;
+  }
 
-if (!visibleCourses.length) {
-  coursesList.className = "stack-list";
-  coursesList.innerHTML = '<div class="empty-state">No courses yet.</div>';
-  return;
-}
+  coursesList.className = "stack-list cards-grid-3";
 
-coursesList.className = "stack-list cards-grid-3";
-coursesList.innerHTML = visibleCourses.map(function (course) {
+  coursesList.innerHTML = courses.map(function (course) {
     const sessions = getSessionsForCourse(course.id);
     const semester = semesters.find(function (s) { return s.id === course.semester_id; });
 
@@ -1757,10 +1695,9 @@ coursesList.innerHTML = visibleCourses.map(function (course) {
 function renderTasks() {
   if (!plannerList) return;
 
-  const visibleTasks = tasks
-    .filter(function (task) { return !isTaskArchived(task); })
-    .slice()
-    .sort(sortTasksByNearestFirst);
+  const visibleTasks = tasks.filter(function (task) {
+    return !isTaskArchived(task);
+  });
 
   if (!visibleTasks.length) {
     plannerList.className = "stack-list";
@@ -1769,53 +1706,64 @@ function renderTasks() {
   }
 
   plannerList.className = "stack-list cards-grid-3";
+
   plannerList.innerHTML = visibleTasks.map(function (task) {
     const course = getCourseById(task.course_id);
-    const priorityClass = task.priority === "High" ? "priority-high" : task.priority === "Medium" ? "priority-medium" : "priority-low";
-    const statusClass = task.status === "Done" ? "status-done" : task.status === "In Progress" ? "status-progress" : "status-todo";
+    const priorityClass = task.priority === "High"
+      ? "priority-high"
+      : task.priority === "Medium"
+        ? "priority-medium"
+        : "priority-low";
+    const statusClass = task.status === "Done"
+      ? "status-done"
+      : task.status === "In Progress"
+        ? "status-progress"
+        : "status-todo";
     const taskAccent = getTaskColor(task);
+
     const detailHtml = `
       <p class="meta">Details: ${escapeHtml(task.details || "No details")}</p>
-      <p class="meta">Course: ${escapeHtml(formatCourseLabel(course))}</p>
+      <p class="meta">Course: ${escapeHtml(course ? `${course.code} — ${course.name}` : "No course")}</p>
       <p class="meta">Due: ${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
       <p class="meta">Priority: ${escapeHtml(task.priority || "No priority")}</p>
       <p class="meta">Status: ${escapeHtml(task.status || "To Do")}</p>
     `;
 
     return `
-      <div class="task-card compact-card">
-        <div class="task-color-line" style="background:${escapeHtml(taskAccent)}"></div>
-        <div class="task-header-line">
-          <div>
-            <div class="badge-row">
-              <span class="priority-badge ${priorityClass}">${escapeHtml(task.priority || "No priority")}</span>
-              <span class="status-badge ${statusClass}">${escapeHtml(task.status || "To Do")}</span>
-            </div>
-            <h4 class="task-title ${task.status === "Done" ? "task-done-title" : ""}">${escapeHtml(task.title)}</h4>
-            <p class="meta">${escapeHtml(task.details || "No details")}</p>
-            <p class="meta">${escapeHtml(formatCourseLabel(course))}</p>
-            <p class="meta">${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
-          </div>
-          <button
-            class="edit-menu-btn"
-            type="button"
-            data-open-record-detail="1"
-            data-record-type="task"
-            data-record-id="${escapeHtml(task.id)}"
-            data-detail-title="${escapeHtml(task.title)}"
-            data-detail-html="${escapeHtml(detailHtml)}"
-            aria-label="Open task actions"
-          >⋯</button>
+  <div class="task-card compact-card">
+    <div class="task-color-line" style="background:${escapeHtml(taskAccent)};"></div>
+    <div class="task-header-line">
+      <div>
+        <div class="badge-row">
+          <span class="priority-badge ${priorityClass}">${escapeHtml(task.priority || "No priority")}</span>
+          <span class="status-badge ${statusClass}">${escapeHtml(task.status || "To Do")}</span>
         </div>
-        <div class="task-quick-actions">
-          <button class="secondary-btn task-status-btn ${task.status === "To Do" ? "active-status-btn" : ""}" type="button" data-task-status-id="${escapeHtml(task.id)}" data-task-status-value="To Do">To Do</button>
-          <button class="secondary-btn task-status-btn ${task.status === "In Progress" ? "active-status-btn" : ""}" type="button" data-task-status-id="${escapeHtml(task.id)}" data-task-status-value="In Progress">In Progress</button>
-          <button class="secondary-btn task-status-btn ${task.status === "Done" ? "active-status-btn" : ""}" type="button" data-task-status-id="${escapeHtml(task.id)}" data-task-status-value="Done">Done</button>
+        <h4 class="task-title ${task.status === "Done" ? "task-done-title" : ""}">${escapeHtml(task.title)}</h4>
+        <p class="meta">${escapeHtml(task.details || "No details")}</p>
+        <p class="meta">${escapeHtml(course ? `${course.code} — ${course.name}` : "No course")}</p>
+        <p class="meta">${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
+        <div class="card-actions">
+          <button type="button" data-task-status-id="${escapeHtml(task.id)}" data-task-status-value="To Do">To Do</button>
+          <button type="button" data-task-status-id="${escapeHtml(task.id)}" data-task-status-value="In Progress">In Progress</button>
+          <button type="button" data-task-status-id="${escapeHtml(task.id)}" data-task-status-value="Done">Done</button>
         </div>
       </div>
-    `;
+      <button
+        class="edit-menu-btn"
+        type="button"
+        data-open-record-detail="1"
+        data-record-type="task"
+        data-record-id="${escapeHtml(task.id)}"
+        data-detail-title="${escapeHtml(task.title)}"
+        data-detail-html="${escapeHtml(detailHtml)}"
+        aria-label="Open task actions"
+      >⋯</button>
+    </div>
+  </div>
+`;
   }).join("");
 }
+
 function renderNotes() {
   if (!notesList) return;
 
@@ -1863,61 +1811,47 @@ function renderNotes() {
 
 function renderExams() {
   if (!examsList) return;
-
-  const visibleExams = exams
-    .filter(function (exam) { return !isExamArchived(exam); })
-    .slice()
-    .sort(sortExamsByNearestFirst);
-
-  if (!visibleExams.length) {
-    examsList.className = "stack-list";
-    examsList.innerHTML = '<div class="empty-state">No exams yet.</div>';
-    return;
-  }
-
-  examsList.className = "stack-list cards-grid-3";
-  examsList.innerHTML = visibleExams.map(function (exam) {
-    const course = getCourseByExam(exam);
-    const accent = getExamColor(exam);
-    const endTime = exam.duration_minutes ? calculateExamEndTime(exam.exam_time, exam.duration_minutes) : "";
-    const detailHtml = `
-      <p class="meta">Course: ${escapeHtml(formatCourseLabel(course))}</p>
-      <p class="meta">Date: ${escapeHtml(exam.exam_date ? formatDate(exam.exam_date) : "No date")}</p>
-      <p class="meta">Time: ${escapeHtml(exam.exam_time ? formatTime(exam.exam_time) : "No time")}${endTime ? ` - ${escapeHtml(formatTime(endTime))}` : ""}</p>
-      <p class="meta">Duration: ${escapeHtml(exam.duration_minutes ? `${exam.duration_minutes} minutes` : "No duration")}</p>
-      <p class="meta">Place: ${escapeHtml(exam.place || "No place")}</p>
-      <p class="meta">Seat: ${escapeHtml(exam.seat_number || "No seat number")}</p>
-      <p class="meta">Grade: ${escapeHtml(exam.grade || "No grade")}</p>
-      <p class="meta">Mark: ${escapeHtml(exam.mark ?? "No mark")}</p>
-      <p class="meta">Notes: ${escapeHtml(exam.notes || "No notes")}</p>
-    `;
-
-    return `
-      <div class="course-card compact-card">
-        <div class="course-color-line" style="background:${escapeHtml(accent)}"></div>
-        <div class="card-head">
-          <div>
-            <h4 class="task-title">${escapeHtml(exam.title)}</h4>
-            <p class="meta">Course: ${escapeHtml(formatCourseLabel(course))}</p>
-            <p class="meta">Date: ${escapeHtml(exam.exam_date ? formatDate(exam.exam_date) : "No date")}</p>
-            <p class="meta">Time: ${escapeHtml(exam.exam_time ? formatTime(exam.exam_time) : "No time")}${endTime ? ` - ${escapeHtml(formatTime(endTime))}` : ""}</p>
-            <p class="meta">Place: ${escapeHtml(exam.place || "No place")}</p>
+  examsList.innerHTML = exams.length
+    ? exams.map(function (exam) {
+        const endTime = exam.duration_minutes ? calculateExamEndTime(exam.exam_time, exam.duration_minutes) : "";
+        const detailHtml = `
+          <p class="meta">Course: ${escapeHtml(exam.course || "No course")}</p>
+          <p class="meta">Date: ${escapeHtml(exam.exam_date ? formatDate(exam.exam_date) : "No date")}</p>
+          <p class="meta">Time: ${escapeHtml(exam.exam_time ? formatTime(exam.exam_time) : "No time")}${endTime ? " - " + escapeHtml(formatTime(endTime)) : ""}</p>
+          <p class="meta">Duration: ${escapeHtml(exam.duration_minutes ? exam.duration_minutes + " minutes" : "No duration")}</p>
+          <p class="meta">Place: ${escapeHtml(exam.place || "No place")}</p>
+          <p class="meta">Seat: ${escapeHtml(exam.seat_number || "No seat number")}</p>
+          <p class="meta">Grade: ${escapeHtml(exam.grade || "No grade")}</p>
+          <p class="meta">Mark: ${escapeHtml(exam.mark ?? "No mark")}</p>
+          <p class="meta">Notes: ${escapeHtml(exam.notes || "No notes")}</p>
+        `;
+        return `
+          <div class="course-card ${isPastExam(exam) ? "past-item" : ""}">
+            <div class="card-head">
+              <div>
+                <h4 class="task-title">${escapeHtml(exam.title)}</h4>
+                <p class="meta">Course: ${escapeHtml(exam.course || "No course")}</p>
+                <p class="meta">Date: ${escapeHtml(exam.exam_date ? formatDate(exam.exam_date) : "No date")}</p>
+                <p class="meta">Time: ${escapeHtml(exam.exam_time ? formatTime(exam.exam_time) : "No time")}${endTime ? " - " + escapeHtml(formatTime(endTime)) : ""}</p>
+                <p class="meta">Place: ${escapeHtml(exam.place || "No place")}</p>
+              </div>
+              <button
+                class="edit-menu-btn"
+                type="button"
+                data-open-record-detail="1"
+                data-record-type="exam"
+                data-record-id="${escapeHtml(exam.id)}"
+                data-detail-title="${escapeHtml(exam.title)}"
+                data-detail-html="${escapeHtml(detailHtml)}"
+                aria-label="Open exam actions"
+              >⋯</button>
+            </div>
           </div>
-          <button
-            class="edit-menu-btn"
-            type="button"
-            data-open-record-detail="1"
-            data-record-type="exam"
-            data-record-id="${escapeHtml(exam.id)}"
-            data-detail-title="${escapeHtml(exam.title)}"
-            data-detail-html="${escapeHtml(detailHtml)}"
-            aria-label="Open exam actions"
-          >⋯</button>
-        </div>
-      </div>
-    `;
-  }).join("");
+        `;
+      }).join("")
+    : '<div class="empty-state">No exams yet.</div>';
 }
+
 function renderHolidays() {
   if (!holidaysList) return;
 
@@ -1928,68 +1862,55 @@ function renderHolidays() {
   }
 
   holidaysList.className = "stack-list cards-grid-2";
+
   holidaysList.innerHTML = holidays
     .slice()
     .sort(function (a, b) {
       return (a.start_date || a.date || "").localeCompare(b.start_date || b.date || "");
     })
     .map(function (holiday) {
-      const start = holiday.start_date || holiday.date;
-      const end = holiday.end_date || holiday.start_date || holiday.date;
-      const isSingleDay = start === end;
-
       const detailHtml = `
-        <p class="meta">Start: ${escapeHtml(start ? formatDate(start) : "No start date")}</p>
-        <p class="meta">End: ${escapeHtml(end ? formatDate(end) : "No end date")}</p>
+        <p class="meta">Start: ${escapeHtml(holiday.start_date ? formatDate(holiday.start_date) : holiday.date ? formatDate(holiday.date) : "No start date")}</p>
+        <p class="meta">End: ${escapeHtml(holiday.end_date ? formatDate(holiday.end_date) : holiday.start_date ? formatDate(holiday.start_date) : holiday.date ? formatDate(holiday.date) : "No end date")}</p>
         <p class="meta">Courses will not appear during this holiday.</p>
       `;
 
       return `
-        <div class="holiday-card compact-card">
-          <div class="holiday-color-line holiday-accent"></div>
-          <div class="holiday-header-line">
-            <div>
-              <h4 class="task-title">${escapeHtml(holiday.title)}</h4>
-              <p class="meta">${isSingleDay ? "Date" : "Start"}: ${escapeHtml(start ? formatDate(start) : "No date")}</p>
-              ${isSingleDay ? "" : `<p class="meta">End: ${escapeHtml(end ? formatDate(end) : "No end date")}</p>`}
-            </div>
-            <button
-              class="edit-menu-btn"
-              type="button"
-              data-open-record-detail="1"
-              data-record-type="holiday"
-              data-record-id="${escapeHtml(holiday.id)}"
-              data-detail-title="${escapeHtml(holiday.title)}"
-              data-detail-html="${escapeHtml(detailHtml)}"
-              aria-label="Open holiday actions"
-            >⋯</button>
-          </div>
-        </div>
-      `;
+  <div class="holiday-card compact-card">
+    <div class="holiday-color-line holiday-accent"></div>
+    <div class="holiday-header-line">
+      <div>
+        <h4 class="task-title">${escapeHtml(holiday.title)}</h4>
+        <p class="meta">Start: ${escapeHtml(holiday.start_date ? formatDate(holiday.start_date) : holiday.date ? formatDate(holiday.date) : "No start date")}</p>
+        <p class="meta">End: ${escapeHtml(holiday.end_date ? formatDate(holiday.end_date) : holiday.start_date ? formatDate(holiday.start_date) : holiday.date ? formatDate(holiday.date) : "No end date")}</p>
+      </div>
+      <button
+        class="edit-menu-btn"
+        type="button"
+        data-open-record-detail="1"
+        data-record-type="holiday"
+        data-record-id="${escapeHtml(holiday.id)}"
+        data-detail-title="${escapeHtml(holiday.title)}"
+        data-detail-html="${escapeHtml(detailHtml)}"
+        aria-label="Open holiday actions"
+      >⋯</button>
+    </div>
+  </div>
+`;
     }).join("");
 }
 
 function renderAcademicYears() {
   if (!academicYearsList) return;
-
-  const visibleYears = academicYears.filter(function (year) {
-    return !isAcademicYearArchived(year);
-  });
-
-  if (!visibleYears.length) {
+  if (!academicYears.length) {
     academicYearsList.innerHTML = '<div class="empty-state">No academic years yet.</div>';
     return;
   }
 
-  academicYearsList.innerHTML = visibleYears.map(function (year) {
-    const yearSemesters = semesters
-      .filter(function (semester) {
-        return semester.academic_year_id === year.id;
-      })
-      .slice()
-      .sort(function (a, b) {
-        return (a.start_date || "").localeCompare(b.start_date || "");
-      });
+  academicYearsList.innerHTML = academicYears.map(function (year) {
+    const yearSemesters = semesters.filter(function (semester) {
+      return semester.academic_year_id === year.id;
+    });
 
     const detailHtml = `<p class="meta">Academic year: ${escapeHtml(year.name)}</p>`;
 
@@ -1999,33 +1920,57 @@ function renderAcademicYears() {
           <div>
             <h4 class="task-title">${escapeHtml(year.name)}</h4>
           </div>
-          <button class="edit-menu-btn" type="button" data-open-record-detail="1" data-record-type="academic-year" data-record-id="${escapeHtml(year.id)}" data-detail-title="${escapeHtml(year.name)}" data-detail-html="${escapeHtml(detailHtml)}" aria-label="Open academic year actions">⋯</button>
+          <button
+            class="edit-menu-btn"
+            type="button"
+            data-open-record-detail="1"
+            data-record-type="academic-year"
+            data-record-id="${escapeHtml(year.id)}"
+            data-detail-title="${escapeHtml(year.name)}"
+            data-detail-html="${escapeHtml(detailHtml)}"
+            aria-label="Open academic year actions"
+          >⋯</button>
         </div>
+
         <div class="task-card-expanded">
-          ${yearSemesters.length ? yearSemesters.map(function (semester) {
-            const semesterDetailHtml = `
-              <p class="meta">Academic year: ${escapeHtml(year.name)}</p>
-              <p class="meta">Semester: ${escapeHtml(semester.name)}</p>
-              <p class="meta">Start: ${escapeHtml(semester.start_date ? formatDate(semester.start_date) : "No start")}</p>
-              <p class="meta">End: ${escapeHtml(semester.end_date ? formatDate(semester.end_date) : "No end")}</p>
-            `;
-            return `
-              <div class="semester-box">
-                <div class="card-head">
-                  <div>
-                    <strong>${escapeHtml(semester.name)}</strong>
-                    <p class="meta">${escapeHtml(semester.start_date ? formatDate(semester.start_date) : "No start")} - ${escapeHtml(semester.end_date ? formatDate(semester.end_date) : "No end")}</p>
-                  </div>
-                  <button class="edit-menu-btn" type="button" data-open-record-detail="1" data-record-type="semester" data-record-id="${escapeHtml(semester.id)}" data-detail-title="${escapeHtml(semester.name)}" data-detail-html="${escapeHtml(semesterDetailHtml)}" aria-label="Open semester actions">⋯</button>
-                </div>
-              </div>
-            `;
-          }).join("") : '<div class="empty-state">No semesters yet.</div>'}
+          ${
+            yearSemesters.length
+              ? yearSemesters.map(function (semester) {
+                  const semesterDetailHtml = `
+                    <p class="meta">Academic year: ${escapeHtml(year.name)}</p>
+                    <p class="meta">Semester: ${escapeHtml(semester.name)}</p>
+                    <p class="meta">Start: ${escapeHtml(semester.start_date ? formatDate(semester.start_date) : "No start")}</p>
+                    <p class="meta">End: ${escapeHtml(semester.end_date ? formatDate(semester.end_date) : "No end")}</p>
+                  `;
+                  return `
+                    <div class="semester-box">
+                      <div class="card-head">
+                        <div>
+                          <strong>${escapeHtml(semester.name)}</strong>
+                          <p class="meta">${escapeHtml(semester.start_date ? formatDate(semester.start_date) : "No start")} - ${escapeHtml(semester.end_date ? formatDate(semester.end_date) : "No end")}</p>
+                        </div>
+                        <button
+                          class="edit-menu-btn"
+                          type="button"
+                          data-open-record-detail="1"
+                          data-record-type="semester"
+                          data-record-id="${escapeHtml(semester.id)}"
+                          data-detail-title="${escapeHtml(semester.name)}"
+                          data-detail-html="${escapeHtml(semesterDetailHtml)}"
+                          aria-label="Open semester actions"
+                        >⋯</button>
+                      </div>
+                    </div>
+                  `;
+                }).join("")
+              : '<div class="empty-state">No semesters yet.</div>'
+          }
         </div>
       </div>
     `;
   }).join("");
 }
+
 function buildCalendarItemHtml(item, compact) {
   const style = `style="background:${escapeHtml(item.color || "#64748b")};"`;
 
@@ -2331,7 +2276,16 @@ if (detailDeleteBtn) {
   });
 }
 
-document.addEventListener("click", function (e) {
+document.addEventListener("click", async function (e) {
+  const statusBtn = e.target.closest("[data-task-status-id]");
+  if (statusBtn) {
+    await updateTaskStatus(
+      statusBtn.dataset.taskStatusId,
+      statusBtn.dataset.taskStatusValue
+    );
+    return;
+  }
+
   const removeSessionBtn = e.target.closest("[data-remove-session]");
   if (removeSessionBtn) {
     const index = Number(removeSessionBtn.dataset.removeSession);
@@ -2384,9 +2338,11 @@ if (noteColorInput) {
     setColorPreview(noteColorInput, noteColorPreview);
   });
 }
+
 if (noteCourseInput) {
   noteCourseInput.addEventListener("change", syncNoteColorToSelectedCourse);
 }
+
 document.querySelector('[data-open-modal="courseModal"]')?.addEventListener("click", resetCourseModal);
 document.querySelector('[data-open-modal="taskModal"]')?.addEventListener("click", resetTaskModal);
 document.querySelector('[data-open-modal="noteModal"]')?.addEventListener("click", resetNoteModal);
