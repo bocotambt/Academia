@@ -2348,7 +2348,7 @@ document.addEventListener("click", async function (e) {
 
   const archivedExamsBtn = e.target.closest("#toggleArchivedExamsBtn");
   if (archivedExamsBtn) {
-    const wrap = id("archivedExamsWrap");
+    const wrap = $("archivedExamsWrap");
     if (wrap) {
       const hidden = wrap.classList.toggle("hidden");
       archivedExamsBtn.textContent = hidden ? "Show archived exams" : "Hide archived exams";
