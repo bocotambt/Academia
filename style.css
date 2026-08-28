@@ -113,6 +113,13 @@ body {
   border-radius: 16px;
 }
 
+.auth-card input,
+.auth-card textarea,
+.auth-card select {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
 .main-content {
   padding: 24px;
 }
@@ -146,7 +153,7 @@ body {
 .note-card,
 .academic-card,
 .day-view-card {
-  background: #fff;
+  background: #ffffff;
   border-radius: 18px;
   padding: 18px;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
@@ -156,6 +163,7 @@ body {
 .card-head,
 .modal-head,
 .section-toolbar,
+.calendar-toolbar,
 .row {
   display: flex;
   align-items: center;
@@ -186,7 +194,6 @@ body {
   border-radius: 12px;
   padding: 11px 14px;
   cursor: pointer;
-  font: inherit;
   font-weight: 600;
 }
 
@@ -258,16 +265,9 @@ textarea {
   display: inline-block;
 }
 
-.course-color-line,
-.note-color-line,
-.holiday-color-line,
-.task-color-line {
+.course-color-line {
   height: 8px;
   border-radius: 999px;
-  margin-bottom: 12px;
-}
-
-.course-color-line {
   margin-bottom: 14px;
 }
 
@@ -289,29 +289,13 @@ textarea {
   font-weight: 700;
 }
 
-.priority-high {
-  background: #dc2626;
-}
+.priority-high { background: #dc2626; }
+.priority-medium { background: #d97706; }
+.priority-low { background: #16a34a; }
 
-.priority-medium {
-  background: #d97706;
-}
-
-.priority-low {
-  background: #16a34a;
-}
-
-.status-done {
-  background: #16a34a;
-}
-
-.status-progress {
-  background: #2563eb;
-}
-
-.status-todo {
-  background: #64748b;
-}
+.status-done { background: #16a34a; }
+.status-progress { background: #2563eb; }
+.status-todo { background: #64748b; }
 
 .task-title {
   margin: 0 0 8px;
@@ -378,7 +362,7 @@ textarea {
 }
 
 .day-card {
-  background: #fff;
+  background: #ffffff;
   border-radius: 16px;
   padding: 14px;
   box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
@@ -396,57 +380,34 @@ textarea {
   opacity: 0.65;
 }
 
-/* Calendar layout */
-
 .calendar-toolbar {
   display: grid;
-  gap: 18px;
-  width: 100%;
-  margin-bottom: 18px;
+  gap: 14px;
+  margin-bottom: 16px;
 }
 
 .calendar-top-actions {
   display: flex;
   justify-content: flex-end;
-  width: 100%;
+}
+
+.calendar-view-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .calendar-nav-row {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 28px;
-  width: 100%;
+  gap: 12px;
 }
 
 .calendar-nav-row h3 {
   margin: 0;
   text-align: center;
-  white-space: nowrap;
-}
-
-.calendar-nav-row #prevPeriodBtn {
-  justify-self: end;
-}
-
-.calendar-nav-row #nextPeriodBtn {
-  justify-self: start;
-}
-
-.calendar-view-actions {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  width: 100%;
-}
-
-.calendar-view-actions .secondary-btn {
-  min-width: 150px;
-}
-
-.active-view-btn {
-  background: #2563eb;
-  color: #fff;
 }
 
 .calendar-weekdays {
@@ -465,13 +426,11 @@ textarea {
 }
 
 .calendar-cell {
-  min-width: 0;
-  min-height: 160px;
-  padding: 12px;
-  overflow: hidden;
   background: #fff;
-  border: 1px solid #e2e8f0;
   border-radius: 16px;
+  padding: 12px;
+  min-height: 160px;
+  border: 1px solid #e2e8f0;
 }
 
 .calendar-cell-fixed {
@@ -480,19 +439,16 @@ textarea {
 }
 
 .calendar-date {
-  margin-bottom: 8px;
   font-weight: 800;
+  margin-bottom: 8px;
 }
 
 .calendar-items {
   display: grid;
-  min-width: 0;
   gap: 8px;
 }
 
 .calendar-item {
-  min-width: 0;
-  overflow: hidden;
   border: none;
   border-radius: 10px;
   padding: 8px 10px;
@@ -503,32 +459,13 @@ textarea {
 
 .calendar-item small {
   display: block;
-  margin-top: 4px;
   opacity: 0.92;
+  margin-top: 4px;
 }
 
 .calendar-item-compact {
   padding: 7px 8px;
   font-size: 12px;
-}
-
-.calendar-item-title,
-.calendar-item-subtitle {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.calendar-item-title {
-  font-weight: 700;
-  line-height: 1.25;
-}
-
-.calendar-item-subtitle {
-  margin-top: 3px;
-  opacity: 0.95;
-  font-size: 11px;
 }
 
 .calendar-more-btn {
@@ -551,8 +488,8 @@ textarea {
 
 .week-day-title,
 .day-view-title {
-  margin-bottom: 12px;
   font-weight: 800;
+  margin-bottom: 12px;
 }
 
 .today {
@@ -570,20 +507,20 @@ textarea {
 .modal {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  background: rgba(15, 23, 42, 0.6);
   display: grid;
   place-items: center;
   padding: 20px;
-  background: rgba(15, 23, 42, 0.6);
+  z-index: 1000;
 }
 
 .modal-card {
   width: min(680px, 100%);
   max-height: 90vh;
   overflow: auto;
-  padding: 20px;
   background: #fff;
   border-radius: 20px;
+  padding: 20px;
 }
 
 .modal-card.large {
@@ -596,9 +533,14 @@ textarea {
 
 .modal-actions {
   display: flex;
-  justify-content: flex-end;
   gap: 10px;
+  justify-content: flex-end;
   margin-top: 18px;
+}
+
+.active-view-btn {
+  background: #2563eb;
+  color: #fff;
 }
 
 .cards-grid-3 {
@@ -617,20 +559,20 @@ textarea {
 .note-card,
 .task-card,
 .holiday-card {
-  padding: 14px;
-  background: #fff;
-  border: 1px solid #e2e8f0;
+  background: #ffffff;
   border-radius: 14px;
+  padding: 14px;
   box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+  border: 1px solid #e2e8f0;
 }
 
 .course-card.compact-card,
 .note-card.compact-card,
 .task-card.compact-card,
 .holiday-card.compact-card {
-  min-height: 100%;
-  margin-bottom: 0;
   padding: 14px;
+  margin-bottom: 0;
+  min-height: 100%;
 }
 
 .course-header-line,
@@ -664,10 +606,10 @@ textarea {
 }
 
 .course-name-strong {
-  margin: 8px 0 4px;
-  color: #0f172a;
-  font-size: 17px;
   font-weight: 800;
+  color: #0f172a;
+  margin: 8px 0 4px;
+  font-size: 17px;
 }
 
 .note-course-label,
@@ -675,8 +617,29 @@ textarea {
   font-weight: 800;
 }
 
+.note-color-line,
+.holiday-color-line,
+.task-color-line {
+  height: 8px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+}
+
 .note-card.course-note .note-color-line {
   background: var(--note-color, #7c3aed);
+}
+
+.calendar-item-title {
+  display: block;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.calendar-item-subtitle {
+  display: block;
+  opacity: 0.95;
+  margin-top: 3px;
+  font-size: 11px;
 }
 
 .holiday-accent {
@@ -692,6 +655,13 @@ textarea {
   border-left: none !important;
 }
 
+.task-card .task-color-line,
+.holiday-card .holiday-color-line {
+  height: 8px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+}
+
 .task-card {
   overflow: hidden;
 }
@@ -699,8 +669,8 @@ textarea {
 .task-quick-actions,
 .card-actions {
   display: flex;
-  flex-wrap: wrap;
   gap: 8px;
+  flex-wrap: wrap;
   margin-top: 12px;
 }
 
@@ -717,21 +687,17 @@ textarea {
 }
 
 .no-course-task {
-  background: #fff;
+  background: #ffffff;
 }
 
 .no-course-task .task-color-line {
-  background: #fff !important;
+  background: #ffffff !important;
   border: 1px solid #cbd5e1;
 }
 
 @media (max-width: 1100px) {
   .cards-grid-3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .calendar-view-actions .secondary-btn {
-    min-width: 120px;
   }
 }
 
@@ -740,8 +706,18 @@ textarea {
     grid-template-columns: 1fr;
   }
 
-  .grid-2,
-  .week-calendar-grid,
+  .sidebar {
+    padding: 16px;
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .week-calendar-grid {
+    grid-template-columns: 1fr;
+  }
+
   .cards-grid-3,
   .cards-grid-2 {
     grid-template-columns: 1fr;
@@ -753,30 +729,21 @@ textarea {
 }
 
 @media (max-width: 640px) {
-  .app-shell {
-    display: block;
-    min-height: 0;
+  .menu-toggle {
+    display: inline-flex;
   }
 
-  .sidebar {
-    min-height: 0;
-    height: auto;
-    padding: 16px;
+  .brand {
+    align-items: center;
   }
 
   .brand h1 {
     font-size: 24px;
-    line-height: 1.15;
-  }
-
-  #menuToggleBtn {
-    display: inline-flex;
-    align-self: flex-start;
   }
 
   .tab-nav {
     display: none;
-    margin: 16px 0 0;
+    margin-top: 16px;
   }
 
   .tab-nav.menu-open {
@@ -784,7 +751,11 @@ textarea {
   }
 
   .auth-card {
-    display: none;
+    margin-top: 16px;
+  }
+
+  .auth-card #signOutBtn {
+    display: none !important;
   }
 
   .main-content {
@@ -795,106 +766,82 @@ textarea {
     display: none;
   }
 
-  .panel {
-    padding: 14px;
-    border-radius: 16px;
-  }
-
-  /* Phone row 1: Add Event at the right */
   .calendar-top-actions {
-    justify-content: flex-end;
+    justify-content: stretch;
   }
 
   .calendar-add-btn {
-    width: auto;
+    width: 100%;
   }
 
-  /* Phone row 2: Previous / month-year / Next */
-  .calendar-nav-row {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 8px;
-  }
-
-  .calendar-nav-row h3 {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 20px;
-  }
-
-  .calendar-nav-row #prevPeriodBtn,
-  .calendar-nav-row #nextPeriodBtn {
-    justify-self: stretch;
-    padding: 10px 9px;
-  }
-
-  /* Phone row 3: Month / Week / Day */
   .calendar-view-actions {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
+    justify-content: center;
   }
 
   .calendar-view-actions .secondary-btn {
-    width: 100%;
+    flex: 1 1 0;
     min-width: 0;
-    padding: 10px 4px;
   }
 
-  /* Keep the seven calendar columns intact and prevent overlap */
+  .calendar-nav-row {
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .calendar-nav-row .secondary-btn {
+    padding-inline: 10px;
+  }
+
   .calendar-weekdays {
-    gap: 3px;
-    font-size: 10px;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+    font-size: 11px;
   }
 
   .calendar-grid {
-    gap: 3px;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
   }
 
   .calendar-cell {
-    min-width: 0;
-    min-height: 105px;
-    padding: 5px;
-    border-radius: 11px;
+    padding: 6px;
+    min-height: 110px;
+    border-radius: 12px;
   }
 
   .calendar-date {
-    margin-bottom: 5px;
     font-size: 12px;
+    margin-bottom: 6px;
   }
 
   .calendar-items {
-    gap: 3px;
+    gap: 4px;
   }
 
   .calendar-item-compact {
-    min-width: 0;
-    padding: 4px;
-    border-radius: 7px;
+    padding: 4px 5px;
+    font-size: 9px;
+    border-radius: 8px;
+  }
+
+  .calendar-item-title {
+    line-height: 1.15;
+  }
+
+  .calendar-item-subtitle {
     font-size: 8px;
-  }
-
-  .calendar-item-title,
-  .calendar-item-subtitle {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .calendar-item-subtitle {
-    margin-top: 1px;
-    font-size: 7px;
+    margin-top: 2px;
   }
 
   .calendar-more-btn {
-    padding: 4px;
-    border-radius: 7px;
-    font-size: 9px;
+    padding: 5px 6px;
+    font-size: 10px;
+    border-radius: 8px;
   }
 
   .course-card,
   .note-card {
-    margin-bottom: 10px;
     padding: 10px 12px;
+    margin-bottom: 10px;
     border-radius: 10px;
   }
 
@@ -904,13 +851,13 @@ textarea {
   }
 
   .task-card-expanded {
-    gap: 8px;
     margin-top: 8px;
+    gap: 8px;
   }
 
   .detail-item {
-    margin-top: 6px;
     padding: 8px 10px;
+    margin-top: 6px;
   }
 
   .task-title {
@@ -938,7 +885,7 @@ textarea {
   }
 
   .edit-menu-btn {
-    min-height: auto;
     padding: 4px 8px;
+    min-height: auto;
   }
 }
