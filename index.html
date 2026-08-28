@@ -1,33 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Academia</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="script.js" defer></script>
 </head>
-
 <body>
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">
-        <div>
+        <div class="brand-text">
           <h1>Academia</h1>
           <p id="brandSignedInText" class="muted small"></p>
         </div>
-        <div id="brandUserArea" class="hidden"></div>
+
+        <button id="menuToggleBtn" class="menu-toggle hamburger-btn" type="button" aria-label="Open menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
       </div>
 
-      <button id="menuToggleBtn" class="menu-toggle hamburger-btn" type="button" aria-label="Open menu">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
+      <div id="brandUserArea" class="hidden"></div>
 
       <nav id="tabNav" class="tab-nav">
         <button class="tab-btn active" data-tab="dashboard" type="button">Dashboard</button>
@@ -43,14 +46,12 @@
       <div class="auth-card">
         <div id="authSignedOut">
           <h3>Sign in</h3>
-          <input id="authEmail" type="email" placeholder="Email" />
-          <input id="authPassword" type="password" placeholder="Password" />
-
+          <input id="authEmail" type="email" placeholder="Email">
+          <input id="authPassword" type="password" placeholder="Password">
           <div class="row">
             <button id="signUpBtn" class="secondary-btn" type="button">Sign Up</button>
             <button id="signInBtn" class="primary-btn" type="button">Sign In</button>
           </div>
-
           <p id="authMessage" class="muted small"></p>
         </div>
 
@@ -143,13 +144,13 @@
       <section id="calendar" class="tab-content">
         <div class="panel">
           <div class="calendar-toolbar">
-            <div class="row wrap calendar-nav-actions">
+            <div class="calendar-nav-row">
               <button id="prevPeriodBtn" class="secondary-btn" type="button">Previous</button>
               <h3 id="calendarMonthLabel">Calendar</h3>
               <button id="nextPeriodBtn" class="secondary-btn" type="button">Next</button>
             </div>
 
-            <div class="row wrap calendar-view-actions">
+            <div class="calendar-view-actions">
               <button id="monthViewBtn" class="secondary-btn active-view-btn" type="button">Month</button>
               <button id="weekViewBtn" class="secondary-btn" type="button">Week</button>
               <button id="dayViewBtn" class="secondary-btn" type="button">Day</button>
@@ -167,7 +168,6 @@
               <div>Fri</div>
               <div>Sat</div>
             </div>
-
             <div id="calendarGrid" class="calendar-grid"></div>
           </div>
 
@@ -187,11 +187,9 @@
     <div class="modal-card">
       <div class="modal-head">
         <h3 id="detailTitle">Details</h3>
-        <button class="icon-btn" data-close-modal="detailModal" type="button">×</button>
+        <button class="icon-btn" data-close-modal="detailModal" type="button">✕</button>
       </div>
-
       <div id="detailBody" class="modal-body"></div>
-
       <div id="detailActions" class="modal-actions hidden">
         <button id="detailEditBtn" class="secondary-btn" type="button">Edit</button>
         <button id="detailDeleteBtn" class="danger-btn" type="button">Delete</button>
@@ -203,16 +201,15 @@
     <div class="modal-card large">
       <div class="modal-head">
         <h3>Course</h3>
-        <button class="icon-btn" data-close-modal="courseModal" type="button">×</button>
+        <button class="icon-btn" data-close-modal="courseModal" type="button">✕</button>
       </div>
-
       <div class="modal-body form-grid">
-        <input id="courseName" type="text" placeholder="Course name" />
-        <input id="courseCode" type="text" placeholder="Course code" />
-        <input id="courseInstructor" type="text" placeholder="Instructor name" />
+        <input id="courseName" type="text" placeholder="Course name">
+        <input id="courseCode" type="text" placeholder="Course code">
+        <input id="courseInstructor" type="text" placeholder="Instructor name">
 
         <div class="color-row">
-          <input id="courseColor" type="color" value="#2563eb" />
+          <input id="courseColor" type="color" value="#2563eb">
           <span id="courseColorPreview" class="color-preview"></span>
         </div>
 
@@ -254,20 +251,20 @@
 
           <div id="sessionDatesWrap" class="hidden">
             <div class="row">
-              <input id="sessionDate" type="date" />
+              <input id="sessionDate" type="date">
               <button id="addSpecificDateBtn" class="secondary-btn" type="button">Add Date</button>
             </div>
-
             <div id="pendingSpecificDates"></div>
           </div>
 
           <div class="row">
-            <input id="sessionStartTime" type="time" />
-            <input id="sessionEndTime" type="time" />
+            <input id="sessionStartTime" type="time">
+            <input id="sessionEndTime" type="time">
           </div>
 
-          <input id="sessionLocation" type="text" placeholder="Location" />
+          <input id="sessionLocation" type="text" placeholder="Location">
           <button id="addSessionBtn" class="secondary-btn" type="button">Add Session</button>
+
           <div id="pendingSessionsList"></div>
         </div>
 
@@ -280,25 +277,24 @@
     <div class="modal-card">
       <div class="modal-head">
         <h3>Task</h3>
-        <button class="icon-btn" data-close-modal="taskModal" type="button">×</button>
+        <button class="icon-btn" data-close-modal="taskModal" type="button">✕</button>
       </div>
-
       <div class="modal-body form-grid">
-        <input id="taskTitle" type="text" placeholder="Task title" />
+        <input id="taskTitle" type="text" placeholder="Task title">
         <textarea id="taskDetails" placeholder="Task details"></textarea>
         <select id="taskCourse"></select>
-        <input id="taskDate" type="date" />
+        <input id="taskDate" type="date">
 
         <select id="taskPriority">
-          <option value="High">High priority</option>
-          <option value="Medium">Medium priority</option>
-          <option value="Low">Low priority</option>
+          <option>High</option>
+          <option>Medium</option>
+          <option>Low</option>
         </select>
 
         <select id="taskStatus">
-          <option value="To Do">To Do</option>
-          <option value="In Progress">In Progress</option>
-          <option value="Done">Done</option>
+          <option>To Do</option>
+          <option>In Progress</option>
+          <option>Done</option>
         </select>
 
         <button id="addTaskBtn" class="primary-btn" type="button">Save Task</button>
@@ -310,19 +306,20 @@
     <div class="modal-card">
       <div class="modal-head">
         <h3>Note</h3>
-        <button class="icon-btn" data-close-modal="noteModal" type="button">×</button>
+        <button class="icon-btn" data-close-modal="noteModal" type="button">✕</button>
       </div>
-
       <div class="modal-body form-grid">
-        <input id="noteTitle" type="text" placeholder="Note title" />
-        <select id="noteCourse"></select>
+        <input id="noteTitle" type="text" placeholder="Note title">
+        <select id="noteCourse">
+          <option value="">No course</option>
+        </select>
 
         <div class="color-row">
-          <input id="noteColor" type="color" value="#7c3aed" />
+          <input id="noteColor" type="color" value="#7c3aed">
           <span id="noteColorPreview" class="color-preview"></span>
         </div>
 
-        <textarea id="noteContent" placeholder="Write your note here"></textarea>
+        <textarea id="noteContent" placeholder="Write your note"></textarea>
         <button id="saveNoteBtn" class="primary-btn" type="button">Save Note</button>
       </div>
     </div>
@@ -332,20 +329,19 @@
     <div class="modal-card">
       <div class="modal-head">
         <h3>Exam</h3>
-        <button class="icon-btn" data-close-modal="examModal" type="button">×</button>
+        <button class="icon-btn" data-close-modal="examModal" type="button">✕</button>
       </div>
-
       <div class="modal-body form-grid">
-        <input id="examTitle" type="text" placeholder="Exam title" />
+        <input id="examTitle" type="text" placeholder="Exam title">
         <select id="examCourse"></select>
-        <input id="examDate" type="date" />
-        <input id="examTime" type="time" />
-        <input id="examDuration" type="number" min="0" placeholder="Duration in minutes" />
-        <input id="examPlace" type="text" placeholder="Place" />
-        <input id="examSeatNumber" type="text" placeholder="Seat number" />
-        <input id="examGrade" type="text" placeholder="Grade" />
-        <input id="examMark" type="number" min="0" placeholder="Mark" />
-        <textarea id="examNotes" placeholder="Notes"></textarea>
+        <input id="examDate" type="date">
+        <input id="examTime" type="time">
+        <input id="examDuration" type="number" placeholder="Duration in minutes">
+        <input id="examPlace" type="text" placeholder="Place">
+        <input id="examSeatNumber" type="text" placeholder="Seat number">
+        <input id="examGrade" type="text" placeholder="Grade">
+        <input id="examMark" type="number" placeholder="Mark">
+        <textarea id="examNotes" placeholder="Exam notes"></textarea>
         <button id="saveExamBtn" class="primary-btn" type="button">Save Exam</button>
       </div>
     </div>
@@ -355,13 +351,12 @@
     <div class="modal-card">
       <div class="modal-head">
         <h3>Holiday</h3>
-        <button class="icon-btn" data-close-modal="holidayModal" type="button">×</button>
+        <button class="icon-btn" data-close-modal="holidayModal" type="button">✕</button>
       </div>
-
       <div class="modal-body form-grid">
-        <input id="holidayTitle" type="text" placeholder="Holiday name" />
-        <input id="holidayStartDate" type="date" />
-        <input id="holidayEndDate" type="date" />
+        <input id="holidayTitle" type="text" placeholder="Holiday name">
+        <input id="holidayStartDate" type="date">
+        <input id="holidayEndDate" type="date">
         <button id="saveHolidayBtn" class="primary-btn" type="button">Save Holiday</button>
       </div>
     </div>
@@ -371,23 +366,18 @@
     <div class="modal-card">
       <div class="modal-head">
         <h3>Event</h3>
-        <button class="icon-btn" data-close-modal="eventModal" type="button">×</button>
+        <button class="icon-btn" data-close-modal="eventModal" type="button">✕</button>
       </div>
-
       <div class="modal-body form-grid">
-        <input id="eventTitle" type="text" placeholder="Event title" />
-        <input id="eventDate" type="date" />
-
-        <div class="row">
-          <input id="eventStartTime" type="time" />
-          <input id="eventEndTime" type="time" />
-        </div>
-
-        <input id="eventLocation" type="text" placeholder="Location" />
-        <textarea id="eventDetails" placeholder="Details"></textarea>
+        <input id="eventTitle" type="text" placeholder="Event title">
+        <input id="eventDate" type="date">
+        <input id="eventStartTime" type="time">
+        <input id="eventEndTime" type="time">
+        <input id="eventLocation" type="text" placeholder="Location">
+        <textarea id="eventDetails" placeholder="Event details"></textarea>
 
         <div class="color-row">
-          <input id="eventColor" type="color" value="#7c3aed" />
+          <input id="eventColor" type="color" value="#7c3aed">
           <span id="eventColorPreview" class="color-preview"></span>
         </div>
 
@@ -400,11 +390,10 @@
     <div class="modal-card">
       <div class="modal-head">
         <h3>Academic Year</h3>
-        <button class="icon-btn" data-close-modal="academicYearModal" type="button">×</button>
+        <button class="icon-btn" data-close-modal="academicYearModal" type="button">✕</button>
       </div>
-
       <div class="modal-body form-grid">
-        <input id="academicYearName" type="text" placeholder="For example: 2026–2027" />
+        <input id="academicYearName" type="text" placeholder="Academic year name">
         <button id="saveAcademicYearBtn" class="primary-btn" type="button">Save Academic Year</button>
       </div>
     </div>
@@ -414,14 +403,13 @@
     <div class="modal-card">
       <div class="modal-head">
         <h3>Semester</h3>
-        <button class="icon-btn" data-close-modal="semesterModal" type="button">×</button>
+        <button class="icon-btn" data-close-modal="semesterModal" type="button">✕</button>
       </div>
-
       <div class="modal-body form-grid">
         <select id="semesterAcademicYear"></select>
-        <input id="semesterName" type="text" placeholder="Semester name" />
-        <input id="semesterStartDate" type="date" />
-        <input id="semesterEndDate" type="date" />
+        <input id="semesterName" type="text" placeholder="Semester name">
+        <input id="semesterStartDate" type="date">
+        <input id="semesterEndDate" type="date">
         <button id="saveSemesterBtn" class="primary-btn" type="button">Save Semester</button>
       </div>
     </div>
