@@ -1470,7 +1470,32 @@ function isPastExam(exam) {
 function getItemsForDate(dateKey) {
   const dateObj = new Date(dateKey + "T00:00:00");
   const courseItems = getSessionsForDate(dateObj);
-
+  const taskItems = tasks
+    .filter(function (task) {
+      return task.due_date === dateKey && !isTaskArchived(task);
+    })
+    .map(function (task) {
+      const course = getCourseById(task.course_id);
+      const courseLabel = course ? `${course.code} — ${course.name}` : "No course";
+      return {
+        type: "task",
+        id: `task-${task.id}`,
+        title: `Task: ${task.title}`,
+        shortTitle: task.title,
+        timeLabel: `Due date: ${formatDate(task.due_date)}`,
+        startTimeSort: "23:58",
+        location: "",
+        color: getTaskColor(task),
+        detailHtml: `
+          <p class="meta">Task: ${escapeHtml(task.title)}</p>
+          <p class="meta">Course: ${escapeHtml(courseLabel)}</p>
+          <p class="meta">Due: ${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
+          <p class="meta">Priority: ${escapeHtml(task.priority || "No priority")}</p>
+          <p class="meta">Status: ${escapeHtml(task.status || "To Do")}</p>
+          <p class="meta">Details: ${escapeHtml(task.details || "No details")}</p>
+        `
+      };
+    });
   const examItems = exams
     .filter(function (exam) { return exam.exam_date === dateKey; })
     .map(function (exam) {
