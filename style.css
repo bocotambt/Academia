@@ -289,13 +289,29 @@ textarea {
   font-weight: 700;
 }
 
-.priority-high { background: #dc2626; }
-.priority-medium { background: #d97706; }
-.priority-low { background: #16a34a; }
+.priority-high {
+  background: #dc2626;
+}
 
-.status-done { background: #16a34a; }
-.status-progress { background: #2563eb; }
-.status-todo { background: #64748b; }
+.priority-medium {
+  background: #d97706;
+}
+
+.priority-low {
+  background: #16a34a;
+}
+
+.status-done {
+  background: #16a34a;
+}
+
+.status-progress {
+  background: #2563eb;
+}
+
+.status-todo {
+  background: #64748b;
+}
 
 .task-title {
   margin: 0 0 8px;
@@ -695,12 +711,7 @@ textarea {
   border: 1px solid #cbd5e1;
 }
 
-/* PC calendar layout fix */
 @media (min-width: 641px) {
-  .calendar-toolbar {
-    width: 100%;
-  }
-
   .calendar-nav-row {
     grid-template-columns: 1fr auto 1fr;
     width: 100%;
@@ -721,9 +732,8 @@ textarea {
   .calendar-view-actions {
     display: grid;
     grid-template-columns: repeat(4, minmax(130px, 1fr));
-    gap: 14px;
+    gap: 24px;
     width: 100%;
-    align-items: stretch;
   }
 
   .calendar-view-actions .secondary-btn,
@@ -762,12 +772,15 @@ textarea {
 }
 
 @media (max-width: 640px) {
-  .sidebar {
-    padding: 16px;
+  .app-shell {
+    display: block;
+    min-height: 0;
   }
 
-  .menu-toggle {
-    display: inline-flex;
+  .sidebar {
+    padding: 16px;
+    min-height: 0;
+    height: auto;
   }
 
   .brand {
@@ -775,21 +788,24 @@ textarea {
   }
 
   .brand h1 {
+    margin: 0 0 6px;
     font-size: 24px;
     line-height: 1.15;
-    margin: 0 0 6px;
   }
 
   #menuToggleBtn {
     display: inline-flex;
+    width: 44px;
+    height: 44px;
     flex: 0 0 44px;
     margin: 0;
     align-self: flex-start;
   }
 
+  /* Hide the menu and sign-out card until the hamburger is used */
   .tab-nav {
     display: none;
-    margin-top: 16px;
+    margin: 16px 0 0;
   }
 
   .tab-nav.menu-open {
@@ -797,11 +813,7 @@ textarea {
   }
 
   .auth-card {
-    margin-top: 16px;
-  }
-
-  .auth-card #signOutBtn {
-    display: none !important;
+    display: none;
   }
 
   .main-content {
@@ -845,7 +857,6 @@ textarea {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
     width: 100%;
-    justify-content: center;
   }
 
   .calendar-view-actions .secondary-btn {
@@ -853,29 +864,23 @@ textarea {
     min-width: 0;
   }
 
-  .calendar-top-actions {
-    justify-content: center;
-  }
-
   .calendar-add-btn {
-    width: 100%;
     grid-column: 1 / -1;
+    width: 100%;
   }
 
   .calendar-weekdays {
-    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 4px;
     font-size: 11px;
   }
 
   .calendar-grid {
-    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 4px;
   }
 
   .calendar-cell {
-    padding: 6px;
     min-height: 110px;
+    padding: 6px;
     border-radius: 12px;
   }
 
@@ -890,8 +895,8 @@ textarea {
 
   .calendar-item-compact {
     padding: 4px 5px;
-    font-size: 9px;
     border-radius: 8px;
+    font-size: 9px;
   }
 
   .calendar-item-title {
@@ -905,8 +910,8 @@ textarea {
 
   .calendar-more-btn {
     padding: 5px 6px;
-    font-size: 10px;
     border-radius: 8px;
+    font-size: 10px;
   }
 
   .course-card,
