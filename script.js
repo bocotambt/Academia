@@ -2328,7 +2328,7 @@ if (detailDeleteBtn) {
 document.addEventListener("click", async function (e) {
   const archivedTasksBtn = e.target.closest("#toggleArchivedTasksBtn");
   if (archivedTasksBtn) {
-    const wrap = id("archivedTasksWrap");
+    const wrap = $("archivedTasksWrap");
     if (wrap) {
       const hidden = wrap.classList.toggle("hidden");
       archivedTasksBtn.textContent = hidden ? "Show archived tasks" : "Hide archived tasks";
