@@ -1564,8 +1564,8 @@ function getItemsForDate(dateKey) {
       };
     });
 
-  return courseItems
-    .concat(examItems, eventItems, holidayItems)
+   return courseItems
+    .concat(taskItems, examItems, eventItems, holidayItems)
     .sort(function (a, b) {
       const timeCompare = (a.startTimeSort || "99:99").localeCompare(b.startTimeSort || "99:99");
       if (timeCompare !== 0) return timeCompare;
