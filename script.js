@@ -337,6 +337,32 @@ function setButtonBusy(button, busy, label) {
 function generateId() {
   return crypto.randomUUID();
 }
+function replaceItemInArray(list, updatedItem) {
+  return list.map(function (item) {
+    return item.id === updatedItem.id ? updatedItem : item;
+  });
+}
+
+function removeItemFromArray(list, id) {
+  return list.filter(function (item) {
+    return item.id !== id;
+  });
+}
+
+function findCourseByName(name) {
+  return courses.find(function (course) {
+    return course.name === name;
+  }) || null;
+}
+
+function getExamCourse(exam) {
+  if (!exam || !exam.course) return null;
+  return findCourseByName(exam.course);
+}
+
+function isExamArchived(exam) {
+  return isPastExam(exam);
+}
 
 function openModal(modalId) {
   const modal = $(modalId);
