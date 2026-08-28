@@ -2034,7 +2034,7 @@ function buildCalendarItemHtml(item, compact) {
 
     return `
       <button
-        class="calendar-item calendar-item-compact ${item.type === "holiday" ? "holiday-accent" : ""}"
+        class="calendar-item calendar-item-compact ${item.type === "holiday" ? "holiday-accent" : ""} ${item.type === "task" ? "calendar-task-item" : ""}"
         ${style}
         type="button"
         data-detail-title="${escapeHtml(item.title)}"
@@ -2053,7 +2053,7 @@ function buildCalendarItemHtml(item, compact) {
 
   return `
     <button
-      class="calendar-item ${item.type === "holiday" ? "holiday-accent" : ""}"
+      class="calendar-item ${item.type === "holiday" ? "holiday-accent" : ""} ${item.type === "task" ? "calendar-task-item" : ""}"
       ${style}
       type="button"
       data-detail-title="${escapeHtml(item.title)}"
