@@ -373,8 +373,6 @@ function getTaskColor(task) {
 }
 
 function getNoteLinkedCourse(note) {
-  if (!note) return null;
-  if (note.course_id) return getCourseById(note.course_id);
   return null;
 }
 
