@@ -162,6 +162,7 @@ let editingSemesterId = null;
 
 let showArchivedTasks = false;
 let showArchivedExams = false;
+let showArchivedCourses = false;
 
 function escapeHtml(value) {
   return String(value ?? "")
