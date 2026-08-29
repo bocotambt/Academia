@@ -407,7 +407,8 @@ function getTaskColor(task) {
 }
 
 function getNoteLinkedCourse(note) {
-  return null;
+  if (!note || !note.course) return null;
+  return findCourseByName(note.course);
 }
 
 function taskPriorityRank(priority) {
