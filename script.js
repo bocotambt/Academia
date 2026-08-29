@@ -1366,11 +1366,12 @@ async function saveNote() {
     }
 
     const payload = {
-      title,
-      content,
-      course_id: linkedCourse ? linkedCourse.id : null,
-      color: linkedCourse && linkedCourse.color ? linkedCourse.color : (noteColorInput ? noteColorInput.value : "#7c3aed")
-    };
+  title,
+  content,
+  color: linkedCourse && linkedCourse.color
+    ? linkedCourse.color
+    : (noteColorInput ? noteColorInput.value : "#7c3aed")
+};
 
     const saved = editingNoteId
       ? await updateRecord("notes", editingNoteId, payload)
