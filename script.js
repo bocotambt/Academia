@@ -356,7 +356,37 @@ function isTaskArchived(task) {
   const todayKey = toDateKey(new Date());
   return task.status === "Done" && task.due_date < todayKey;
 }
+function isCourseArchived(course) {
+  if (!course || !course.semester_id) return false;
+  const semester = getSemesterById(course.semester_id);
+  if (!semester || !semester.end_date) return false;
 
+  const todayKey = toDateKey(new Date());
+  return semester.end_date < todayKey;
+}
+
+function getActiveCourses() {
+  return courses.filter(function (course) {
+    return !isCourseArchived(course);
+  });
+}
+
+function getArchivedCourses() {
+  return courses
+    .filter(function (course) {
+      return isCourseArchived(course);
+    })
+    .slice()
+    .sort(function (a, b) {
+      const semesterA = getSemesterById(a.semester_id);
+      const semesterB = getSemesterById(b.semester_id);
+      const endA = semesterA?.end_date || "9999-99-99";
+      const endB = semesterB?.end_date || "9999-99-99";
+      const first = endB.localeCompare(endA);
+      if (first !== 0) return first;
+      return (a.code || "").localeCompare(b.code || "") || (a.name || "").localeCompare(b.name || "");
+    });
+}
 function shouldShowTaskOnDashboard(task) {
   if (!task) return false;
   if (isTaskArchived(task)) return false;
