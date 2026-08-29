@@ -211,17 +211,13 @@ function formatShortDate(dateString) {
 function formatWeekRangeCompact(startDate, endDate) {
   const start = new Date(startDate);
   const end = new Date(endDate);
-
   const startDay = start.getDate();
   const endDay = end.getDate();
   const startMonth = start.toLocaleDateString([], { month: "long" });
   const endMonth = end.toLocaleDateString([], { month: "long" });
   const endYear = end.getFullYear();
 
-  if (
-    start.getFullYear() === end.getFullYear() &&
-    start.getMonth() === end.getMonth()
-  ) {
+  if (start.getFullYear() === end.getFullYear() && start.getMonth() === end.getMonth()) {
     return `${startDay}-${endDay} ${endMonth} ${endYear}`;
   }
 
@@ -380,6 +376,27 @@ function getNoteLinkedCourse(note) {
   if (!note) return null;
   if (note.course_id) return getCourseById(note.course_id);
   return null;
+}
+
+function taskPriorityRank(priority) {
+  const rank = { High: 1, Medium: 2, Low: 3 };
+  return rank[priority] || 99;
+}
+
+function compareTaskDates(a, b) {
+  const first = (a.due_date || "9999-99-99").localeCompare(b.due_date || "9999-99-99");
+  if (first !== 0) return first;
+  const second = taskPriorityRank(a.priority) - taskPriorityRank(b.priority);
+  if (second !== 0) return second;
+  return (a.title || "").localeCompare(b.title || "");
+}
+
+function compareExamDates(a, b) {
+  const first = (a.exam_date || "9999-99-99").localeCompare(b.exam_date || "9999-99-99");
+  if (first !== 0) return first;
+  const second = (a.exam_time || "99:99").localeCompare(b.exam_time || "99:99");
+  if (second !== 0) return second;
+  return (a.title || "").localeCompare(b.title || "");
 }
 
 function setColorPreview(input, preview) {
@@ -810,7 +827,7 @@ function populateCourseOptions() {
   }
 
   if (taskCourseFilter) {
-    const current = taskCourseFilter.value;
+    const selected = taskCourseFilter.value;
     taskCourseFilter.innerHTML = `<option value="">All courses</option>`;
     courses.forEach(function (course) {
       const option = document.createElement("option");
@@ -818,7 +835,7 @@ function populateCourseOptions() {
       option.textContent = `${course.code} — ${course.name}`;
       taskCourseFilter.appendChild(option);
     });
-    taskCourseFilter.value = current;
+    taskCourseFilter.value = selected;
   }
 }
 
@@ -1776,9 +1793,8 @@ function renderDashboard() {
 
   const upcomingTasks = tasks
     .filter(shouldShowTaskOnDashboard)
-    .sort(function (a, b) {
-      return (a.due_date || "").localeCompare(b.due_date || "");
-    })
+    .slice()
+    .sort(compareTaskDates)
     .slice(0, 5);
 
   if (dashboardUpcomingTasks) {
@@ -1810,9 +1826,7 @@ function renderDashboard() {
   const upcomingExams = exams
     .filter(shouldShowExamOnDashboard)
     .slice()
-    .sort(function (a, b) {
-      return `${a.exam_date || ""}${a.exam_time || ""}`.localeCompare(`${b.exam_date || ""}${b.exam_time || ""}`);
-    })
+    .sort(compareExamDates)
     .slice(0, 5);
 
   if (dashboardUpcomingExams) {
@@ -1943,17 +1957,16 @@ function getFilteredAndSortedActiveTasks() {
       const labelB = courseB ? `${courseB.code} ${courseB.name}` : "ZZZ No course";
       const first = labelA.localeCompare(labelB);
       if (first !== 0) return first;
-      return (a.due_date || "").localeCompare(b.due_date || "");
+      return compareTaskDates(a, b);
     }
 
     if (sortMode === "priority") {
-      const priorityRank = { High: 1, Medium: 2, Low: 3 };
-      const first = (priorityRank[a.priority] || 99) - (priorityRank[b.priority] || 99);
+      const first = taskPriorityRank(a.priority) - taskPriorityRank(b.priority);
       if (first !== 0) return first;
-      return (a.due_date || "").localeCompare(b.due_date || "");
+      return compareTaskDates(a, b);
     }
 
-    return (a.due_date || "").localeCompare(b.due_date || "");
+    return compareTaskDates(a, b);
   });
 
   return visibleTasks;
@@ -1968,9 +1981,7 @@ function renderTasks() {
       return isTaskArchived(task);
     })
     .slice()
-    .sort(function (a, b) {
-      return (a.due_date || "").localeCompare(b.due_date || "");
-    });
+    .sort(compareTaskDates);
 
   plannerList.className = "stack-list";
 
@@ -2117,18 +2128,14 @@ function renderExams() {
       return !isPastExam(exam);
     })
     .slice()
-    .sort(function (a, b) {
-      return `${a.exam_date || ""}${a.exam_time || ""}`.localeCompare(`${b.exam_date || ""}${b.exam_time || ""}`);
-    });
+    .sort(compareExamDates);
 
   const archivedExams = exams
     .filter(function (exam) {
       return isPastExam(exam);
     })
     .slice()
-    .sort(function (a, b) {
-      return `${a.exam_date || ""}${a.exam_time || ""}`.localeCompare(`${b.exam_date || ""}${b.exam_time || ""}`);
-    });
+    .sort(compareExamDates);
 
   examsList.className = "stack-list";
 
@@ -2642,4 +2649,151 @@ async function handleDeleteRecord(record) {
       });
     }
   }
-  if (record.type === "semester
+  if (record.type === "semester") {
+    deleted = await deleteRecord("semesters", record.id);
+    if (deleted) {
+      semesters = removeItemFromArray(semesters, record.id);
+      courses = courses.map(function (course) {
+        return course.semester_id === record.id ? { ...course, semester_id: null } : course;
+      });
+    }
+  }
+
+  if (!deleted) return;
+
+  closeModal("detailModal");
+  hideDetailActions();
+  renderAll();
+}
+
+if (detailEditBtn) {
+  detailEditBtn.addEventListener("click", function () {
+    handleEditRecord(activeDetailRecord);
+  });
+}
+
+if (detailDeleteBtn) {
+  detailDeleteBtn.addEventListener("click", function () {
+    handleDeleteRecord(activeDetailRecord);
+  });
+}
+
+document.addEventListener("click", async function (e) {
+  const statusBtn = e.target.closest("[data-task-status-id]");
+  if (statusBtn) {
+    await updateTaskStatus(
+      statusBtn.dataset.taskStatusId,
+      statusBtn.dataset.taskStatusValue
+    );
+    return;
+  }
+
+  const archiveToggle = e.target.closest("[data-toggle-archive]");
+  if (archiveToggle) {
+    if (archiveToggle.dataset.toggleArchive === "tasks") {
+      showArchivedTasks = !showArchivedTasks;
+      renderTasks();
+    }
+    if (archiveToggle.dataset.toggleArchive === "exams") {
+      showArchivedExams = !showArchivedExams;
+      renderExams();
+    }
+    return;
+  }
+
+  const removeSessionBtn = e.target.closest("[data-remove-session]");
+  if (removeSessionBtn) {
+    const index = Number(removeSessionBtn.dataset.removeSession);
+    pendingSessions.splice(index, 1);
+    renderPendingSessions();
+    return;
+  }
+
+  const removeSpecificDateBtn = e.target.closest("[data-remove-specific-date]");
+  if (removeSpecificDateBtn) {
+    const index = Number(removeSpecificDateBtn.dataset.removeSpecificDate);
+    pendingSpecificDateList.splice(index, 1);
+    renderPendingSpecificDates();
+    return;
+  }
+
+  const recordDetailTrigger = e.target.closest("[data-open-record-detail]");
+  if (recordDetailTrigger) {
+    const title = recordDetailTrigger.dataset.detailTitle || "Details";
+    const html = decodeHtml(recordDetailTrigger.dataset.detailHtml || "");
+    const type = recordDetailTrigger.dataset.recordType;
+    const id = recordDetailTrigger.dataset.recordId;
+    openDetailModal(title, html, getRecordMeta(type, id));
+    return;
+  }
+
+  const detailTrigger = e.target.closest("[data-detail-title]");
+  if (detailTrigger) {
+    if (detailTrigger.hasAttribute("data-open-record-detail")) return;
+    const title = detailTrigger.dataset.detailTitle || "Details";
+    const html = decodeHtml(detailTrigger.dataset.detailHtml || "");
+    openDetailModal(title, html, null);
+  }
+});
+
+if (courseColorInput) {
+  courseColorInput.addEventListener("input", function () {
+    setColorPreview(courseColorInput, courseColorPreview);
+  });
+}
+
+if (eventColorInput) {
+  eventColorInput.addEventListener("input", function () {
+    setColorPreview(eventColorInput, eventColorPreview);
+  });
+}
+
+if (noteColorInput) {
+  noteColorInput.addEventListener("input", function () {
+    setColorPreview(noteColorInput, noteColorPreview);
+  });
+}
+
+if (noteCourseInput) {
+  noteCourseInput.addEventListener("change", syncNoteColorToSelectedCourse);
+}
+
+if (taskSortFilter) {
+  taskSortFilter.addEventListener("change", renderTasks);
+}
+if (taskCourseFilter) {
+  taskCourseFilter.addEventListener("change", renderTasks);
+}
+if (taskPriorityFilter) {
+  taskPriorityFilter.addEventListener("change", renderTasks);
+}
+
+document.querySelector('[data-open-modal="courseModal"]')?.addEventListener("click", resetCourseModal);
+document.querySelector('[data-open-modal="taskModal"]')?.addEventListener("click", resetTaskModal);
+document.querySelector('[data-open-modal="noteModal"]')?.addEventListener("click", resetNoteModal);
+document.querySelector('[data-open-modal="examModal"]')?.addEventListener("click", resetExamModal);
+document.querySelector('[data-open-modal="holidayModal"]')?.addEventListener("click", resetHolidayModal);
+document.querySelector('[data-open-modal="eventModal"]')?.addEventListener("click", resetEventModal);
+document.querySelector('[data-open-modal="academicYearModal"]')?.addEventListener("click", resetAcademicYearModal);
+document.querySelector('[data-open-modal="semesterModal"]')?.addEventListener("click", resetSemesterModal);
+
+function renderAll() {
+  populateSemesterOptions();
+  populateCourseOptions();
+  renderPendingSpecificDates();
+  renderPendingSessions();
+  renderDashboard();
+  renderCourses();
+  renderTasks();
+  renderNotes();
+  renderExams();
+  renderHolidays();
+  renderAcademicYears();
+  renderCalendar();
+  setColorPreview(courseColorInput, courseColorPreview);
+  setColorPreview(eventColorInput, eventColorPreview);
+  setColorPreview(noteColorInput, noteColorPreview);
+}
+
+getCurrentSession();
+showTab("dashboard");
