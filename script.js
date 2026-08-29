@@ -1890,15 +1890,18 @@ function renderDashboard() {
 function renderCourses() {
   if (!coursesList) return;
 
-  if (!courses.length) {
+  const activeCourses = getActiveCourses();
+  const archivedCourses = getArchivedCourses();
+
+  if (!activeCourses.length && !archivedCourses.length) {
     coursesList.className = "stack-list";
     coursesList.innerHTML = '<div class="empty-state">No courses yet.</div>';
     return;
   }
 
-  coursesList.className = "stack-list cards-grid-3";
+  coursesList.className = "stack-list";
 
-  coursesList.innerHTML = courses.map(function (course) {
+  const renderCourseCard = function (course, archived) {
     const sessions = getSessionsForCourse(course.id);
     const semester = semesters.find(function (s) { return s.id === course.semester_id; });
 
@@ -1906,11 +1909,12 @@ function renderCourses() {
       <p class="meta">Code: ${escapeHtml(course.code || "No code")}</p>
       <p class="meta">Instructor: ${escapeHtml(course.instructor || "No instructor")}</p>
       <p class="meta">Semester: ${escapeHtml(semester ? semester.name : "No semester")}</p>
+      <p class="meta">Semester end: ${escapeHtml(semester?.end_date ? formatDate(semester.end_date) : "No end date")}</p>
       <p class="meta">Sessions: ${escapeHtml(String(sessions.length))}</p>
     `;
 
     return `
-      <div class="course-card compact-card">
+      <div class="course-card compact-card ${archived ? "past-item" : ""}">
         <div class="course-color-line" style="background:${escapeHtml(courseColor(course))};"></div>
         <div class="course-header-line">
           <div>
@@ -1918,6 +1922,7 @@ function renderCourses() {
               <span class="course-badge" style="background:${escapeHtml(courseColor(course))};">
                 <span class="course-code-chip">${escapeHtml(course.code || "CODE")}</span>
               </span>
+              ${archived ? '<span class="archive-badge">Past course</span>' : ""}
             </div>
             <h4 class="course-name-strong">${escapeHtml(course.name)}</h4>
             <p class="meta">${escapeHtml(course.instructor || "No instructor")}</p>
@@ -1957,9 +1962,34 @@ function renderCourses() {
         </div>
       </div>
     `;
-  }).join("");
-}
+  };
 
+  coursesList.innerHTML = `
+    ${
+      activeCourses.length
+        ? `<div class="cards-grid-3">${activeCourses.map(function (course) { return renderCourseCard(course, false); }).join("")}</div>`
+        : '<div class="empty-state">No active courses.</div>'
+    }
+
+    ${
+      archivedCourses.length
+        ? `
+          <div class="archived-section">
+            <button class="archive-toggle-btn" type="button" data-toggle-archive="courses">
+              ${showArchivedCourses ? "Hide archived courses" : `Show archived courses (${archivedCourses.length})`}
+            </button>
+
+            ${
+              showArchivedCourses
+                ? `<div class="archive-list cards-grid-3">${archivedCourses.map(function (course) { return renderCourseCard(course, true); }).join("")}</div>`
+                : ""
+            }
+          </div>
+        `
+        : ""
+    }
+  `;
+}
 function getFilteredAndSortedActiveTasks() {
   let visibleTasks = tasks.filter(function (task) {
     return !isTaskArchived(task);
