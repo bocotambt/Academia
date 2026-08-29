@@ -2749,17 +2749,21 @@ document.addEventListener("click", async function (e) {
   }
 
   const archiveToggle = e.target.closest("[data-toggle-archive]");
-  if (archiveToggle) {
-    if (archiveToggle.dataset.toggleArchive === "tasks") {
-      showArchivedTasks = !showArchivedTasks;
-      renderTasks();
-    }
-    if (archiveToggle.dataset.toggleArchive === "exams") {
-      showArchivedExams = !showArchivedExams;
-      renderExams();
-    }
-    return;
+if (archiveToggle) {
+  if (archiveToggle.dataset.toggleArchive === "tasks") {
+    showArchivedTasks = !showArchivedTasks;
+    renderTasks();
   }
+  if (archiveToggle.dataset.toggleArchive === "exams") {
+    showArchivedExams = !showArchivedExams;
+    renderExams();
+  }
+  if (archiveToggle.dataset.toggleArchive === "courses") {
+    showArchivedCourses = !showArchivedCourses;
+    renderCourses();
+  }
+  return;
+}
 
   const removeSessionBtn = e.target.closest("[data-remove-session]");
   if (removeSessionBtn) {
