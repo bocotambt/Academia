@@ -864,13 +864,35 @@ textarea {
 
 @media (max-width: 640px) {
   .sidebar {
-    padding: 18px 16px;
+    padding: 18px 16px 18px 16px;
     min-height: 0;
+    height: auto;
+    display: block;
   }
 
   .brand {
-    min-height: 76px;
+    min-height: auto;
+    align-items: flex-start;
+    gap: 12px;
   }
+
+  .brand-text {
+    margin: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .brand h1 {
+    font-size: 24px;
+    margin: 0 0 4px;
+    line-height: 1.15;
+  }
+
+  .sidebar .muted.small {
+    margin: 0;
+    line-height: 1.35;
+  }
+
   .sidebar:has(.tab-nav:not(.menu-open)) {
     padding-bottom: 18px;
   }
@@ -878,16 +900,15 @@ textarea {
   .auth-card {
     display: none;
   }
+
   .menu-toggle {
     display: inline-flex;
   }
 
-  .brand {
-    align-items: center;
-  }
-
-  .brand h1 {
-    font-size: 24px;
+  .hamburger-btn {
+    margin-left: auto;
+    margin-right: 6px;
+    align-self: flex-start;
   }
 
   .tab-nav {
@@ -909,6 +930,7 @@ textarea {
 
   .main-content {
     padding: 16px;
+    min-height: 0;
   }
 
   .topbar {
@@ -924,7 +946,7 @@ textarea {
     min-width: 0;
   }
 
-    .calendar-toolbar {
+  .calendar-toolbar {
     margin-bottom: 14px;
   }
 
@@ -1097,43 +1119,5 @@ textarea {
   .edit-menu-btn {
     padding: 4px 8px;
     min-height: auto;
-  }
-}
-/* Phone only: one compact, uniform Academia header on every tab */
-@media (max-width: 640px) {
-  .sidebar {
-    padding: 18px 16px !important;
-    min-height: 0 !important;
-    height: auto !important;
-    display: block !important;
-  }
-
-  .sidebar .brand {
-    min-height: 76px !important;
-    margin: 0 !important;
-    align-items: center !important;
-  }
-
-  .sidebar .brand-text {
-    margin: 0 !important;
-  }
-
-  .sidebar .brand h1 {
-    margin: 0 0 4px !important;
-  }
-
-  .sidebar .tab-nav:not(.menu-open) {
-    display: none !important;
-    margin: 0 !important;
-  }
-
-  .sidebar .auth-card {
-    display: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  .main-content {
-    min-height: 0 !important;
   }
 }
