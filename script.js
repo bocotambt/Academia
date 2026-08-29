@@ -361,8 +361,11 @@ function isCourseArchived(course) {
   const semester = getSemesterById(course.semester_id);
   if (!semester || !semester.end_date) return false;
 
-  const todayKey = toDateKey(new Date());
-  return semester.end_date < todayKey;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const semesterEnd = new Date(semester.end_date + "T00:00:00");
+  return semesterEnd < today;
 }
 
 function getActiveCourses() {
