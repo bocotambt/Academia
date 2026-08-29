@@ -1165,6 +1165,25 @@ function fillNoteModal(note) {
 
   saveNoteBtn.textContent = "Update Note";
   setColorPreview(noteColorInput, noteColorPreview);
+}function fillNoteModal(note) {
+  editingNoteId = note.id;
+  noteTitleInput.value = note.title || "";
+  noteContentInput.value = note.content || "";
+
+  const linkedCourse = getNoteLinkedCourse(note);
+
+  if (noteCourseInput) {
+    noteCourseInput.value = linkedCourse ? linkedCourse.id : "";
+  }
+
+  if (noteColorInput) {
+    noteColorInput.value = linkedCourse && linkedCourse.color
+      ? linkedCourse.color
+      : (note.color || "#7c3aed");
+  }
+
+  saveNoteBtn.textContent = "Update Note";
+  setColorPreview(noteColorInput, noteColorPreview);
 }
 
 function fillExamModal(exam) {
