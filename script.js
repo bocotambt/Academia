@@ -356,6 +356,7 @@ function isTaskArchived(task) {
   const todayKey = toDateKey(new Date());
   return task.status === "Done" && task.due_date < todayKey;
 }
+
 function isCourseArchived(course) {
   if (!course || !course.semester_id) return false;
   const semester = getSemesterById(course.semester_id);
@@ -390,6 +391,7 @@ function getArchivedCourses() {
       return (a.code || "").localeCompare(b.code || "") || (a.name || "").localeCompare(b.name || "");
     });
 }
+
 function shouldShowTaskOnDashboard(task) {
   if (!task) return false;
   if (isTaskArchived(task)) return false;
@@ -408,7 +410,6 @@ function getTaskColor(task) {
 
 function getNoteLinkedCourse(note) {
   if (!note || !note.course) return null;
-
   return courses.find(function (course) {
     return course.name === note.course;
   }) || null;
@@ -1165,25 +1166,6 @@ function fillNoteModal(note) {
 
   saveNoteBtn.textContent = "Update Note";
   setColorPreview(noteColorInput, noteColorPreview);
-}function fillNoteModal(note) {
-  editingNoteId = note.id;
-  noteTitleInput.value = note.title || "";
-  noteContentInput.value = note.content || "";
-
-  const linkedCourse = getNoteLinkedCourse(note);
-
-  if (noteCourseInput) {
-    noteCourseInput.value = linkedCourse ? linkedCourse.id : "";
-  }
-
-  if (noteColorInput) {
-    noteColorInput.value = linkedCourse && linkedCourse.color
-      ? linkedCourse.color
-      : (note.color || "#7c3aed");
-  }
-
-  saveNoteBtn.textContent = "Update Note";
-  setColorPreview(noteColorInput, noteColorPreview);
 }
 
 function fillExamModal(exam) {
@@ -1426,9 +1408,7 @@ async function saveNote() {
       const title = noteTitleInput.value.trim();
       const content = noteContentInput.value.trim();
       const selectedCourseId = noteCourseInput ? noteCourseInput.value : "";
-      const linkedCourse = selectedCourseId
-        ? getCourseById(selectedCourseId)
-        : null;
+      const linkedCourse = selectedCourseId ? getCourseById(selectedCourseId) : null;
 
       if (!title || !content) {
         alert("Please enter a note title and content.");
@@ -1461,24 +1441,6 @@ async function saveNote() {
       closeModal("noteModal");
     }
   );
-}
-
-    const saved = editingNoteId
-      ? await updateRecord("notes", editingNoteId, payload)
-      : await insertRecord("notes", payload);
-
-    if (!saved) return;
-
-    if (editingNoteId) {
-      notes = replaceItemInArray(notes, saved);
-    } else {
-      notes = [...notes, saved];
-    }
-
-    resetNoteModal();
-    renderAll();
-    closeModal("noteModal");
-  });
 }
 
 if (saveNoteBtn) saveNoteBtn.addEventListener("click", saveNote);
@@ -2051,6 +2013,7 @@ function renderCourses() {
     }
   `;
 }
+
 function getFilteredAndSortedActiveTasks() {
   let visibleTasks = tasks.filter(function (task) {
     return !isTaskArchived(task);
@@ -2810,21 +2773,21 @@ document.addEventListener("click", async function (e) {
   }
 
   const archiveToggle = e.target.closest("[data-toggle-archive]");
-if (archiveToggle) {
-  if (archiveToggle.dataset.toggleArchive === "tasks") {
-    showArchivedTasks = !showArchivedTasks;
-    renderTasks();
+  if (archiveToggle) {
+    if (archiveToggle.dataset.toggleArchive === "tasks") {
+      showArchivedTasks = !showArchivedTasks;
+      renderTasks();
+    }
+    if (archiveToggle.dataset.toggleArchive === "exams") {
+      showArchivedExams = !showArchivedExams;
+      renderExams();
+    }
+    if (archiveToggle.dataset.toggleArchive === "courses") {
+      showArchivedCourses = !showArchivedCourses;
+      renderCourses();
+    }
+    return;
   }
-  if (archiveToggle.dataset.toggleArchive === "exams") {
-    showArchivedExams = !showArchivedExams;
-    renderExams();
-  }
-  if (archiveToggle.dataset.toggleArchive === "courses") {
-    showArchivedCourses = !showArchivedCourses;
-    renderCourses();
-  }
-  return;
-}
 
   const removeSessionBtn = e.target.closest("[data-remove-session]");
   if (removeSessionBtn) {
