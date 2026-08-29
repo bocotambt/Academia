@@ -1407,7 +1407,9 @@ async function saveNote() {
       const title = noteTitleInput.value.trim();
       const content = noteContentInput.value.trim();
       const selectedCourseId = noteCourseInput ? noteCourseInput.value : "";
-      const linkedCourse = selectedCourseId ? getCourseById(selectedCourseId) : null;
+      const linkedCourse = selectedCourseId
+        ? getCourseById(selectedCourseId)
+        : null;
 
       if (!title || !content) {
         alert("Please enter a note title and content.");
@@ -1417,7 +1419,7 @@ async function saveNote() {
       const payload = {
         title: title,
         content: content,
-        course: linkedCourse ? linkedCourse.name : null,
+        course_id: selectedCourseId || null,
         color: linkedCourse && linkedCourse.color
           ? linkedCourse.color
           : (noteColorInput ? noteColorInput.value : "#7c3aed")
