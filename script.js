@@ -409,10 +409,9 @@ function getTaskColor(task) {
 }
 
 function getNoteLinkedCourse(note) {
-  if (!note || !note.course) return null;
-  return courses.find(function (course) {
-    return course.name === note.course;
-  }) || null;
+  if (!note || !note.course_id) return null;
+
+  return getCourseById(note.course_id);
 }
 
 function taskPriorityRank(priority) {
