@@ -1396,23 +1396,49 @@ async function updateTaskStatus(taskId, status) {
 }
 
 async function saveNote() {
-  await withSaveLock("note-save", saveNoteBtn, editingNoteId ? "Updating..." : "Saving...", async function () {
-    const title = noteTitleInput.value.trim();
-    const content = noteContentInput.value.trim();
-    const linkedCourse = noteCourseInput ? getCourseById(noteCourseInput.value || "") : null;
+  await withSaveLock(
+    "note-save",
+    saveNoteBtn,
+    editingNoteId ? "Updating..." : "Saving...",
+    async function () {
+      const title = noteTitleInput.value.trim();
+      const content = noteContentInput.value.trim();
+      const linkedCourse = noteCourseInput
+        ? getCourseById(noteCourseInput.value || "")
+        : null;
 
-    if (!title || !content) {
-      alert("Please enter a note title and content.");
-      return;
+      if (!title || !content) {
+        alert("Please enter a note title and content.");
+        return;
+      }
+
+      const payload = {
+        title,
+        content,
+        course: linkedCourse ? linkedCourse.name : null,
+        color: linkedCourse && linkedCourse.color
+          ? linkedCourse.color
+          : (noteColorInput ? noteColorInput.value : "#7c3aed")
+      };
+
+      const saved = editingNoteId
+        ? await updateRecord("notes", editingNoteId, payload)
+        : await insertRecord("notes", payload);
+
+      if (!saved) return;
+
+      if (editingNoteId) {
+        notes = replaceItemInArray(notes, saved);
+      } else {
+        notes = [...notes, saved];
+      }
+
+      resetNoteModal();
+      renderAll();
+      closeModal("noteModal");
     }
-
-    const payload = {
-  title,
-  content,
-  color: linkedCourse && linkedCourse.color
-    ? linkedCourse.color
-    : (noteColorInput ? noteColorInput.value : "#7c3aed")
-};
+  );
+}
 
     const saved = editingNoteId
       ? await updateRecord("notes", editingNoteId, payload)
