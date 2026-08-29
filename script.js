@@ -409,9 +409,17 @@ function getTaskColor(task) {
 }
 
 function getNoteLinkedCourse(note) {
-  if (!note || !note.course_id) return null;
+  if (!note) return null;
 
-  return getCourseById(note.course_id);
+  if (note.course_id) {
+    return getCourseById(note.course_id);
+  }
+
+  if (note.course) {
+    return findCourseByName(note.course);
+  }
+
+  return null;
 }
 
 function taskPriorityRank(priority) {
@@ -853,6 +861,7 @@ function populateCourseOptions() {
   }
 
   if (noteCourseInput) {
+    const selected = noteCourseInput.value;
     noteCourseInput.innerHTML = `<option value="">No course</option>`;
     courses.forEach(function (course) {
       const option = document.createElement("option");
@@ -860,6 +869,7 @@ function populateCourseOptions() {
       option.textContent = `${course.code} — ${course.name}`;
       noteCourseInput.appendChild(option);
     });
+    noteCourseInput.value = selected;
   }
 
   if (taskCourseFilter) {
@@ -1407,9 +1417,7 @@ async function saveNote() {
       const title = noteTitleInput.value.trim();
       const content = noteContentInput.value.trim();
       const selectedCourseId = noteCourseInput ? noteCourseInput.value : "";
-      const linkedCourse = selectedCourseId
-        ? getCourseById(selectedCourseId)
-        : null;
+      const linkedCourse = selectedCourseId ? getCourseById(selectedCourseId) : null;
 
       if (!title || !content) {
         alert("Please enter a note title and content.");
