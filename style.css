@@ -871,7 +871,13 @@ textarea {
   .brand {
     min-height: 76px;
   }
+  .sidebar:has(.tab-nav:not(.menu-open)) {
+    padding-bottom: 18px;
+  }
 
+  .auth-card {
+    display: none;
+  }
   .menu-toggle {
     display: inline-flex;
   }
