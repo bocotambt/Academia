@@ -1406,8 +1406,9 @@ async function saveNote() {
     async function () {
       const title = noteTitleInput.value.trim();
       const content = noteContentInput.value.trim();
-      const linkedCourse = noteCourseInput
-        ? getCourseById(noteCourseInput.value || "")
+      const selectedCourseId = noteCourseInput ? noteCourseInput.value : "";
+      const linkedCourse = selectedCourseId
+        ? getCourseById(selectedCourseId)
         : null;
 
       if (!title || !content) {
@@ -1416,8 +1417,8 @@ async function saveNote() {
       }
 
       const payload = {
-        title,
-        content,
+        title: title,
+        content: content,
         course: linkedCourse ? linkedCourse.name : null,
         color: linkedCourse && linkedCourse.color
           ? linkedCourse.color
