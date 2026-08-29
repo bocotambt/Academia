@@ -720,7 +720,8 @@ textarea {
 .note-header-line,
 .task-header-line,
 .holiday-header-line,
-.exam-header-line {
+.exam-header-line,
+.card-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -1069,12 +1070,18 @@ textarea {
   .note-card,
   .task-card,
   .holiday-card,
-  .exam-card {
+  .exam-card,
+  .academic-card {
     padding: 10px 12px;
     margin-bottom: 10px;
     border-radius: 10px;
   }
 
+  .course-header-line,
+  .note-header-line,
+  .task-header-line,
+  .holiday-header-line,
+  .exam-header-line,
   .card-head {
     align-items: flex-start;
     gap: 8px;
