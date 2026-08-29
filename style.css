@@ -1099,3 +1099,41 @@ textarea {
     min-height: auto;
   }
 }
+/* Phone only: one compact, uniform Academia header on every tab */
+@media (max-width: 640px) {
+  .sidebar {
+    padding: 18px 16px !important;
+    min-height: 0 !important;
+    height: auto !important;
+    display: block !important;
+  }
+
+  .sidebar .brand {
+    min-height: 76px !important;
+    margin: 0 !important;
+    align-items: center !important;
+  }
+
+  .sidebar .brand-text {
+    margin: 0 !important;
+  }
+
+  .sidebar .brand h1 {
+    margin: 0 0 4px !important;
+  }
+
+  .sidebar .tab-nav:not(.menu-open) {
+    display: none !important;
+    margin: 0 !important;
+  }
+
+  .sidebar .auth-card {
+    display: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .main-content {
+    min-height: 0 !important;
+  }
+}
