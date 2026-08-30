@@ -120,6 +120,12 @@ body {
   margin-bottom: 12px;
 }
 
+.mobile-signout-btn {
+  display: none;
+  width: 100%;
+  margin-top: 6px;
+}
+
 .main-content {
   padding: 24px;
 }
@@ -865,7 +871,7 @@ textarea {
 
 @media (max-width: 640px) {
   .sidebar {
-    padding: 18px 16px 18px 16px;
+    padding: 12px 14px 12px 14px;
     min-height: 0;
     height: auto;
     display: block;
@@ -874,7 +880,8 @@ textarea {
   .brand {
     min-height: auto;
     align-items: flex-start;
-    gap: 12px;
+    gap: 8px;
+    margin-bottom: 0;
   }
 
   .brand-text {
@@ -884,18 +891,19 @@ textarea {
   }
 
   .brand h1 {
-    font-size: 24px;
-    margin: 0 0 4px;
-    line-height: 1.15;
+    font-size: 22px;
+    margin: 0 0 2px;
+    line-height: 1.1;
   }
 
   .sidebar .muted.small {
     margin: 0;
-    line-height: 1.35;
+    line-height: 1.25;
+    font-size: 12px;
   }
 
   .sidebar:has(.tab-nav:not(.menu-open)) {
-    padding-bottom: 18px;
+    padding-bottom: 10px;
   }
 
   .auth-card {
@@ -908,17 +916,29 @@ textarea {
 
   .hamburger-btn {
     margin-left: auto;
-    margin-right: 6px;
+    margin-right: 0;
     align-self: flex-start;
+    width: 40px;
+    height: 40px;
   }
 
   .tab-nav {
     display: none;
-    margin: 12px 0 0;
+    margin: 8px 0 0;
+    gap: 8px;
   }
 
   .tab-nav.menu-open {
     display: flex;
+  }
+
+  .tab-btn {
+    padding: 12px 14px;
+    border-radius: 12px;
+  }
+
+  .mobile-signout-btn {
+    display: block;
   }
 
   .auth-card {
@@ -930,12 +950,24 @@ textarea {
   }
 
   .main-content {
-    padding: 16px;
+    padding: 12px;
     min-height: 0;
   }
 
   .topbar {
     display: none;
+  }
+
+  .tab-content.active {
+    padding-top: 0;
+    margin-top: 0;
+  }
+
+  #exams .section-toolbar,
+  #holidays .section-toolbar,
+  #academic .section-toolbar {
+    margin-top: 0;
+    margin-bottom: 10px;
   }
 
   .inline-filters {
