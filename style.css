@@ -121,6 +121,7 @@ body {
 }
 
 .mobile-signout-btn {
+  display: none !important;
   width: 100%;
   margin-top: 6px;
 }
@@ -870,7 +871,7 @@ textarea {
 
 @media (max-width: 640px) {
   .sidebar {
-    padding: 10px 14px;
+    padding: 8px 12px;
     min-height: 0;
     height: auto;
     display: block;
@@ -879,7 +880,7 @@ textarea {
   .brand {
     min-height: auto;
     align-items: flex-start;
-    gap: 8px;
+    gap: 6px;
     margin-bottom: 0;
   }
 
@@ -891,13 +892,13 @@ textarea {
 
   .brand h1 {
     font-size: 22px;
-    margin: 0 0 2px;
-    line-height: 1.1;
+    margin: 0;
+    line-height: 1.05;
   }
 
   .sidebar .muted.small {
-    margin: 0;
-    line-height: 1.25;
+    margin: 2px 0 0;
+    line-height: 1.2;
     font-size: 12px;
   }
 
@@ -923,7 +924,7 @@ textarea {
 
   .tab-nav {
     display: none;
-    margin: 8px 0 0;
+    margin: 6px 0 0;
     gap: 8px;
   }
 
@@ -937,7 +938,7 @@ textarea {
   }
 
   .mobile-signout-btn:not(.hidden) {
-    display: block;
+    display: block !important;
   }
 
   .auth-card {
@@ -958,29 +959,37 @@ textarea {
   }
 
   .tab-content,
-  .tab-content.active {
-    padding-top: 0;
-    margin-top: 0;
-  }
-
+  .tab-content.active,
+  #dashboard,
+  #courses,
+  #planner,
+  #notes,
   #exams,
   #holidays,
-  #academic {
+  #academic,
+  #calendar {
     padding-top: 0 !important;
     margin-top: 0 !important;
   }
 
+  #courses .section-toolbar,
+  #planner .section-toolbar,
+  #notes .section-toolbar,
   #exams .section-toolbar,
   #holidays .section-toolbar,
-  #academic .section-toolbar {
-    margin-top: 0;
+  #academic .section-toolbar,
+  #calendar .section-toolbar {
+    margin-top: 0 !important;
     margin-bottom: 10px;
   }
 
+  #courses .stack-list,
+  #planner .stack-list,
+  #notes .stack-list,
   #exams .stack-list,
   #holidays .stack-list,
   #academic .stack-list {
-    margin-top: 0;
+    margin-top: 0 !important;
   }
 
   .inline-filters {
