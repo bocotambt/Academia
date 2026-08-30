@@ -1,5 +1,10 @@
 const SUPABASE_URL = "https://fdijdgvsqfzgzzwlvqff.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_qkCIilGuoTE3FgWWzeqKLw_4R9ERznE";
+
+if (!window.supabase || typeof window.supabase.createClient !== "function") {
+  throw new Error("Supabase library failed to load.");
+}
+
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 function $(id) {
@@ -410,15 +415,8 @@ function getTaskColor(task) {
 
 function getNoteLinkedCourse(note) {
   if (!note) return null;
-
-  if (note.course_id) {
-    return getCourseById(note.course_id);
-  }
-
-  if (note.course) {
-    return findCourseByName(note.course);
-  }
-
+  if (note.course_id) return getCourseById(note.course_id);
+  if (note.course) return findCourseByName(note.course);
   return null;
 }
 
@@ -653,7 +651,12 @@ if (signInBtn) signInBtn.addEventListener("click", signIn);
 if (signOutBtn) signOutBtn.addEventListener("click", signOut);
 
 async function getCurrentSession() {
-  const { data } = await supabaseClient.auth.getSession();
+  const { data, error } = await supabaseClient.auth.getSession();
+  if (error) {
+    console.error("getSession error:", error);
+    renderAll();
+    return;
+  }
   currentUser = data.session?.user || null;
   updateAuthUI();
   if (currentUser) await loadAllData();
@@ -699,6 +702,7 @@ async function loadTable(tableName) {
 
 async function loadAllData() {
   if (!currentUser) return;
+
   const [
     loadedAcademicYears,
     loadedSemesters,
@@ -819,6 +823,7 @@ async function deleteCourseWithSessions(courseId) {
 
 function populateSemesterOptions() {
   if (courseSemesterInput) {
+    const selected = courseSemesterInput.value;
     courseSemesterInput.innerHTML = `<option value="">Choose semester</option>`;
     semesters.forEach(function (semester) {
       const option = document.createElement("option");
@@ -826,9 +831,11 @@ function populateSemesterOptions() {
       option.textContent = semester.name;
       courseSemesterInput.appendChild(option);
     });
+    courseSemesterInput.value = selected;
   }
 
   if (semesterAcademicYearInput) {
+    const selected = semesterAcademicYearInput.value;
     semesterAcademicYearInput.innerHTML = `<option value="">Choose academic year</option>`;
     academicYears.forEach(function (year) {
       const option = document.createElement("option");
@@ -836,11 +843,13 @@ function populateSemesterOptions() {
       option.textContent = year.name;
       semesterAcademicYearInput.appendChild(option);
     });
+    semesterAcademicYearInput.value = selected;
   }
 }
 
 function populateCourseOptions() {
   if (taskCourseInput) {
+    const selected = taskCourseInput.value;
     taskCourseInput.innerHTML = `<option value="">No course</option>`;
     courses.forEach(function (course) {
       const option = document.createElement("option");
@@ -848,9 +857,11 @@ function populateCourseOptions() {
       option.textContent = `${course.code} — ${course.name}`;
       taskCourseInput.appendChild(option);
     });
+    taskCourseInput.value = selected;
   }
 
   if (examCourseInput) {
+    const selected = examCourseInput.value;
     examCourseInput.innerHTML = `<option value="">No course</option>`;
     courses.forEach(function (course) {
       const option = document.createElement("option");
@@ -858,6 +869,7 @@ function populateCourseOptions() {
       option.textContent = `${course.code} — ${course.name}`;
       examCourseInput.appendChild(option);
     });
+    examCourseInput.value = selected;
   }
 
   if (noteCourseInput) {
@@ -1425,8 +1437,8 @@ async function saveNote() {
       }
 
       const payload = {
-        title: title,
-        content: content,
+        title,
+        content,
         course_id: selectedCourseId || null,
         color: linkedCourse && linkedCourse.color
           ? linkedCourse.color
@@ -1522,7 +1534,7 @@ async function saveHoliday() {
 
     const saved = editingHolidayId
       ? await updateRecord("holidays", editingHolidayId, payload)
-      : await insertRecord("holidays", { id: generateId(), ...payload });
+      : await insertRecord("holidays", payload);
 
     if (!saved) return;
 
@@ -1621,6 +1633,11 @@ async function saveSemester() {
 
     if (!academic_year_id || !name || !start_date || !end_date) {
       alert("Please choose an academic year and enter semester name, start date, and end date.");
+      return;
+    }
+
+    if (end_date < start_date) {
+      alert("Semester end date cannot be earlier than start date.");
       return;
     }
 
@@ -2875,21 +2892,25 @@ document.querySelector('[data-open-modal="academicYearModal"]')?.addEventListene
 document.querySelector('[data-open-modal="semesterModal"]')?.addEventListener("click", resetSemesterModal);
 
 function renderAll() {
-  populateSemesterOptions();
-  populateCourseOptions();
-  renderPendingSpecificDates();
-  renderPendingSessions();
-  renderDashboard();
-  renderCourses();
-  renderTasks();
-  renderNotes();
-  renderExams();
-  renderHolidays();
-  renderAcademicYears();
-  renderCalendar();
-  setColorPreview(courseColorInput, courseColorPreview);
-  setColorPreview(eventColorInput, eventColorPreview);
-  setColorPreview(noteColorInput, noteColorPreview);
+  try {
+    populateSemesterOptions();
+    populateCourseOptions();
+    renderPendingSpecificDates();
+    renderPendingSessions();
+    renderDashboard();
+    renderCourses();
+    renderTasks();
+    renderNotes();
+    renderExams();
+    renderHolidays();
+    renderAcademicYears();
+    renderCalendar();
+    setColorPreview(courseColorInput, courseColorPreview);
+    setColorPreview(eventColorInput, eventColorPreview);
+    setColorPreview(noteColorInput, noteColorPreview);
+  } catch (error) {
+    console.error("renderAll error:", error);
+  }
 }
 
 getCurrentSession();
