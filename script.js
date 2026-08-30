@@ -15,6 +15,7 @@ const pageTitle = $("pageTitle");
 const menuToggleBtn = $("menuToggleBtn");
 const tabNav = $("tabNav");
 const signOutBtn = $("signOutBtn");
+const mobileSignOutBtn = $("mobileSignOutBtn");
 
 const authSignedOut = $("authSignedOut");
 const authEmail = $("authEmail");
@@ -575,6 +576,7 @@ function updateAuthUI() {
   const signedIn = !!currentUser;
   if (authSignedOut) authSignedOut.classList.toggle("hidden", signedIn);
   if (signOutBtn) signOutBtn.classList.toggle("hidden", !signedIn);
+  if (mobileSignOutBtn) mobileSignOutBtn.classList.toggle("hidden", !signedIn);
   if (brandUserArea) brandUserArea.classList.toggle("hidden", !signedIn);
 
   if (currentUser) {
@@ -649,6 +651,7 @@ async function signOut() {
 if (signUpBtn) signUpBtn.addEventListener("click", signUp);
 if (signInBtn) signInBtn.addEventListener("click", signIn);
 if (signOutBtn) signOutBtn.addEventListener("click", signOut);
+if (mobileSignOutBtn) mobileSignOutBtn.addEventListener("click", signOut);
 
 async function getCurrentSession() {
   const { data, error } = await supabaseClient.auth.getSession();
@@ -1094,7 +1097,6 @@ function resetAcademicYearModal() {
   academicYearNameInput.value = "";
   saveAcademicYearBtn.textContent = "Save Academic Year";
 }
-
 function resetSemesterModal() {
   editingSemesterId = null;
   semesterAcademicYearInput.value = "";
