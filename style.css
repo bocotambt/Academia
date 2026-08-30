@@ -870,15 +870,24 @@ textarea {
 }
 
 @media (max-width: 640px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
   .sidebar {
     padding: 8px 12px;
-    min-height: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: auto;
     height: auto;
-    display: block;
   }
 
   .brand {
-    min-height: auto;
+    flex: 1 1 auto;
+    min-height: 0;
     align-items: flex-start;
     gap: 6px;
     margin-bottom: 0;
@@ -902,8 +911,8 @@ textarea {
     font-size: 12px;
   }
 
-  .sidebar:has(.tab-nav:not(.menu-open)) {
-    padding-bottom: 8px;
+  #brandUserArea {
+    display: none !important;
   }
 
   .auth-card {
@@ -941,10 +950,6 @@ textarea {
     display: block !important;
   }
 
-  .auth-card {
-    margin-top: 12px;
-  }
-
   .auth-card #signOutBtn {
     display: none !important;
   }
@@ -952,6 +957,7 @@ textarea {
   .main-content {
     padding: 8px 12px 12px;
     min-height: 0;
+    margin-top: 0 !important;
   }
 
   .topbar {
@@ -970,6 +976,18 @@ textarea {
   #calendar {
     padding-top: 0 !important;
     margin-top: 0 !important;
+  }
+
+  #academic,
+  #exams,
+  #holidays {
+    display: block;
+  }
+
+  #academic:not(.active),
+  #exams:not(.active),
+  #holidays:not(.active) {
+    display: none;
   }
 
   #courses .section-toolbar,
