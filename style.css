@@ -121,7 +121,6 @@ body {
 }
 
 .mobile-signout-btn {
-  display: none;
   width: 100%;
   margin-top: 6px;
 }
@@ -871,7 +870,7 @@ textarea {
 
 @media (max-width: 640px) {
   .sidebar {
-    padding: 12px 14px 12px 14px;
+    padding: 10px 14px;
     min-height: 0;
     height: auto;
     display: block;
@@ -903,7 +902,7 @@ textarea {
   }
 
   .sidebar:has(.tab-nav:not(.menu-open)) {
-    padding-bottom: 10px;
+    padding-bottom: 8px;
   }
 
   .auth-card {
@@ -937,7 +936,7 @@ textarea {
     border-radius: 12px;
   }
 
-  .mobile-signout-btn {
+  .mobile-signout-btn:not(.hidden) {
     display: block;
   }
 
@@ -950,7 +949,7 @@ textarea {
   }
 
   .main-content {
-    padding: 12px;
+    padding: 8px 12px 12px;
     min-height: 0;
   }
 
@@ -958,9 +957,17 @@ textarea {
     display: none;
   }
 
+  .tab-content,
   .tab-content.active {
     padding-top: 0;
     margin-top: 0;
+  }
+
+  #exams,
+  #holidays,
+  #academic {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
   }
 
   #exams .section-toolbar,
@@ -968,6 +975,12 @@ textarea {
   #academic .section-toolbar {
     margin-top: 0;
     margin-bottom: 10px;
+  }
+
+  #exams .stack-list,
+  #holidays .stack-list,
+  #academic .stack-list {
+    margin-top: 0;
   }
 
   .inline-filters {
