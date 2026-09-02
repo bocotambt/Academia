@@ -143,6 +143,7 @@ let academicYears = [];
 let semesters = [];
 let courses = [];
 let courseSessions = [];
+let courseSessionExceptions = [];
 let tasks = [];
 let notes = [];
 let exams = [];
