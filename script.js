@@ -166,6 +166,8 @@ let editingHolidayId = null;
 let editingEventId = null;
 let editingAcademicYearId = null;
 let editingSemesterId = null;
+let editingSingleSessionId = null;
+let editingSingleSessionCourseId = null;
 
 let showArchivedTasks = false;
 let showArchivedExams = false;
@@ -436,7 +438,7 @@ function compareTaskDates(a, b) {
 }
 
 function compareExamDates(a, b) {
-  const first = (a.exam_date || "9999-99-99").localeCompare(b.exam_date || "9999-99-99");
+  const first = (a.exam_date || "9999-99-99").localeCompare(b.exam_date || "9999-99:99");
   if (first !== 0) return first;
   const second = (a.exam_time || "99:99").localeCompare(b.exam_time || "99:99");
   if (second !== 0) return second;
@@ -471,10 +473,6 @@ function setButtonBusy(button, busy, label) {
     button.classList.remove("save-disabled");
     button.textContent = button.dataset.originalText || button.textContent;
   }
-}
-
-function generateId() {
-  return crypto.randomUUID();
 }
 
 function replaceItemInArray(list, updatedItem) {
@@ -907,7 +905,14 @@ function updateSessionRepeatUI() {
   if (sessionDatesWrap) sessionDatesWrap.classList.toggle("hidden", repeatType !== "specific");
 }
 
+function resetSingleSessionEditingState() {
+  editingSingleSessionId = null;
+  editingSingleSessionCourseId = null;
+  if (addSessionBtn) addSessionBtn.textContent = "Add Session";
+}
+
 function resetCourseSessionInputs() {
+  resetSingleSessionEditingState();
   if (sessionTypeInput) sessionTypeInput.value = "";
   if (sessionRepeatInput) sessionRepeatInput.value = "";
   if (sessionDayInput) sessionDayInput.value = "";
@@ -918,6 +923,31 @@ function resetCourseSessionInputs() {
   pendingSpecificDateList = [];
   renderPendingSpecificDates();
   updateSessionRepeatUI();
+}
+
+function fillSingleSessionForm(session) {
+  if (!session) return;
+  editingSingleSessionId = session.id;
+  editingSingleSessionCourseId = session.course_id || null;
+
+  if (sessionTypeInput) sessionTypeInput.value = session.session_type || "";
+  if (sessionRepeatInput) sessionRepeatInput.value = session.repeat_type || "weekly";
+  updateSessionRepeatUI();
+
+  if (session.repeat_type === "weekly") {
+    if (sessionDayInput) sessionDayInput.value = session.day_name || "";
+    pendingSpecificDateList = [];
+  } else {
+    if (sessionDayInput) sessionDayInput.value = "";
+    pendingSpecificDateList = session.session_date ? [session.session_date] : [];
+  }
+
+  if (sessionStartTimeInput) sessionStartTimeInput.value = session.start_time || "";
+  if (sessionEndTimeInput) sessionEndTimeInput.value = session.end_time || "";
+  if (sessionLocationInput) sessionLocationInput.value = session.location || "";
+
+  renderPendingSpecificDates();
+  if (addSessionBtn) addSessionBtn.textContent = "Update Session";
 }
 
 function renderPendingSpecificDates() {
@@ -981,7 +1011,55 @@ function addSpecificDate() {
   renderPendingSpecificDates();
 }
 
-function addPendingSession() {
+async function addPendingSession() {
+  if (editingSingleSessionId) {
+    const session_type = sessionTypeInput.value.trim();
+    const repeat_type = sessionRepeatInput.value;
+    const day_name = sessionDayInput.value;
+    const start_time = sessionStartTimeInput.value;
+    const end_time = sessionEndTimeInput.value;
+    const location = sessionLocationInput.value.trim();
+
+    if (!session_type || !repeat_type || !start_time || !end_time) {
+      alert("Please choose session type, repeat rule, start time, and end time.");
+      return;
+    }
+
+    if (repeat_type === "weekly" && !day_name) {
+      alert("Please choose a weekly day.");
+      return;
+    }
+
+    if (repeat_type === "specific" && !pendingSpecificDateList.length) {
+      alert("Please add at least one specific date.");
+      return;
+    }
+
+    if (repeat_type === "specific" && pendingSpecificDateList.length > 1) {
+      alert("A single session can only have one specific date.");
+      return;
+    }
+
+    const updatedPayload = {
+      session_type,
+      repeat_type,
+      day_name: repeat_type === "weekly" ? day_name : null,
+      session_date: repeat_type === "specific" ? pendingSpecificDateList[0] : null,
+      start_time,
+      end_time,
+      location
+    };
+
+    const updated = await updateRecord("course_sessions", editingSingleSessionId, updatedPayload);
+    if (!updated) return;
+
+    courseSessions = replaceItemInArray(courseSessions, updated);
+    renderAll();
+    resetCourseSessionInputs();
+    closeModal("courseModal");
+    return;
+  }
+
   const session_type = sessionTypeInput.value.trim();
   const repeat_type = sessionRepeatInput.value;
   const day_name = sessionDayInput.value;
@@ -1704,6 +1782,7 @@ function getSessionsForDate(date) {
             <p class="meta">Instructor: ${escapeHtml(course.instructor || "No instructor")}</p>
             <p class="meta">Semester: ${escapeHtml(getSemesterById(course.semester_id)?.name || "No semester")}</p>
             <p class="meta">Session: ${escapeHtml(session.session_type)}</p>
+            <p class="meta">Repeat: ${escapeHtml(session.repeat_type === "weekly" ? `Weekly on ${session.day_name || ""}` : `Specific date: ${session.session_date || ""}`)}</p>
             <p class="meta">Time: ${escapeHtml(formatTime(session.start_time))} - ${escapeHtml(formatTime(session.end_time))}</p>
             <p class="meta">Location: ${escapeHtml(session.location || "No location")}</p>
           `
@@ -1729,6 +1808,7 @@ function getItemsForDate(dateKey) {
       const course = getCourseById(task.course_id);
       return {
         type: "task",
+        recordId: task.id,
         id: `task-${task.id}`,
         title: `Task: ${task.title}`,
         shortTitle: `Task: ${task.title}`,
@@ -1756,6 +1836,7 @@ function getItemsForDate(dateKey) {
       const courseCode = course?.code || "";
       return {
         type: "exam",
+        recordId: exam.id,
         id: `exam-${exam.id}`,
         title: `Exam: ${exam.title}`,
         shortTitle: `Exam: ${exam.title}`,
@@ -1858,6 +1939,8 @@ function renderScheduleList(container, items) {
         type="button"
         data-detail-title="${escapeHtml(item.title)}"
         data-detail-html="${escapeHtml(item.detailHtml)}"
+        data-record-type="${escapeHtml(item.type || "")}"
+        data-record-id="${escapeHtml(item.recordId || "")}"
       >
         <h4 class="task-title">${escapeHtml(item.title)}</h4>
         <p class="meta">${escapeHtml(item.timeLabel || "")}</p>
@@ -1898,6 +1981,8 @@ function renderDashboard() {
               type="button"
               data-detail-title="${escapeHtml(task.title)}"
               data-detail-html="${escapeHtml(html)}"
+              data-record-type="task"
+              data-record-id="${escapeHtml(task.id)}"
             >
               <h4 class="task-title">${escapeHtml(task.title)}</h4>
               <p class="meta">${escapeHtml(task.due_date ? formatDate(task.due_date) : "No due date")}</p>
@@ -1930,6 +2015,8 @@ function renderDashboard() {
               type="button"
               data-detail-title="${escapeHtml(exam.title)}"
               data-detail-html="${escapeHtml(html)}"
+              data-record-type="exam"
+              data-record-id="${escapeHtml(exam.id)}"
             >
               <h4 class="task-title">${escapeHtml(exam.title)}</h4>
               <p class="meta">${escapeHtml(exam.exam_date ? formatDate(exam.exam_date) : "No date")}</p>
@@ -2673,6 +2760,13 @@ function getRecordMeta(type, id) {
 function handleEditRecord(record) {
   if (!record) return;
   closeModal("detailModal");
+
+  if (record.type === "course-session") {
+    const item = courseSessions.find(function (x) { return x.id === record.id; });
+    if (!item) return;
+    fillSingleSessionForm(item);
+    openModal("courseModal");
+  }
 
   if (record.type === "course") {
     const item = courses.find(function (x) { return x.id === record.id; });
