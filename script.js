@@ -1687,7 +1687,8 @@ function getSessionsForDate(date) {
 
       if (weeklyMatch || specificMatch) {
         items.push({
-          type: "course",
+          type: "course-session",
+          recordId: session.id,
           id: `course-session-${session.id}-${dateKey}`,
           title: `${course.name} - ${session.session_type}`,
           shortTitle: `${course.name}`,
@@ -1783,6 +1784,7 @@ function getItemsForDate(dateKey) {
     .map(function (event) {
       return {
         type: "event",
+        recordId: event.id,
         id: `event-${event.id}`,
         title: event.title,
         shortTitle: event.title,
@@ -2462,7 +2464,7 @@ function buildCalendarItemHtml(item, compact) {
   if (compact) {
     const compactTitle = item.shortTitle || item.title;
     const compactSubtitle =
-      item.type === "course" || item.type === "exam" || item.type === "task"
+      item.type === "course-session" || item.type === "exam" || item.type === "task"
         ? (item.monthSubtitle || "")
         : (item.startTimeSort && item.startTimeSort !== "99:99" ? formatTime(item.startTimeSort) : "");
 
@@ -2473,6 +2475,8 @@ function buildCalendarItemHtml(item, compact) {
         type="button"
         data-detail-title="${escapeHtml(item.title)}"
         data-detail-html="${escapeHtml(item.detailHtml)}"
+        data-record-type="${escapeHtml(item.type || "")}"
+        data-record-id="${escapeHtml(item.recordId || "")}"
         title="${escapeHtml(item.title)}"
       >
         <span class="calendar-item-title">${escapeHtml(compactTitle)}</span>
@@ -2482,7 +2486,7 @@ function buildCalendarItemHtml(item, compact) {
   }
 
   const fullTitle =
-    item.type === "course" || item.type === "exam" || item.type === "task"
+    item.type === "course-session" || item.type === "exam" || item.type === "task"
       ? (item.weekShortTitle || item.title)
       : (item.title || "");
 
@@ -2493,6 +2497,8 @@ function buildCalendarItemHtml(item, compact) {
       type="button"
       data-detail-title="${escapeHtml(item.title)}"
       data-detail-html="${escapeHtml(item.detailHtml)}"
+      data-record-type="${escapeHtml(item.type || "")}"
+      data-record-id="${escapeHtml(item.recordId || "")}"
     >
       <span class="calendar-item-title">${escapeHtml(fullTitle)}</span>
       <small>${escapeHtml(item.timeLabel || "")}</small>
@@ -2732,6 +2738,11 @@ async function handleDeleteRecord(record) {
 
   let deleted = false;
 
+  if (record.type === "course-session") {
+    deleted = await deleteRecord("course_sessions", record.id);
+    if (deleted) courseSessions = removeItemFromArray(courseSessions, record.id);
+  }
+
   if (record.type === "course") deleted = await deleteCourseWithSessions(record.id);
   if (record.type === "task") {
     deleted = await deleteRecord("tasks", record.id);
@@ -2849,7 +2860,10 @@ document.addEventListener("click", async function (e) {
     if (detailTrigger.hasAttribute("data-open-record-detail")) return;
     const title = detailTrigger.dataset.detailTitle || "Details";
     const html = decodeHtml(detailTrigger.dataset.detailHtml || "");
-    openDetailModal(title, html, null);
+    const type = detailTrigger.dataset.recordType || "";
+    const id = detailTrigger.dataset.recordId || "";
+    const recordMeta = type && id ? getRecordMeta(type, id) : null;
+    openDetailModal(title, html, recordMeta);
   }
 });
 
