@@ -16,6 +16,7 @@ const menuToggleBtn = $("menuToggleBtn");
 const tabNav = $("tabNav");
 const signOutBtn = $("signOutBtn");
 const mobileSignOutBtn = $("mobileSignOutBtn");
+const mobileSignInBtn = $("mobileSignInBtn");
 
 const authSignedOut = $("authSignedOut");
 const authEmail = $("authEmail");
@@ -438,7 +439,7 @@ function compareTaskDates(a, b) {
 }
 
 function compareExamDates(a, b) {
-  const first = (a.exam_date || "9999-99-99").localeCompare(b.exam_date || "9999-99:99");
+  const first = (a.exam_date || "9999-99-99").localeCompare(b.exam_date || "9999-99-99");
   if (first !== 0) return first;
   const second = (a.exam_time || "99:99").localeCompare(b.exam_time || "99:99");
   if (second !== 0) return second;
@@ -573,10 +574,12 @@ if (menuToggleBtn) {
 
 function updateAuthUI() {
   const signedIn = !!currentUser;
+
   if (authSignedOut) authSignedOut.classList.toggle("hidden", signedIn);
   if (signOutBtn) signOutBtn.classList.toggle("hidden", !signedIn);
   if (mobileSignOutBtn) mobileSignOutBtn.classList.toggle("hidden", !signedIn);
   if (brandUserArea) brandUserArea.classList.toggle("hidden", !signedIn);
+  if (mobileSignInBtn) mobileSignInBtn.classList.toggle("hidden", signedIn);
 
   if (currentUser) {
     const email = currentUser.email || "Signed in";
@@ -651,6 +654,10 @@ if (signUpBtn) signUpBtn.addEventListener("click", signUp);
 if (signInBtn) signInBtn.addEventListener("click", signIn);
 if (signOutBtn) signOutBtn.addEventListener("click", signOut);
 if (mobileSignOutBtn) mobileSignOutBtn.addEventListener("click", signOut);
+if (mobileSignInBtn) mobileSignInBtn.addEventListener("click", function () {
+  showTab("dashboard");
+  if (authSignedOut) authSignedOut.classList.remove("hidden");
+});
 
 async function getCurrentSession() {
   const { data, error } = await supabaseClient.auth.getSession();
@@ -1036,11 +1043,11 @@ async function addPendingSession() {
     }
 
     if (repeat_type === "specific" && pendingSpecificDateList.length > 1) {
-      alert("A single session can only have one specific date.");
+      alert("Single session edit only supports one specific date.");
       return;
     }
 
-    const updatedPayload = {
+    const updated = await updateRecord("course_sessions", editingSingleSessionId, {
       session_type,
       repeat_type,
       day_name: repeat_type === "weekly" ? day_name : null,
@@ -1048,15 +1055,14 @@ async function addPendingSession() {
       start_time,
       end_time,
       location
-    };
+    });
 
-    const updated = await updateRecord("course_sessions", editingSingleSessionId, updatedPayload);
     if (!updated) return;
 
     courseSessions = replaceItemInArray(courseSessions, updated);
-    renderAll();
     resetCourseSessionInputs();
     closeModal("courseModal");
+    renderAll();
     return;
   }
 
@@ -2764,8 +2770,11 @@ function handleEditRecord(record) {
   if (record.type === "course-session") {
     const item = courseSessions.find(function (x) { return x.id === record.id; });
     if (!item) return;
+
+    resetCourseModal();
     fillSingleSessionForm(item);
     openModal("courseModal");
+    return;
   }
 
   if (record.type === "course") {
@@ -2773,6 +2782,7 @@ function handleEditRecord(record) {
     if (!item) return;
     fillCourseModal(item);
     openModal("courseModal");
+    return;
   }
 
   if (record.type === "task") {
@@ -2780,6 +2790,7 @@ function handleEditRecord(record) {
     if (!item) return;
     fillTaskModal(item);
     openModal("taskModal");
+    return;
   }
 
   if (record.type === "note") {
@@ -2787,6 +2798,7 @@ function handleEditRecord(record) {
     if (!item) return;
     fillNoteModal(item);
     openModal("noteModal");
+    return;
   }
 
   if (record.type === "exam") {
@@ -2794,6 +2806,7 @@ function handleEditRecord(record) {
     if (!item) return;
     fillExamModal(item);
     openModal("examModal");
+    return;
   }
 
   if (record.type === "holiday") {
@@ -2801,6 +2814,7 @@ function handleEditRecord(record) {
     if (!item) return;
     fillHolidayModal(item);
     openModal("holidayModal");
+    return;
   }
 
   if (record.type === "event") {
@@ -2808,6 +2822,7 @@ function handleEditRecord(record) {
     if (!item) return;
     fillEventModal(item);
     openModal("eventModal");
+    return;
   }
 
   if (record.type === "academic-year") {
@@ -2815,6 +2830,7 @@ function handleEditRecord(record) {
     if (!item) return;
     fillAcademicYearModal(item);
     openModal("academicYearModal");
+    return;
   }
 
   if (record.type === "semester") {
