@@ -657,6 +657,10 @@ if (mobileSignOutBtn) mobileSignOutBtn.addEventListener("click", signOut);
 if (mobileSignInBtn) mobileSignInBtn.addEventListener("click", function () {
   showTab("dashboard");
   if (authSignedOut) authSignedOut.classList.remove("hidden");
+  if (authSignedOut && authSignedOut.closest) {
+    const card = authSignedOut.closest(".auth-card");
+    if (card) card.classList.add("show-on-mobile");
+  }
 });
 
 async function getCurrentSession() {
