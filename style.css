@@ -927,6 +927,10 @@ textarea {
     display: none;
   }
 
+  .auth-card.show-on-mobile {
+    display: block;
+  }
+
   .menu-toggle {
     display: inline-flex;
   }
