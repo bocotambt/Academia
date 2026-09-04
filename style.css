@@ -120,10 +120,18 @@ body {
   margin-bottom: 12px;
 }
 
-.mobile-signout-btn {
+.mobile-signout-btn,
+.mobile-signin-btn {
   display: none !important;
   width: 100%;
   margin-top: 6px;
+}
+
+@media (max-width: 640px) {
+  .mobile-signout-btn:not(.hidden),
+  .mobile-signin-btn:not(.hidden) {
+    display: block !important;
+  }
 }
 
 .main-content {
@@ -946,7 +954,8 @@ textarea {
     border-radius: 12px;
   }
 
-  .mobile-signout-btn:not(.hidden) {
+  .mobile-signout-btn:not(.hidden),
+  .mobile-signin-btn:not(.hidden) {
     display: block !important;
   }
 
