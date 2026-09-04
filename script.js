@@ -503,6 +503,74 @@ function hideDetailActions() {
   if (detailActions) detailActions.classList.add("hidden");
 }
 
+function isSessionExcludedOnDate(sessionId, dateKey) {
+  return courseSessionExceptions.some(function (exception) {
+    return exception.course_session_id === sessionId && exception.exception_date === dateKey;
+  });
+}
+
+function buildCompactSpecificDateLabel(dateList) {
+  const cleaned = (dateList || []).filter(Boolean).slice().sort();
+  if (!cleaned.length) return "No dates";
+  if (cleaned.length <= 3) {
+    return cleaned.map(formatShortDate).join(", ");
+  }
+  return `${cleaned.slice(0, 2).map(formatShortDate).join(", ")} +${cleaned.length - 2} more`;
+}
+
+function groupSessionsForCourseCard(courseId) {
+  const sessions = getSessionsForCourse(courseId);
+
+  const weeklyGroups = sessions
+    .filter(function (session) {
+      return session.repeat_type === "weekly";
+    })
+    .map(function (session) {
+      return {
+        type: "weekly",
+        session_type: session.session_type,
+        day_name: session.day_name,
+        start_time: session.start_time,
+        end_time: session.end_time,
+        location: session.location || "",
+        dates: []
+      };
+    });
+
+  const specificMap = new Map();
+
+  sessions
+    .filter(function (session) {
+      return session.repeat_type === "specific";
+    })
+    .forEach(function (session) {
+      const key = [
+        session.session_type || "",
+        session.start_time || "",
+        session.end_time || "",
+        session.location || ""
+      ].join("||");
+
+      if (!specificMap.has(key)) {
+        specificMap.set(key, {
+          type: "specific",
+          session_type: session.session_type,
+          day_name: null,
+          start_time: session.start_time,
+          end_time: session.end_time,
+          location: session.location || "",
+          dates: []
+        });
+      }
+
+      if (session.session_date) {
+        specificMap.get(key).dates.push(session.session_date);
+      }
+    });
+
+  return weeklyGroups.concat(Array.from(specificMap.values()));
+}
+
 document.querySelectorAll("[data-open-modal]").forEach(function (btn) {
   btn.addEventListener("click", function () {
     openModal(btn.dataset.openModal);
@@ -635,6 +703,7 @@ async function signOut() {
     semesters = [];
     courses = [];
     courseSessions = [];
+    courseSessionExceptions = [];
     tasks = [];
     notes = [];
     exams = [];
@@ -658,16 +727,13 @@ if (mobileSignInBtn) {
   mobileSignInBtn.addEventListener("click", function () {
     showTab("dashboard");
 
-    // Show the signed-out auth block
     if (authSignedOut) authSignedOut.classList.remove("hidden");
 
-    // Force auth card visible on mobile via sidebar class
     const sidebar = document.querySelector(".sidebar");
     if (sidebar) {
       sidebar.classList.add("show-auth");
     }
 
-    // Also add the older class as backup
     const authCard = document.querySelector(".sidebar .auth-card");
     if (authCard) {
       authCard.classList.add("show-on-mobile");
@@ -699,6 +765,7 @@ supabaseClient.auth.onAuthStateChange(async function (_event, session) {
     semesters = [];
     courses = [];
     courseSessions = [];
+    courseSessionExceptions = [];
     tasks = [];
     notes = [];
     exams = [];
@@ -733,6 +800,7 @@ async function loadAllData() {
     loadedSemesters,
     loadedCourses,
     loadedCourseSessions,
+    loadedCourseSessionExceptions,
     loadedTasks,
     loadedNotes,
     loadedExams,
@@ -743,6 +811,7 @@ async function loadAllData() {
     loadTable("semesters"),
     loadTable("courses"),
     loadTable("course_sessions"),
+    loadTable("course_session_exceptions"),
     loadTable("tasks"),
     loadTable("notes"),
     loadTable("exams"),
@@ -754,6 +823,7 @@ async function loadAllData() {
   semesters = loadedSemesters;
   courses = loadedCourses;
   courseSessions = loadedCourseSessions;
+  courseSessionExceptions = loadedCourseSessionExceptions;
   tasks = loadedTasks;
   notes = loadedNotes;
   exams = loadedExams;
@@ -820,7 +890,64 @@ async function deleteRecord(tableName, id) {
   return true;
 }
 
+async function deleteSingleSessionOccurrence(record) {
+  if (!record || !record.id) return false;
+
+  if (record.sessionDate) {
+    const session = courseSessions.find(function (item) {
+      return item.id === record.id;
+    });
+
+    if (!session) return false;
+
+    if (session.repeat_type === "specific") {
+      const deleted = await deleteRecord("course_sessions", record.id);
+      if (deleted) {
+        courseSessions = removeItemFromArray(courseSessions, record.id);
+      }
+      return deleted;
+    }
+
+    const inserted = await insertRecord("course_session_exceptions", {
+      course_session_id: record.id,
+      exception_date: record.sessionDate
+    });
+
+    if (!inserted) return false;
+
+    courseSessionExceptions = [...courseSessionExceptions, inserted];
+    return true;
+  }
+
+  const deleted = await deleteRecord("course_sessions", record.id);
+  if (deleted) {
+    courseSessions = removeItemFromArray(courseSessions, record.id);
+  }
+  return deleted;
+}
+
 async function deleteCourseWithSessions(courseId) {
+  const sessionIds = courseSessions
+    .filter(function (session) {
+      return session.course_id === courseId;
+    })
+    .map(function (session) {
+      return session.id;
+    });
+
+  if (sessionIds.length) {
+    const { error: exceptionError } = await supabaseClient
+      .from("course_session_exceptions")
+      .delete()
+      .eq("user_id", currentUser.id)
+      .in("course_session_id", sessionIds);
+
+    if (exceptionError) {
+      alert(exceptionError.message || "Could not delete course session exceptions.");
+      return false;
+    }
+  }
+
   const { error: sessionError } = await supabaseClient
     .from("course_sessions")
     .delete()
@@ -834,6 +961,10 @@ async function deleteCourseWithSessions(courseId) {
 
   const ok = await deleteRecord("courses", courseId);
   if (!ok) return false;
+
+  courseSessionExceptions = courseSessionExceptions.filter(function (exception) {
+    return !sessionIds.includes(exception.course_session_id);
+  });
 
   courseSessions = courseSessions.filter(function (session) {
     return session.course_id !== courseId;
@@ -1003,7 +1134,7 @@ function renderPendingSessions() {
   pendingSessions.forEach(function (session, index) {
     const repeatText = session.repeat_type === "weekly"
       ? `Weekly on ${session.day_name}`
-      : `Specific dates: ${session.session_dates.map(formatShortDate).join(", ")}`;
+      : `Specific dates: ${buildCompactSpecificDateLabel(session.session_dates)}`;
 
     const item = document.createElement("div");
     item.className = "pending-session-item";
@@ -1372,6 +1503,14 @@ async function saveCourse() {
     let savedCourseRecord = null;
 
     if (editingCourseId) {
+      const existingSessionIds = courseSessions
+        .filter(function (session) {
+          return session.course_id === editingCourseId;
+        })
+        .map(function (session) {
+          return session.id;
+        });
+
       const updated = await updateRecord("courses", editingCourseId, {
         name,
         code,
@@ -1383,6 +1522,19 @@ async function saveCourse() {
       courseId = editingCourseId;
       savedCourseRecord = updated;
 
+      if (existingSessionIds.length) {
+        const { error: deleteExceptionsError } = await supabaseClient
+          .from("course_session_exceptions")
+          .delete()
+          .eq("user_id", currentUser.id)
+          .in("course_session_id", existingSessionIds);
+
+        if (deleteExceptionsError) {
+          alert(deleteExceptionsError.message || "Could not update course session exceptions.");
+          return;
+        }
+      }
+
       const { error: deleteSessionsError } = await supabaseClient
         .from("course_sessions")
         .delete()
@@ -1393,6 +1545,10 @@ async function saveCourse() {
         alert(deleteSessionsError.message || "Could not update course sessions.");
         return;
       }
+
+      courseSessionExceptions = courseSessionExceptions.filter(function (exception) {
+        return !existingSessionIds.includes(exception.course_session_id);
+      });
 
       courseSessions = courseSessions.filter(function (session) {
         return session.course_id !== editingCourseId;
@@ -1782,13 +1938,22 @@ function getSessionsForDate(date) {
   courses.forEach(function (course) {
     const sessions = getSessionsForCourse(course.id);
     sessions.forEach(function (session) {
-      const weeklyMatch = session.repeat_type === "weekly" && session.day_name === dayName && isDateWithinSemester(dateKey, course.semester_id);
-      const specificMatch = session.repeat_type === "specific" && session.session_date === dateKey;
+      const weeklyMatch =
+        session.repeat_type === "weekly" &&
+        session.day_name === dayName &&
+        isDateWithinSemester(dateKey, course.semester_id) &&
+        !isSessionExcludedOnDate(session.id, dateKey);
+
+      const specificMatch =
+        session.repeat_type === "specific" &&
+        session.session_date === dateKey &&
+        !isSessionExcludedOnDate(session.id, dateKey);
 
       if (weeklyMatch || specificMatch) {
         items.push({
           type: "course-session",
           recordId: session.id,
+          sessionDate: dateKey,
           id: `course-session-${session.id}-${dateKey}`,
           title: `${course.name} - ${session.session_type}`,
           shortTitle: `${course.name}`,
@@ -1805,6 +1970,7 @@ function getSessionsForDate(date) {
             <p class="meta">Semester: ${escapeHtml(getSemesterById(course.semester_id)?.name || "No semester")}</p>
             <p class="meta">Session: ${escapeHtml(session.session_type)}</p>
             <p class="meta">Repeat: ${escapeHtml(session.repeat_type === "weekly" ? `Weekly on ${session.day_name || ""}` : `Specific date: ${session.session_date || ""}`)}</p>
+            <p class="meta">Date shown: ${escapeHtml(formatDate(dateKey))}</p>
             <p class="meta">Time: ${escapeHtml(formatTime(session.start_time))} - ${escapeHtml(formatTime(session.end_time))}</p>
             <p class="meta">Location: ${escapeHtml(session.location || "No location")}</p>
           `
@@ -1909,6 +2075,7 @@ function getItemsForDate(dateKey) {
     .map(function (holiday) {
       return {
         type: "holiday",
+        recordId: holiday.id,
         id: `holiday-${holiday.id}`,
         title: `Holiday: ${holiday.title}`,
         shortTitle: `Holiday: ${holiday.title}`,
@@ -1963,6 +2130,7 @@ function renderScheduleList(container, items) {
         data-detail-html="${escapeHtml(item.detailHtml)}"
         data-record-type="${escapeHtml(item.type || "")}"
         data-record-id="${escapeHtml(item.recordId || "")}"
+        data-session-date="${escapeHtml(item.sessionDate || "")}"
       >
         <h4 class="task-title">${escapeHtml(item.title)}</h4>
         <p class="meta">${escapeHtml(item.timeLabel || "")}</p>
@@ -2065,7 +2233,8 @@ function renderCourses() {
   coursesList.className = "stack-list";
 
   const renderCourseCard = function (course, archived) {
-    const sessions = getSessionsForCourse(course.id);
+    const rawSessions = getSessionsForCourse(course.id);
+    const groupedSessions = groupSessionsForCourseCard(course.id);
     const semester = semesters.find(function (s) { return s.id === course.semester_id; });
 
     const detailHtml = `
@@ -2073,7 +2242,7 @@ function renderCourses() {
       <p class="meta">Instructor: ${escapeHtml(course.instructor || "No instructor")}</p>
       <p class="meta">Semester: ${escapeHtml(semester ? semester.name : "No semester")}</p>
       <p class="meta">Semester end: ${escapeHtml(semester?.end_date ? formatDate(semester.end_date) : "No end date")}</p>
-      <p class="meta">Sessions: ${escapeHtml(String(sessions.length))}</p>
+      <p class="meta">Sessions: ${escapeHtml(String(rawSessions.length))}</p>
     `;
 
     return `
@@ -2105,16 +2274,16 @@ function renderCourses() {
 
         <div class="task-card-expanded">
           ${
-            sessions.length
-              ? sessions.map(function (session) {
+            groupedSessions.length
+              ? groupedSessions.map(function (session) {
+                  const repeatLine = session.type === "weekly"
+                    ? `Weekly on ${session.day_name || ""}`
+                    : `Specific dates: ${buildCompactSpecificDateLabel(session.dates)}`;
+
                   return `
                     <div class="detail-item">
                       <strong>${escapeHtml(session.session_type)}</strong>
-                      <p class="meta">
-                        ${session.repeat_type === "weekly"
-                          ? `Weekly on ${escapeHtml(session.day_name || "")}`
-                          : `Specific date: ${escapeHtml(session.session_date || "")}`}
-                      </p>
+                      <p class="meta">${escapeHtml(repeatLine)}</p>
                       <p class="meta">${escapeHtml(formatTime(session.start_time))} - ${escapeHtml(formatTime(session.end_time))}</p>
                       <p class="meta">${escapeHtml(session.location || "No location")}</p>
                     </div>
@@ -2586,6 +2755,7 @@ function buildCalendarItemHtml(item, compact) {
         data-detail-html="${escapeHtml(item.detailHtml)}"
         data-record-type="${escapeHtml(item.type || "")}"
         data-record-id="${escapeHtml(item.recordId || "")}"
+        data-session-date="${escapeHtml(item.sessionDate || "")}"
         title="${escapeHtml(item.title)}"
       >
         <span class="calendar-item-title">${escapeHtml(compactTitle)}</span>
@@ -2608,6 +2778,7 @@ function buildCalendarItemHtml(item, compact) {
       data-detail-html="${escapeHtml(item.detailHtml)}"
       data-record-type="${escapeHtml(item.type || "")}"
       data-record-id="${escapeHtml(item.recordId || "")}"
+      data-session-date="${escapeHtml(item.sessionDate || "")}"
     >
       <span class="calendar-item-title">${escapeHtml(fullTitle)}</span>
       <small>${escapeHtml(item.timeLabel || "")}</small>
@@ -2775,8 +2946,8 @@ if (nextPeriodBtn) {
   });
 }
 
-function getRecordMeta(type, id) {
-  return { type, id, canEdit: true };
+function getRecordMeta(type, id, sessionDate) {
+  return { type, id, sessionDate: sessionDate || null, canEdit: true };
 }
 
 function handleEditRecord(record) {
@@ -2859,14 +3030,19 @@ function handleEditRecord(record) {
 
 async function handleDeleteRecord(record) {
   if (!record) return;
-  const ok = confirm("Delete this item?");
+
+  let ok = false;
+  if (record.type === "course-session" && record.sessionDate) {
+    ok = confirm("Delete this course session on this day only?");
+  } else {
+    ok = confirm("Delete this item?");
+  }
   if (!ok) return;
 
   let deleted = false;
 
   if (record.type === "course-session") {
-    deleted = await deleteRecord("course_sessions", record.id);
-    if (deleted) courseSessions = removeItemFromArray(courseSessions, record.id);
+    deleted = await deleteSingleSessionOccurrence(record);
   }
 
   if (record.type === "course") deleted = await deleteCourseWithSessions(record.id);
@@ -2977,7 +3153,8 @@ document.addEventListener("click", async function (e) {
     const html = decodeHtml(recordDetailTrigger.dataset.detailHtml || "");
     const type = recordDetailTrigger.dataset.recordType;
     const id = recordDetailTrigger.dataset.recordId;
-    openDetailModal(title, html, getRecordMeta(type, id));
+    const sessionDate = recordDetailTrigger.dataset.sessionDate || "";
+    openDetailModal(title, html, getRecordMeta(type, id, sessionDate));
     return;
   }
 
@@ -2988,7 +3165,8 @@ document.addEventListener("click", async function (e) {
     const html = decodeHtml(detailTrigger.dataset.detailHtml || "");
     const type = detailTrigger.dataset.recordType || "";
     const id = detailTrigger.dataset.recordId || "";
-    const recordMeta = type && id ? getRecordMeta(type, id) : null;
+    const sessionDate = detailTrigger.dataset.sessionDate || "";
+    const recordMeta = type && id ? getRecordMeta(type, id, sessionDate) : null;
     openDetailModal(title, html, recordMeta);
   }
 });
