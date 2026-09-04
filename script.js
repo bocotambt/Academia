@@ -654,14 +654,26 @@ if (signUpBtn) signUpBtn.addEventListener("click", signUp);
 if (signInBtn) signInBtn.addEventListener("click", signIn);
 if (signOutBtn) signOutBtn.addEventListener("click", signOut);
 if (mobileSignOutBtn) mobileSignOutBtn.addEventListener("click", signOut);
-if (mobileSignInBtn) mobileSignInBtn.addEventListener("click", function () {
-  showTab("dashboard");
-  if (authSignedOut) authSignedOut.classList.remove("hidden");
-  if (authSignedOut && authSignedOut.closest) {
-    const card = authSignedOut.closest(".auth-card");
-    if (card) card.classList.add("show-on-mobile");
-  }
-});
+if (mobileSignInBtn) {
+  mobileSignInBtn.addEventListener("click", function () {
+    showTab("dashboard");
+
+    // Show the signed-out auth block
+    if (authSignedOut) authSignedOut.classList.remove("hidden");
+
+    // Force auth card visible on mobile via sidebar class
+    const sidebar = document.querySelector(".sidebar");
+    if (sidebar) {
+      sidebar.classList.add("show-auth");
+    }
+
+    // Also add the older class as backup
+    const authCard = document.querySelector(".sidebar .auth-card");
+    if (authCard) {
+      authCard.classList.add("show-on-mobile");
+    }
+  });
+}
 
 async function getCurrentSession() {
   const { data, error } = await supabaseClient.auth.getSession();
