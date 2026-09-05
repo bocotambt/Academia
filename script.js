@@ -518,6 +518,42 @@ function buildCompactSpecificDateLabel(dateList) {
   return `${cleaned.slice(0, 2).map(formatShortDate).join(", ")} +${cleaned.length - 2} more`;
 }
 
+function buildCollapsedSpecificDatesHtml(dateList) {
+  const cleaned = (dateList || []).filter(Boolean).slice().sort();
+  if (!cleaned.length) return "No dates";
+
+  if (cleaned.length <= 2) {
+    return cleaned.map(formatShortDate).join(", ");
+  }
+
+  return `
+    ${escapeHtml(formatShortDate(cleaned[0]))}, ${escapeHtml(formatShortDate(cleaned[1]))}
+    <button
+      type="button"
+      class="session-more-dates-btn"
+      data-toggle-session-dates="1"
+      data-more-label="+${cleaned.length - 2} more"
+    >
+      +${cleaned.length - 2} more
+    </button>
+  `;
+}
+
+function buildExpandedSpecificDatesHtml(dateList) {
+  const cleaned = (dateList || []).filter(Boolean).slice().sort();
+  if (!cleaned.length) return "";
+
+  return `
+    <div class="session-dates-expanded hidden">
+      <div class="session-date-chip-list">
+        ${cleaned.map(function (date) {
+          return `<span class="session-date-chip">${escapeHtml(formatShortDate(date))}</span>`;
+        }).join("")}
+      </div>
+    </div>
+  `;
+}
+
 function groupSessionsForCourseCard(courseId) {
   const sessions = getSessionsForCourse(courseId);
 
@@ -726,14 +762,11 @@ if (mobileSignOutBtn) mobileSignOutBtn.addEventListener("click", signOut);
 if (mobileSignInBtn) {
   mobileSignInBtn.addEventListener("click", function () {
     showTab("dashboard");
-
     if (authSignedOut) authSignedOut.classList.remove("hidden");
-
     const sidebar = document.querySelector(".sidebar");
     if (sidebar) {
       sidebar.classList.add("show-auth");
     }
-
     const authCard = document.querySelector(".sidebar .auth-card");
     if (authCard) {
       authCard.classList.add("show-on-mobile");
@@ -1329,6 +1362,7 @@ function resetAcademicYearModal() {
   academicYearNameInput.value = "";
   saveAcademicYearBtn.textContent = "Save Academic Year";
 }
+
 function resetSemesterModal() {
   editingSemesterId = null;
   semesterAcademicYearInput.value = "";
@@ -2278,12 +2312,22 @@ function renderCourses() {
               ? groupedSessions.map(function (session) {
                   const repeatLine = session.type === "weekly"
                     ? `Weekly on ${session.day_name || ""}`
-                    : `Specific dates: ${buildCompactSpecificDateLabel(session.dates)}`;
+                    : null;
 
                   return `
                     <div class="detail-item">
                       <strong>${escapeHtml(session.session_type)}</strong>
-                      <p class="meta">${escapeHtml(repeatLine)}</p>
+                      ${
+                        session.type === "weekly"
+                          ? `<p class="meta">${escapeHtml(repeatLine)}</p>`
+                          : `
+                            <div class="meta">
+                              <span>Specific dates: </span>
+                              <span class="session-dates-inline">${buildCollapsedSpecificDatesHtml(session.dates)}</span>
+                            </div>
+                            ${buildExpandedSpecificDatesHtml(session.dates)}
+                          `
+                      }
                       <p class="meta">${escapeHtml(formatTime(session.start_time))} - ${escapeHtml(formatTime(session.end_time))}</p>
                       <p class="meta">${escapeHtml(session.location || "No location")}</p>
                     </div>
@@ -3105,6 +3149,22 @@ if (detailDeleteBtn) {
 }
 
 document.addEventListener("click", async function (e) {
+  const toggleSessionDatesBtn = e.target.closest("[data-toggle-session-dates]");
+  if (toggleSessionDatesBtn) {
+    const detailItem = toggleSessionDatesBtn.closest(".detail-item");
+    const expanded = detailItem ? detailItem.querySelector(".session-dates-expanded") : null;
+    if (!expanded) return;
+
+    const opening = expanded.classList.contains("hidden");
+    expanded.classList.toggle("hidden");
+
+    toggleSessionDatesBtn.textContent = opening
+      ? "Show less"
+      : (toggleSessionDatesBtn.dataset.moreLabel || "Show more");
+
+    return;
+  }
+
   const statusBtn = e.target.closest("[data-task-status-id]");
   if (statusBtn) {
     await updateTaskStatus(
