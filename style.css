@@ -1218,3 +1218,59 @@ textarea {
     min-height: auto;
   }
 }
+.session-dates-inline {
+  display: inline;
+}
+
+.session-more-dates-btn {
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 4px;
+  text-decoration: underline;
+}
+
+.session-more-dates-btn:hover {
+  color: #1d4ed8;
+}
+
+.session-dates-expanded {
+  margin-top: 8px;
+}
+
+.session-date-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.session-date-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #334155;
+  font-size: 12px;
+  line-height: 1.2;
+  border: 1px solid #c7d2fe;
+}
+
+@media (max-width: 640px) {
+  .session-more-dates-btn {
+    font-size: 12px;
+  }
+
+  .session-date-chip-list {
+    gap: 5px;
+  }
+
+  .session-date-chip {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+}
