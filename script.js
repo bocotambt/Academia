@@ -2998,8 +2998,13 @@ function handleEditRecord(record) {
   if (!record) return;
   closeModal("detailModal");
 
-  if (record.type === "course-session") {
-    const item = courseSessions.find(function (x) { return x.id === record.id; });
+  const normalizedType = String(record.type || "").trim();
+  const normalizedId = String(record.id || "").trim();
+
+  if (normalizedType === "course-session") {
+    const item = courseSessions.find(function (x) {
+      return String(x.id) === normalizedId;
+    });
     if (!item) return;
 
     resetCourseModal();
@@ -3008,68 +3013,93 @@ function handleEditRecord(record) {
     return;
   }
 
-  if (record.type === "course") {
-    const item = courses.find(function (x) { return x.id === record.id; });
+  if (normalizedType === "course") {
+    const item = courses.find(function (x) {
+      return String(x.id) === normalizedId;
+    });
     if (!item) return;
     fillCourseModal(item);
     openModal("courseModal");
     return;
   }
 
-  if (record.type === "task") {
-    const item = tasks.find(function (x) { return x.id === record.id; });
+  if (normalizedType === "task") {
+    const item = tasks.find(function (x) {
+      return String(x.id) === normalizedId;
+    });
     if (!item) return;
     fillTaskModal(item);
     openModal("taskModal");
     return;
   }
 
-  if (record.type === "note") {
-    const item = notes.find(function (x) { return x.id === record.id; });
+  if (normalizedType === "note") {
+    const item = notes.find(function (x) {
+      return String(x.id) === normalizedId;
+    });
     if (!item) return;
     fillNoteModal(item);
     openModal("noteModal");
     return;
   }
 
-  if (record.type === "exam") {
-    const item = exams.find(function (x) { return x.id === record.id; });
-    if (!item) return;
+  if (normalizedType === "exam") {
+    const item = exams.find(function (x) {
+      return String(x.id) === normalizedId;
+    });
+
+    if (!item) {
+      console.error("Exam edit failed: exam not found", record, exams);
+      alert("Could not open this exam for editing.");
+      return;
+    }
+
     fillExamModal(item);
     openModal("examModal");
     return;
   }
 
-  if (record.type === "holiday") {
-    const item = holidays.find(function (x) { return x.id === record.id; });
+  if (normalizedType === "holiday") {
+    const item = holidays.find(function (x) {
+      return String(x.id) === normalizedId;
+    });
     if (!item) return;
     fillHolidayModal(item);
     openModal("holidayModal");
     return;
   }
 
-  if (record.type === "event") {
-    const item = events.find(function (x) { return x.id === record.id; });
+  if (normalizedType === "event") {
+    const item = events.find(function (x) {
+      return String(x.id) === normalizedId;
+    });
     if (!item) return;
     fillEventModal(item);
     openModal("eventModal");
     return;
   }
 
-  if (record.type === "academic-year") {
-    const item = academicYears.find(function (x) { return x.id === record.id; });
+  if (normalizedType === "academic-year") {
+    const item = academicYears.find(function (x) {
+      return String(x.id) === normalizedId;
+    });
     if (!item) return;
     fillAcademicYearModal(item);
     openModal("academicYearModal");
     return;
   }
 
-  if (record.type === "semester") {
-    const item = semesters.find(function (x) { return x.id === record.id; });
+  if (normalizedType === "semester") {
+    const item = semesters.find(function (x) {
+      return String(x.id) === normalizedId;
+    });
     if (!item) return;
     fillSemesterModal(item);
     openModal("semesterModal");
+    return;
   }
+
+  console.error("Unknown record type in handleEditRecord:", record);
 }
 
 async function handleDeleteRecord(record) {
